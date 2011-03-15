@@ -1,0 +1,108 @@
+{%extends "base.html" %}
+
+{%set user = None %}
+{%if 'id' in field: %}
+  {%set user = db.get_user_by_id(field['id'].value) %}
+{%elif 'name' in field: %}
+  {%set user = db.get_user_by_name(field['name'].value.decode('utf8')) %}
+{%endif %}
+
+{%block page_title %}{%if user == None: %}Fehler{%else: %}Benutzerdetails für {{ user[0] }}{%endif %}{%endblock %}
+
+{%block heading %}{%if user == None: %}Fehler{%else: %}Benutzerdetails für {{ user[0] }}{%endif %}{%endblock %}
+
+{%block content %}
+{%if user == None: %}
+  <p>Ein Fehler ist aufgetreten: Entweder hast du keinen Benutzer angegeben, oder der angegebene Benutzer existiert nicht.</p>
+{%else: %}
+  {%if user[2] != None: %}
+    <p><b>Kommentar:</b> {{ user[2] }}</p>
+  {%endif %}
+  <table>
+    <tr>
+      <th><a href="#vergeben">Vergebene Bestätigungen</a></th>
+      <td>{{ format_number(db.get_cf_count_by_user(user[1])) }}</td>
+    </tr>
+    <tr>
+      <th><a href="#erhalten">Erhaltene Bestätigungen</a></th>
+      <td>{{ format_number(db.get_cf_count_by_confirmed(user[1])) }}</td>
+    </tr>
+  </table>
+
+  <h2><a id="vergeben">Vergebene Bestätigungen</a></h2>
+  <table class="full-width">
+    <colgroup>
+      <col width="2%" />
+      <col width="30%" />
+      <col width="20%" />
+      <col width="38%" />
+      <col width="10%" />
+    </colgroup>
+    <tr>
+      <th></th>
+      <th>An Benutzer</th>
+      <th>Datum</th>
+      <th>Kommentar</th>
+      <th>Rückbestätigt?</th>
+    </tr>
+    {%set conf_self = db.get_confirmations_by_user(user[1]) %}
+    {%for conf in conf_self: %}
+      {%set (cf_user_name, cf_user_id, cf_date, cf_comment) = conf %}
+      {%set cf_reconfirmed = db.has_confirmed(cf_user_id, user[1]) %}
+      <tr{%if not cf_reconfirmed: %} class="not-reconf"{%endif %}>
+	{%set (cf_user_name, cf_user_id, cf_date, cf_comment) = conf %}
+	{%set cf_reconfirmed = db.has_confirmed(cf_user_id, user[1]) %}
+	<td class="cf-detail">{{ link('confirmation', 'user_one=' + str(user[1]) + 
+                    '&amp;user_two=' + str(cf_user_id), '.') }}</td>
+	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) }}</td>
+	<td class="cf-date">{{ format_date(cf_date) }}</td>
+	<td class="cf-comment">{{ cf_comment }}</td>
+	<td class="cf-reconf">
+	  {%if cf_reconfirmed: %}
+	    ja
+	  {%else: %}
+	    nein
+	  {%endif %}
+	</td>
+      </tr>
+    {%endfor %}
+  </table>
+
+  <h2><a id="erhalten">Erhaltene Bestätigungen</a></h2>
+  <table class="full-width">
+    <colgroup>
+      <col width="2%" />
+      <col width="30%" />
+      <col width="20%" />
+      <col width="38%" />
+      <col width="10%" />
+    </colgroup>
+    <tr>
+      <th></th>
+      <th>Von Benutzer</th>
+      <th>Datum</th>
+      <th>Kommentar</th>
+      <th>Rückbestätigt?</th>
+    </tr>
+    {%set conf_from = db.get_confirmations_by_confirmed(user[1]) %}
+    {%for conf in conf_from: %}
+      {%set (cf_user_name, cf_user_id, cf_date, cf_comment) = conf %}
+      {%set cf_reconfirmed = db.has_confirmed(user[1], cf_user_id) %}
+      <tr{%if not cf_reconfirmed: %} class="not-reconf"{%endif %}>
+	<td class="cf-detail">{{ link('confirmation', 'user_one=' + str(cf_user_id) + 
+                    '&amp;user_two=' + str(user[1]), '.') }}</td>
+	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) }}</td>
+	<td class="cf-date">{{ format_date(cf_date) }}</td>
+	<td class="cf-comment">{{ cf_comment }}</td>
+	<td class="cf-reconf">
+	  {%if cf_reconfirmed: %}
+	    ja
+	  {%else: %}
+	    nein
+	  {%endif %}
+	</td>
+      </tr>
+    {%endfor %}
+  </table>
+{%endif %}
+{%endblock %}

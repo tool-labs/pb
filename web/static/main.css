@@ -1,0 +1,22 @@
+body { margin: 20px 0px 20px 0px; width: 800px; margin-left: auto; margin-right: auto; background-color: white; }
+h1 { border-bottom: 1px solid black; text-align: center; margin-top: 0px; }
+h2 { border-bottom: 1px solid black; }
+h1 span.h1-prefix { color: grey; }
+div#navi   { border-bottom: 0px solid black; font-size: 0.8em; color: grey; padding-left: 10px; padding-right: 10px; }
+div#footer { border-top: 1px solid black; font-size: 0.8em; color: grey; padding-left: 10px; padding-right: 10px; margin-top: 20px; }
+div#footer a { color: grey; text-decoration: underline; }
+
+body { font-family: "Helvetica", sans; }
+h1, h2 { font-family: "Linux Libertine O", serif; }
+
+a { color: grey; }
+a.ext:before { content: "» "; }
+
+table { border-collapse: collapse; }
+table.full-width { width: 100%; }
+td, th { border: 1px solid #aaaaaa; padding: 5px; }
+th { background-color: #dddddd; }
+tr.not-reconf { background-color: #eeeeee; }
+td.cf-date { text-align: center; }
+td.cf-comment { font-style: italic; }
+td.cf-reconf { text-align: center; }

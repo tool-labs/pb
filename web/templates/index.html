@@ -1,0 +1,15 @@
+{%extends "base.html" %}
+
+{%block page_title %}Startseite{%endblock %}
+
+{%block heading %}<span class="h1-prefix">Wikipedia:</span>Persönliche Bekanntschaften{%endblock %}
+
+{%block content %}
+<p>Herzlich willkommen auf der Datenbankseite des <em>Persönliche-Bekanntschaften</em>-Projekts! Mehr Informationen zu dem Projekt findest du auf der <a href="http://de.wikipedia.org/wiki/WP:PB" class="ext">Wikipedia-Projektseite</a>.</p>
+
+<h2>Aktuelle Zahlen</h2>
+<ul>
+  <li>Momentan nehmen {{ format_number(db.get_user_count()) }} Benutzer am Projekt <em>Persönliche Bekanntschaften</em> teil.</li>
+  <li>Diese haben sich untereinander insgesamt {{ format_number(db.get_confirmation_count()) }} Mal bestätigt.</li>
+</ul>
+{%endblock %}
