@@ -7,9 +7,13 @@
   {%set user = db.get_user_by_name(field['name'].value.decode('utf8')) %}
 {%endif %}
 
-{%block page_title %}{%if user == None: %}Fehler{%else: %}Benutzerdetails für {{ user[0] }}{%endif %}{%endblock %}
+{%block page_title %}
+	{%if user == None: %}Fehler{%else: %}Benutzerdetails für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
+{%endif %}{%endblock %}
 
-{%block heading %}{%if user == None: %}Fehler{%else: %}Benutzerdetails für {{ user[0] }}{%endif %}{%endblock %}
+{%block heading %}
+	{%if user == None: %}Fehler{%else: %}Benutzerdetails für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
+{%endif %}{%endblock %}
 
 {%block content %}
 {%if user == None: %}
@@ -17,6 +21,7 @@
 {%else: %}
   {%if user[2] != None: %}
     <p><b>Kommentar:</b> {{ user[2] }}</p>
+    {%if user[3] == 0: %}<span style="color:#dd3333;font-weight:bold;">{{ user[0] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschloßen</span></p>{%endif%}
   {%endif %}
   <table>
     <tr>
@@ -47,14 +52,19 @@
     </tr>
     {%set conf_self = db.get_confirmations_by_user(user[1]) %}
     {%for conf in conf_self: %}
-      {%set (cf_user_name, cf_user_id, cf_date, cf_comment) = conf %}
+      {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden) = conf %}
       {%set cf_reconfirmed = db.has_confirmed(cf_user_id, user[1]) %}
-      <tr{%if not cf_reconfirmed: %} class="not-reconf"{%endif %}>
-	{%set (cf_user_name, cf_user_id, cf_date, cf_comment) = conf %}
+      <tr class="{%if not cf_reconfirmed: %}not-reconf{%endif %} {%if cf_was_deleted==1: %}cf_deleted{%endif%}">
 	{%set cf_reconfirmed = db.has_confirmed(cf_user_id, user[1]) %}
-	<td class="cf-detail">{{ link('confirmation', 'user_one=' + str(user[1]) + 
-                    '&amp;user_two=' + str(cf_user_id), '.') }}</td>
-	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) }}</td>
+	<td class="cf-detail">
+		{%if not cf_user_is_hidden: %}
+			{{ link('confirmation', 'user_one=' + str(user[1]) + 
+			'&amp;user_two=' + str(cf_user_id), '.') }}
+		{%endif%}</td>
+	<td class="cf-user">{%if not cf_user_is_hidden: %}
+			{{ link('user', 'id=' + str(cf_user_id), cf_user_name) }}
+		{%else%}Ex-Teilnehmer
+		{%endif%}</td>
 	<td class="cf-date">{{ format_date(cf_date) }}</td>
 	<td class="cf-comment">{{ cf_comment }}</td>
 	<td class="cf-reconf">
@@ -86,12 +96,18 @@
     </tr>
     {%set conf_from = db.get_confirmations_by_confirmed(user[1]) %}
     {%for conf in conf_from: %}
-      {%set (cf_user_name, cf_user_id, cf_date, cf_comment) = conf %}
+      {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden) = conf %}
       {%set cf_reconfirmed = db.has_confirmed(user[1], cf_user_id) %}
-      <tr{%if not cf_reconfirmed: %} class="not-reconf"{%endif %}>
-	<td class="cf-detail">{{ link('confirmation', 'user_one=' + str(cf_user_id) + 
-                    '&amp;user_two=' + str(user[1]), '.') }}</td>
-	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) }}</td>
+      <tr class="{%if not cf_reconfirmed: %}not-reconf{%endif %} {%if cf_was_deleted==1: %}cf_deleted{%endif%}">
+	<td class="cf-detail">
+		{%if not cf_user_is_hidden: %}
+			{{ link('confirmation', 'user_one=' + str(cf_user_id) + 
+			'&amp;user_two=' + str(user[1]), '.') }}
+		{%endif%}</td>
+	<td class="cf-user">{%if not cf_user_is_hidden: %}
+			{{ link('user', 'id=' + str(cf_user_id), cf_user_name) }}
+		{%else%}Ex-Teilnehmer
+		{%endif%}</td>
 	<td class="cf-date">{{ format_date(cf_date) }}</td>
 	<td class="cf-comment">{{ cf_comment }}</td>
 	<td class="cf-reconf">

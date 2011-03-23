@@ -12,4 +12,14 @@
   <li>Momentan nehmen {{ format_number(db.get_user_count()) }} Benutzer am Projekt <em>Persönliche Bekanntschaften</em> teil.</li>
   <li>Diese haben sich untereinander insgesamt {{ format_number(db.get_confirmation_count()) }} Mal bestätigt.</li>
 </ul>
+
+{%set confs = db.get_latest_confirmations() %}
+<h2>letzte Bestätigungen</h2>
+<ul>
+{%for conf in confs: %}
+  {%set (has_confirmed_name,was_confirmed_name,cf_comment,cf_was_deleted,cf_timestamp) = conf %}
+  <li>{{ format_date(cf_timestamp) }}, {{ format_time(cf_timestamp) }}: {{ link('user', 'name=' + str(has_confirmed_name), has_confirmed_name) }} → {{ link('user', 'name=' + str(was_confirmed_name), was_confirmed_name) }} {%if cf_comment:%}({{cf_comment}}){%endif%}</li>
+{%endfor %}
+</ul>
+
 {%endblock %}

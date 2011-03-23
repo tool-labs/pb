@@ -4,7 +4,7 @@
 def serve_page(page_name, arguments):
     # init Jinja2
     from jinja2 import Environment, FileSystemLoader, TemplateNotFound
-    env = Environment(loader=FileSystemLoader(config.base_path + 'templates',
+    env = Environment(loader=FileSystemLoader(pb_db_config.base_path + 'templates',
                                               encoding='utf-8'))
     try:
         template = env.get_template(page_name)
@@ -14,7 +14,7 @@ def serve_page(page_name, arguments):
         print template.render(**arguments).encode('utf-8')
 
 def href(page, args):
-    return config.index_path % {'page': page, 'args': args}
+    return pb_db_config.index_path % {'page': page, 'args': args}
 
 def link(page, args, text):
     return '<a href="%(href)s">%(text)s</a>' % {'href':href(page, args),
@@ -36,10 +36,10 @@ def format_number(number):
     return locale.format("%.d", number, True)
 
 
-import config
+import pb_db_config
 
 import cgi,cgitb
-cgitb.enable(display=0, format='plain', logdir=config.log_path)
+cgitb.enable(display=0, format='plain', logdir=pb_db_config.log_path)
 
 print("Content-type: text/html;charset=utf-8\n")
 
@@ -47,16 +47,16 @@ field = cgi.FieldStorage()
 
 import os.path
 import sys
-sys.path.append(os.path.abspath(config.base_path + '../pyapi'))
+sys.path.append(os.path.abspath(pb_db_config.base_path + '../pyapi'))
 import wppb
 
-db = wppb.Database(database=config.db_name)
+db = wppb.Database(database=pb_db_config.db_name)
 
 page = 'index'
 if 'p' in field:
     page = field['p'].value
 
-args = {'config':config, 'link':link, 'db': db, 'href':href, 'str':str,
+args = {'config':pb_db_config, 'link':link, 'db': db, 'href':href, 'str':str,
         'field':field, 'empty':empty, 'format_date':format_date,
         'format_time':format_time, 'format_number':format_number}
 serve_page(page + ".html", dict(field, **args))

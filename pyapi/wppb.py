@@ -40,8 +40,9 @@ class Database:
         # try to read the .my.cnf
         import ConfigParser
         import os.path
+        import pb_db_config
 
-        p = os.path.expanduser('~wppb/.my.cnf')
+        p = pb_db_config.db_conf_file
         if os.path.exists(p):
             parser = ConfigParser.ConfigParser()
             parser.read(p)
@@ -74,16 +75,18 @@ class Database:
                                 u'data. Error message: ' + unicode(e))
 
 
-    def get_all_users(self):
+    def get_all_users(self, show_hidden_users=True, show_banned_users=False):
         """
         Returns a list of all users.
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `user_id`, `user_comment` 
+            SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned` 
                 FROM `user` 
+                WHERE (? OR `user_is_hidden` = 0) AND
+                      (? OR `user_was_banned` = 0)
                 ORDER BY `user_name`
-            ;''')
+            ;''', (show_hidden_users, show_banned_users,))
             return curs.fetchall()
 
     def get_user_by_id(self, id):
@@ -92,7 +95,7 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `user_id`, `user_comment` 
+            SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`
                 FROM `user` 
                 WHERE `user_id` = ?
             ;''', (id,))
@@ -104,13 +107,13 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `user_id`, `user_comment` 
+            SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`
                 FROM `user` 
                 WHERE `user_name` = ?
             ;''', (name,))
             return curs.fetchone()
 
-    def get_user_count(self):
+    def get_user_count(self, count_banned_users=False):
         """
         Returns the count of all users.
         """
@@ -118,18 +121,20 @@ class Database:
             curs.execute('''
             SELECT COUNT(`user_id`) 
                 FROM `user`
-            ;''')
+                WHERE ? OR `user_was_banned` = 0
+            ;''', (count_banned_users,))
             return curs.fetchone()[0]
 
-    def get_confirmation_count(self):
+    def get_confirmation_count(self, count_deleted_cf=False):
         """
         Returns the count of all confirmations.
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT COUNT(1) 
+            SELECT COUNT(1)
                 FROM `confirmation`
-            ;''')
+                WHERE ? OR `cf_was_deleted` = 0
+            ;''', (count_deleted_cf,))
             return curs.fetchone()[0]
 
     def get_cf_count_by_user(self, user_id):
@@ -163,7 +168,7 @@ class Database:
         with self.conn as curs:
             curs.execute('''
             SELECT `user_name`, `cf_confirmed_user_id`, 
-                   `cf_timestamp`, `cf_comment`
+                   `cf_timestamp`, `cf_comment`, `cf_was_deleted`, `user_is_hidden`
                 FROM `confirmation`
                 JOIN `user`
                     ON `user_id` = `cf_confirmed_user_id`
@@ -179,13 +184,69 @@ class Database:
         with self.conn as curs:
             curs.execute('''
             SELECT `user_name`, `cf_user_id`, 
-                   `cf_timestamp`, `cf_comment`
+                   `cf_timestamp`, `cf_comment`, `cf_was_deleted`, `user_is_hidden`
                 FROM `confirmation`
                 JOIN `user`
                     ON `user_id` = `cf_user_id`
                 WHERE `cf_confirmed_user_id` = ?
                 ORDER BY `cf_timestamp` ASC
             ;''', (user_id,))
+            return curs.fetchall()
+
+    def get_latest_user_list_with_confirmations(self):
+        """
+        Returns a list of all users joined this project in the last 3 months
+		banned and hidden users are NOT shown
+        """
+        with self.conn as curs:
+            curs.execute('''
+            SELECT `user_name`, COUNT(`cf_user_id`), `user_participates_since`
+                FROM `user`
+                LEFT JOIN `confirmation`
+                    ON `cf_was_deleted` = 0 AND `user_id` = `cf_confirmed_user_id`
+               WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0 AND `user_participates_since` > DATE_ADD(NOW(), INTERVAL -3 MONTH)
+                GROUP BY `user_name`
+                ORDER BY `user_participates_since` ASC
+            ;''')
+            return curs.fetchall()
+
+    def get_latest_confirmations(self, limit=8):
+        """
+        Returns a list of all confirmations were made in the last ? months
+		banned and hidden users are shown
+        """
+        with self.conn as curs:
+            curs.execute('''
+            SELECT
+                  has_confirmed_t.`user_name` AS has_confirmed_name,
+                  was_confirmed_t.`user_name` AS was_confirmed_name,
+                  `cf_comment`,`cf_was_deleted`,`cf_timestamp`
+               FROM `confirmation`
+               JOIN `user` AS was_confirmed_t
+                 ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
+               JOIN `user` AS has_confirmed_t
+                 ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
+               WHERE `cf_timestamp` > DATE_ADD(NOW(), INTERVAL -2 MONTH)
+               ORDER BY `cf_timestamp` DESC LIMIT ?
+            ;''', (limit,))
+            return curs.fetchall()
+
+
+    def get_user_list_with_confirmations(self):
+        """
+        Returns an overview over all users, i.e. user list + number of confirmations this user got
+		banned and hidden users are NOT shown, but we do not count the deleted confirmations here
+        """
+        with self.conn as curs:
+            curs.execute('''
+            SELECT `user_name`, COUNT(`cf_user_id`), `user_participates_since` 
+                FROM `user`
+                LEFT JOIN `confirmation`
+                    ON `cf_was_deleted` = 0 AND `user_id` = `cf_confirmed_user_id`
+                WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0
+                GROUP BY `user_name`
+                ORDER BY `user_name` ASC
+            ;''')
             return curs.fetchall()
 
     def has_confirmed(self, user_id, confirmed_id):
@@ -230,12 +291,39 @@ class Database:
                 INSERT INTO `user` (`user_id`, `user_name`)
                     VALUES (?,?)
                 ;''', (user_id,user_name))
+                # self.touch_user(user_id, timestamp) not neccessary
+                return True
+
+    def add_user(self, user_name, part_tstamp, comment=None):
+        """
+        Adds a user to the database with given timestamp of participation. Returns the success as a boolean value.
+         comment is not used here, but is useful for admin comments like "X is a sock"
+        """
+        # check if the user exists (MW database)
+        user_id = get_mw_user_id(user_name)
+        import re
+        if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d", part_tstamp) == None:
+            return False
+        if len(user_name) == 0 or user_id == None:
+            # user does not exist
+            return False
+        else:
+            # user does exist
+            with self.conn as curs:
+                curs.execute('''
+                INSERT INTO `user` (`user_id`, `user_name`, `user_participates_since`, `user_last_update`)
+                    VALUES (?,?,?,?)
+                ;''', (user_id,user_name,part_tstamp,part_tstamp))
+                # self.touch_user(user_id, timestamp) not neccessary
                 return True
 
     def add_confirmation(self, user_id, confirmed_id, comment, timestamp):
         """
         Adds a new confirmation to the database: *user_id* confirmes
         *confirmed_id* with the comment *comment* at *timestamp*.
+        If *confirmed_id* gets his third confirmation, he/she
+        is 'verified' and *user_verified_since* will be set to
+        *timestamp*.
         Returns the success as a boolean value.
 
         *timestamp* has to be provided as 'YYYY-MM-DD hh:mm:ss'.
@@ -256,7 +344,14 @@ class Database:
             )
                 VALUES (?,?,?,?)
             ;''', (user_id,confirmed_id,timestamp,comment))
-            return True
+            if (len(self.get_confirmations_by_confirmed(confirmed_id))==3):
+                curs.execute('''
+                UPDATE `user` SET
+                     `user_verified_since` = ?
+                WHERE `user`.`user_id` = ? LIMIT 1
+                ;''', (timestamp, confirmed_id,))
+                self.touch_user(confirmed_id, timestamp)
+                return True
 
     def get_mw_user_id(self, user_name):
         """
@@ -276,3 +371,17 @@ class Database:
                 return int(row[0])
             else:
                 return None
+
+    def touch_user(self, user_id, timestamp):
+        """
+        Updates `user`.`user_last_update` for *user_id*. This is used
+        after adding the user, makeing changes to the user manually or
+        when the user gets 'verified'.
+        """
+        curs.execute('''
+        UPDATE `user` SET
+               `user_last_update` = ?
+        WHERE `user`.`user_id` = ? LIMIT 1
+        ;''', (timestamp, user_id,))
+        return True
+

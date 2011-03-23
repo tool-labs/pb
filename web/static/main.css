@@ -17,6 +17,7 @@ table.full-width { width: 100%; }
 td, th { border: 1px solid #aaaaaa; padding: 5px; }
 th { background-color: #dddddd; }
 tr.not-reconf { background-color: #eeeeee; }
+tr.cf_deleted { text-decoration: line-through; }
 td.cf-date { text-align: center; }
 td.cf-comment { font-style: italic; }
 td.cf-reconf { text-align: center; }

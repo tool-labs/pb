@@ -5,9 +5,9 @@
 {%block heading %}Teilnehmende Benutzer{%endblock %}
 
 {%block content %}
-  {%set users = db.get_all_users() %}
 
-  <p>Die folgenden Benutzer nehmen am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
+{%set users = db.get_all_users() %}
+  <p>Die folgenden {{users|length}} Benutzer nehmen am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
 
   <table>
     <tr>
@@ -16,6 +16,7 @@
       <th>Erhaltene Bestätigungen</th>
     </tr>
     {%for u in users: %}
+      {%if u[3] == 0: %}
       <tr>
 	<td>
 	  {{ link('user', 'id='+str(u[1]), u[0]) }}
@@ -27,6 +28,22 @@
 	  {{ db.get_cf_count_by_confirmed(u[1]) }}
 	</td>
       </tr>
+      {%endif %}
+    {%endfor %}
+    {%for u in users: %}
+      {%if u[3] == 1: %}
+      <tr>
+	<td>
+	  Ex-Teilnehmer
+	</td>
+	<td>
+	  {{ db.get_cf_count_by_user(u[1]) }}
+	</td>
+	<td>
+	  {{ db.get_cf_count_by_confirmed(u[1]) }}
+	</td>
+      </tr>
+      {%endif %}
     {%endfor %}
   </table>
 {%endblock %}
