@@ -14,7 +14,7 @@
 </ul>
 
 {%set confs = db.get_latest_confirmations() %}
-<h2>letzte Bestätigungen</h2>
+<h2>Letzte Bestätigungen</h2>
 <ul>
 {%for conf in confs: %}
   {%set (has_confirmed_name,was_confirmed_name,cf_comment,cf_was_deleted,cf_timestamp) = conf %}
