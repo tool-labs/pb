@@ -210,7 +210,29 @@ class Database:
             ;''')
             return curs.fetchall()
 
-    def get_latest_confirmations(self, limit=8):
+    def get_yesterdays_confirmations_sorted_by_confirmed(self, day=1, delta=1):
+        """
+        Returns a list of all confirmations were made yesterday. This is
+             used by the bot for informing the user about the confirmations he got.
+             banned and hidden users are NOT shown
+        """
+        with self.conn as curs:
+            curs.execute('''
+               SELECT
+                  was_confirmed_t.`user_name` AS was_confirmed_name,
+                  has_confirmed_t.`user_name` AS has_confirmed_name,
+                  `cf_timestamp`
+               FROM `confirmation`
+               JOIN `user` AS was_confirmed_t
+                 ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
+               JOIN `user` AS has_confirmed_t
+                 ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
+               WHERE `cf_timestamp` > DATE_ADD(CURDATE(), INTERVAL -? DAY) AND `cf_timestamp` < DATE_ADD(CURDATE(), INTERVAL -? DAY) AND `cf_was_deleted`=0
+               ORDER BY was_confirmed_name
+               ;''', (day,day-delta))
+            return curs.fetchall()
+
+    def get_latest_confirmations(self, limit=8, days=70):
         """
         Returns a list of all confirmations were made in the last ? months
 		banned and hidden users are shown
@@ -226,9 +248,9 @@ class Database:
                  ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
                JOIN `user` AS has_confirmed_t
                  ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
-               WHERE `cf_timestamp` > DATE_ADD(NOW(), INTERVAL -2 MONTH)
+               WHERE `cf_timestamp` > DATE_ADD(NOW(), INTERVAL -? DAY)
                ORDER BY `cf_timestamp` DESC LIMIT ?
-            ;''', (limit,))
+            ;''', (days,limit))
             return curs.fetchall()
 
 
