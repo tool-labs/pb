@@ -7,7 +7,7 @@ configuration.
 
 import os.path
 # path to www index.py
-index_path = "http://toolserver.org/~wppb/%(page)s/%(args)s"
+index_path = "http://toolserver.org/~wppb/web/%(page)s/%(args)s"
 # path to the www static directory
 static_path = "http://toolserver.org/~wppb/static/"
 # path to the local base directory
