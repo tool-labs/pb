@@ -302,7 +302,7 @@ class Database:
         Adds a user to the database. Returns the success as a boolean value.
         """
         # check if the user exists (MW database)
-        user_id = get_mw_user_id(user_name)
+        user_id = self.get_mw_user_id(user_name)
         if len(user_name) == 0 or user_id == None:
             # user does not exist
             return False
@@ -322,7 +322,7 @@ class Database:
          comment is not used here, but is useful for admin comments like "X is a sock"
         """
         # check if the user exists (MW database)
-        user_id = get_mw_user_id(user_name)
+        user_id = self.get_mw_user_id(user_name)
         import re
         if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d", part_tstamp) == None:
             return False
@@ -350,8 +350,8 @@ class Database:
 
         *timestamp* has to be provided as 'YYYY-MM-DD hh:mm:ss'.
         """
-        if (get_user_by_id(user_id) == None or 
-            get_user_by_id(confirmed_id) == None):
+        if (self.get_user_by_id(user_id) == None or 
+            self.get_user_by_id(confirmed_id) == None):
             return False
         import re
         if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d", timestamp) == None:
