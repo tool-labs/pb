@@ -23,19 +23,19 @@
     <p><b>Kommentar:</b> {{ user[2] }}</p>
     {%if user[3] == 0: %}<span style="color:#dd3333;font-weight:bold;">{{ user[0] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschloßen</span></p>{%endif%}
   {%endif %}
-  <table>
-    <tr>
+  <table class="toc">
+    <tr class="given">
       <th><a href="#vergeben">Vergebene Bestätigungen</a></th>
       <td>{{ format_number(db.get_cf_count_by_user(user[1])) }}</td>
     </tr>
-    <tr>
+    <tr class="taken">
       <th><a href="#erhalten">Erhaltene Bestätigungen</a></th>
       <td>{{ format_number(db.get_cf_count_by_confirmed(user[1])) }}</td>
     </tr>
   </table>
 
   <h2><a id="vergeben">Vergebene Bestätigungen</a></h2>
-  <table class="full-width">
+  <table class="full-width given">
     <colgroup>
       <col width="2%" />
       <col width="30%" />
@@ -79,7 +79,7 @@
   </table>
 
   <h2><a id="erhalten">Erhaltene Bestätigungen</a></h2>
-  <table class="full-width">
+  <table class="full-width taken">
     <colgroup>
       <col width="2%" />
       <col width="30%" />

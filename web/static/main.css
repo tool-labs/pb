@@ -9,15 +9,23 @@ div#footer a { color: grey; text-decoration: underline; }
 body { font-family: "Helvetica", sans; }
 h1, h2 { font-family: "Linux Libertine O", serif; }
 
-a { color: grey; }
+a { color: #666; }
 a.ext:before { content: "» "; }
 
 table { border-collapse: collapse; }
 table.full-width { width: 100%; }
-td, th { border: 1px solid #aaaaaa; padding: 5px; }
+td, th { border: 1px solid #aaaaaa; padding: 0.25em 1ex; }
 th { background-color: #dddddd; }
-tr.not-reconf { background-color: #eeeeee; }
+tr.not-reconf td { background-color: #fee; }
 tr.cf_deleted { text-decoration: line-through; }
 td.cf-date { text-align: center; }
 td.cf-comment { font-style: italic; }
 td.cf-reconf { text-align: center; }
+
+table.toc th { text-align: left; }
+table.toc td { text-align: right; }
+
+.given th { background-color: #cce; }
+.given td { background-color: #eef; }
+.taken th { background-color: #cec; }
+.taken td { background-color: #efe; }
