@@ -232,7 +232,7 @@ class Database:
                ;''', (day,day-delta))
             return curs.fetchall()
 
-    def get_latest_confirmations(self, limit=8, days=70):
+    def get_latest_confirmations(self, limit=8, days=30):
         """
         Returns a list of all confirmations were made in the last ? months
 		banned and hidden users are shown
