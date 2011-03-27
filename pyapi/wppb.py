@@ -30,7 +30,7 @@ class Database:
     """
 
     def __init__(self, user_name=None, password=None, host=None,
-                 database='p_wppb', wp_database=None):
+                 database='p_wppb', wp_database='dewiki_p'):
         """
         Constructor.
 
@@ -59,7 +59,7 @@ class Database:
         
         if user_name is None or password is None or host is None:
             raise WPPBException(u'You did not specify enough information on' +
-                                u' the database connection. The .my.cnf ' +
+                                u' the database connection. The .my-pb-db-****.cnf ' +
                                 u'file did not contain the required ' + 
                                 u'information.')
 
