@@ -17,12 +17,17 @@
 
 {%block content %}
 {%if user == None: %}
-  <p>Ein Fehler ist aufgetreten: Entweder hast du keinen Benutzer angegeben, oder der angegebene Benutzer existiert nicht.</p>
+  <p>Ein Fehler ist aufgetreten: Entweder hast du keinen Benutzer angegeben oder der angegebene Benutzer existiert nicht.</p>
 {%else: %}
   {%if user[2] != None: %}
     <p><b>Kommentar:</b> {{ user[2] }}</p>
-    {%if user[3] == 0: %}<span style="color:#dd3333;font-weight:bold;">{{ user[0] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschloßen</span></p>{%endif%}
+    {%if user[3] == 0: %}<span class="warning">{{ user[0] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>{%endif%}
   {%endif %}
+
+  <div id="wp-box">
+    <img src="http://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/12px-Wikipedia-logo-v2.svg.png" /> <a href="http://de.wikipedia.org/wiki/Benutzer:{{ user[0] }}">Benutzerseite</a>, <a href="http://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user[0] }}">Diskussionsseite</a>
+  </div>
+
   <table class="toc">
     <tr class="given">
       <th><a href="#vergeben">Vergebene Bestätigungen</a></th>
@@ -32,10 +37,20 @@
       <th><a href="#erhalten">Erhaltene Bestätigungen</a></th>
       <td>{{ format_number(db.get_cf_count_by_confirmed(user[1])) }}</td>
     </tr>
+    <tr class="participates-since">
+      <th>Anmeldungsdatum WP:BP</th>
+      <td>{{ format_date(user[5]) }}</td>
+    </tr>
+    {%if user[6] != None: %}
+    <tr class="verified-since">
+      <th>Bestätigt seit</th>
+      <td>{{ format_date(user[6]) }}</td>
+    </tr>
+    {%endif %}
   </table>
 
   <h2><a id="vergeben">Vergebene Bestätigungen</a></h2>
-  <table class="full-width given">
+  <table class="full-width given tablesorter" id="given-confirmations">
     <colgroup>
       <col width="2%" />
       <col width="30%" />
@@ -43,13 +58,16 @@
       <col width="38%" />
       <col width="10%" />
     </colgroup>
-    <tr>
-      <th></th>
-      <th>An Benutzer</th>
-      <th>Datum</th>
-      <th>Kommentar</th>
-      <th>Rückbestätigt?</th>
-    </tr>
+    <thead>
+      <tr>
+	<th></th>
+	<th>An Benutzer</th>
+	<th>Datum</th>
+	<th>Kommentar</th>
+	<th>Rückbestätigt?</th>
+      </tr>
+    </thead>
+    <tbody>
     {%set conf_self = db.get_confirmations_by_user(user[1]) %}
     {%for conf in conf_self: %}
       {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden) = conf %}
@@ -76,10 +94,11 @@
 	</td>
       </tr>
     {%endfor %}
+    </tbody>
   </table>
 
   <h2><a id="erhalten">Erhaltene Bestätigungen</a></h2>
-  <table class="full-width taken">
+  <table class="full-width taken tablesorter" id="taken-confirmations">
     <colgroup>
       <col width="2%" />
       <col width="30%" />
@@ -87,13 +106,16 @@
       <col width="38%" />
       <col width="10%" />
     </colgroup>
-    <tr>
-      <th></th>
-      <th>Von Benutzer</th>
-      <th>Datum</th>
-      <th>Kommentar</th>
-      <th>Rückbestätigt?</th>
-    </tr>
+    <thead>
+      <tr>
+	<th></th>
+	<th>Von Benutzer</th>
+	<th>Datum</th>
+	<th>Kommentar</th>
+	<th>Rückbestätigt?</th>
+      </tr>
+    </thead>
+    <tbody>
     {%set conf_from = db.get_confirmations_by_confirmed(user[1]) %}
     {%for conf in conf_from: %}
       {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden) = conf %}
@@ -119,6 +141,42 @@
 	</td>
       </tr>
     {%endfor %}
+    </tbody>
   </table>
 {%endif %}
+{%endblock %}
+
+{%block javascript %}
+  var textExtractor = function(node) {
+    if (node.className == "cf-date") {
+      var date = node.innerHTML;
+      match = date.match(/^(\d+)\.(\d+)\.(\d+)$/)
+      if (match == null) {
+        alert(node.innerHTML);
+        return node.innerHTML;
+      } else {
+        return match[3] + "-" + match[2] + "-" + match[1];
+      }
+    } else if (node.className == "cf-user") {
+      var returnValue = node.innerHTML;
+      if (node.childNodes.length == 1) {
+        // Ex-Teilnehmer
+        returnValue = "";
+      } else if (node.childNodes.length > 1) {
+        returnValue = node.childNodes[1].innerHTML;
+      }
+      if (returnValue == undefined) {
+        console.log(node.childNodes[0].nodeValue);
+      }
+      return returnValue;
+    } else {
+      return node.innerHTML;
+    }
+  }
+
+  $(document).ready(function() {
+    var opts = {textExtraction: textExtractor, headers:{0:{sorter:false}}};
+    $("#given-confirmations").tablesorter(opts);
+    $("#taken-confirmations").tablesorter(opts);
+  });
 {%endblock %}

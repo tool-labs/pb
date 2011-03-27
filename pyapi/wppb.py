@@ -95,7 +95,7 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`
+            SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`, `user_participates_since`, `user_verified_since`
                 FROM `user` 
                 WHERE `user_id` = ?
             ;''', (id,))
@@ -107,7 +107,7 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`
+            SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`, `user_participates_since`, `user_verified_since`
                 FROM `user` 
                 WHERE `user_name` = ?
             ;''', (name,))
