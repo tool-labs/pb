@@ -1,0 +1,8 @@
+HOWTO
+- you need a toolserver account that is in the group of 'wppb'
+- get the http://pywikipediabot.sourceforge.net/
+  -> svn co http://svn.wikimedia.org/svnroot/pywikipedia/trunk/pywikipedia pywikipedia
+- copy the two files from the project repository into your pybot folder:
+  https://fisheye.toolserver.org/browse/p_wppb/trunk/bot
+- configure your bot & update the file path to the pyapi (https://fisheye.toolserver.org/browse/p_wppb/branches/production/pyapi/wppb.py)
+- create a cron job and have fun

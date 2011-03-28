@@ -20,6 +20,7 @@
   {%set (has_confirmed_name,was_confirmed_name,cf_comment,cf_was_deleted,cf_timestamp) = conf %}
   <li>{{ format_date(cf_timestamp) }}, {{ format_time(cf_timestamp) }}: {{ link('user', 'name=' + has_confirmed_name, has_confirmed_name) }} → {{ link('user', 'name=' + was_confirmed_name, was_confirmed_name) }} {%if cf_comment:%}({{cf_comment}}){%endif%}</li>
 {%endfor %}
+  <li>{{ link('recent_changes', '', 'Weitere neue Bestätigungen') }}</li>
 </ul>
 
 {%endblock %}

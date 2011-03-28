@@ -57,6 +57,6 @@ if 'p' in field:
     page = field['p'].value
 
 args = {'config':pb_db_config, 'link':link, 'db': db, 'href':href, 'str':str,
-        'field':field, 'empty':empty, 'format_date':format_date,
+        'field':field, 'empty':empty, 'format_date':format_date, 'int':int,
         'format_time':format_time, 'format_number':format_number}
 serve_page(page + ".html", dict(field, **args))
