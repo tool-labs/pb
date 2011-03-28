@@ -400,10 +400,11 @@ class Database:
         after adding the user, makeing changes to the user manually or
         when the user gets 'verified'.
         """
-        curs.execute('''
-        UPDATE `user` SET
-               `user_last_update` = ?
-        WHERE `user`.`user_id` = ? LIMIT 1
-        ;''', (timestamp, user_id,))
-        return True
+        with self.wp_conn as curs:
+            curs.execute('''
+            UPDATE `user` SET
+                `user_last_update` = ?
+            WHERE `user`.`user_id` = ? LIMIT 1
+            ;''', (timestamp, user_id,))
+            return True
 
