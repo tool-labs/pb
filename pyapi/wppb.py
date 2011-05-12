@@ -408,3 +408,19 @@ class Database:
             ;''', (timestamp, user_id,))
             return True
 
+    def user_blocked(self, user_id):
+        """
+        Checks if a user is blocked and returns the reason and the duration. 
+        `None` as return value means that the user is not blocked.
+        """
+        
+        with self.wp_conn as curs:
+            curs.execute('''
+            SELECT `ipb_reason`, `ipb_expiry`
+                FROM `ipblocks`
+                WHERE `ipb_user` = ?
+                LIMIT 1
+            ;''', (user_id,))
+            row = curs.fetchone()
+            return row
+

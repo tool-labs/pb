@@ -47,6 +47,17 @@
       <td>{{ format_date(user[6]) }}</td>
     </tr>
     {%endif %}
+    {%set block = db.user_blocked(user[1]) %}
+    {%if block != None: %}
+    <tr class="block">
+      <th>Sperre bis</th>
+      {%if block[1] != 'infinity': %}
+      <td>{{ format_date(number_to_date(block[1])) }}</td>
+      {%else %}
+      <td>unbeschränkt</td>
+      {%endif %}
+    </tr>
+    {%endif %}
   </table>
 
   <h2><a id="vergeben">Vergebene Bestätigungen</a></h2>
