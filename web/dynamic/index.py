@@ -35,6 +35,10 @@ def format_number(number):
     locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
     return locale.format("%.d", number, True)
 
+def number_to_date(number):
+    import datetime
+    return datetime.datetime.strptime(number, '%Y%m%d%H%M%S')
+
 
 import pb_db_config
 
@@ -58,5 +62,6 @@ if 'p' in field:
 
 args = {'config':pb_db_config, 'link':link, 'db': db, 'href':href, 'str':str,
         'field':field, 'empty':empty, 'format_date':format_date, 'int':int,
-        'format_time':format_time, 'format_number':format_number}
+        'format_time':format_time, 'format_number':format_number,
+        'number_to_date':number_to_date}
 serve_page(page + ".html", dict(field, **args))

@@ -38,13 +38,24 @@
       <td>{{ format_number(db.get_cf_count_by_confirmed(user[1])) }}</td>
     </tr>
     <tr class="participates-since">
-      <th>Anmeldungsdatum WP:BP</th>
+      <th>Anmeldungsdatum WP:PB</th>
       <td>{{ format_date(user[5]) }}</td>
     </tr>
     {%if user[6] != None: %}
     <tr class="verified-since">
       <th>Bestätigt seit</th>
       <td>{{ format_date(user[6]) }}</td>
+    </tr>
+    {%endif %}
+    {%set block = db.user_blocked(user[1]) %}
+    {%if block != None: %}
+    <tr class="block">
+      <th>Sperre bis</th>
+      {%if block[1] != 'infinity': %}
+      <td>{{ format_date(number_to_date(block[1])) }}</td>
+      {%else %}
+      <td>unbeschränkt</td>
+      {%endif %}
     </tr>
     {%endif %}
   </table>
