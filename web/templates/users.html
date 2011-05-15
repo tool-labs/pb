@@ -1,49 +1,60 @@
 {%extends "base.html" %}
 
-{%block page_title %}Übersicht{%endblock %}
+{%block page_title %}Alle Teilnehmer{%endblock %}
 
-{%block heading %}Teilnehmende Benutzer{%endblock %}
+{%block heading %}Alle Teilnehmer{%endblock %}
 
 {%block content %}
 
 {%set users = db.get_all_users() %}
   <p>Die folgenden {{users|length}} Benutzer nehmen am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
 
-  <table>
-    <tr>
-      <th>Benutzername</th>
-      <th>Vergebene Bestätigungen</th>
-      <th>Erhaltene Bestätigungen</th>
-    </tr>
-    {%for u in users: %}
-      {%if u[3] == 0: %}
+  <table class="users tablesorter">
+    <thead>
       <tr>
-	<td>
-	  {{ link('user', 'id='+str(u[1]), u[0]) }}
-	</td>
-	<td>
-	  {{ db.get_cf_count_by_user(u[1]) }}
-	</td>
-	<td>
-	  {{ db.get_cf_count_by_confirmed(u[1]) }}
-	</td>
+        <th>Benutzer</th>
+        <th class="given">Vergebene<br/>Bestätigungen</th>
+        <th class="taken">Erhaltene<br/>Bestätigungen</th>
+        <th>Teilnehmer seit</th>
+        <th>Bestätigt seit</th>
       </tr>
-      {%endif %}
-    {%endfor %}
-    {%for u in users: %}
-      {%if u[3] == 1: %}
+    </thead>
+    <tbody>
+
+{%for ex in range(0, 2): %}
+  {%for u in users: %}
+    {%if u[3] == ex: %}
+
       <tr>
-	<td>
-	  Ex-Teilnehmer
-	</td>
-	<td>
-	  {{ db.get_cf_count_by_user(u[1]) }}
-	</td>
-	<td>
-	  {{ db.get_cf_count_by_confirmed(u[1]) }}
-	</td>
+        <td class="cf-user">{{ link('user', 'id='+str(u[1]), u[0]) if ex == 0 else 'Ex-Teilnehmer' }}</td>
+        <td class="given">{{ u[7] }}</td>
+        <td class="taken">{{ u[8] }}</td>
+        <td class="cf-date">{{ format_date(u[5]) }}</td>
+        <td class="cf-date">{{ format_date(u[6]) if u[6] != None }}</td>
       </tr>
-      {%endif %}
-    {%endfor %}
+
+    {%endif %}
+  {%endfor %}
+{%endfor %}
+
+    </tbody>
   </table>
+
+{%endblock %}
+
+{%block javascript %}
+  var textExtractor = function(node) {
+    if (node.className == "cf-date")
+      return node.innerHTML.replace(/^(\d+)\.(\d+)\.(\d+)$/, '$3-$2-$1');
+    else if (node.className == "cf-user")
+      return (node.hasChildNodes() && node.firstChild.nodeType == 1 ?
+        '_' + node.firstChild.innerHTML : '~');
+    else
+      return node.innerHTML;
+  }
+
+  $(document).ready(function() {
+    $(".tablesorter").tablesorter({textExtraction: textExtractor});
+  });
+
 {%endblock %}

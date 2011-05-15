@@ -38,7 +38,7 @@
       <td>{{ format_number(db.get_cf_count_by_confirmed(user[1])) }}</td>
     </tr>
     <tr class="participates-since">
-      <th>Anmeldungsdatum WP:PB</th>
+      <th>Teilnehmer seit</th>
       <td>{{ format_date(user[5]) }}</td>
     </tr>
     {%if user[6] != None: %}
@@ -50,7 +50,7 @@
     {%set block = db.user_blocked(user[1]) %}
     {%if block != None: %}
     <tr class="block">
-      <th>Sperre bis</th>
+      <th>Gesperrt bis</th>
       {%if block[1] != 'infinity': %}
       <td>{{ format_date(number_to_date(block[1])) }}</td>
       {%else %}
@@ -90,10 +90,7 @@
 			{{ link('confirmation', 'user_one=' + str(user[1]) + 
 			'&amp;user_two=' + str(cf_user_id), '.') }}
 		{%endif%}</td>
-	<td class="cf-user">{%if not cf_user_is_hidden: %}
-			{{ link('user', 'id=' + str(cf_user_id), cf_user_name) }}
-		{%else%}Ex-Teilnehmer
-		{%endif%}</td>
+	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) if not cf_user_is_hidden else 'Ex-Teilnehmer' }}</td>
 	<td class="cf-date">{{ format_date(cf_date) }}</td>
 	<td class="cf-comment">{{ cf_comment }}</td>
 	<td class="cf-reconf">
@@ -137,10 +134,7 @@
 			{{ link('confirmation', 'user_one=' + str(cf_user_id) + 
 			'&amp;user_two=' + str(user[1]), '.') }}
 		{%endif%}</td>
-	<td class="cf-user">{%if not cf_user_is_hidden: %}
-			{{ link('user', 'id=' + str(cf_user_id), cf_user_name) }}
-		{%else%}Ex-Teilnehmer
-		{%endif%}</td>
+	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) if not cf_user_is_hidden else 'Ex-Teilnehmer' }}</td>
 	<td class="cf-date">{{ format_date(cf_date) }}</td>
 	<td class="cf-comment">{{ cf_comment }}</td>
 	<td class="cf-reconf">
@@ -159,30 +153,13 @@
 
 {%block javascript %}
   var textExtractor = function(node) {
-    if (node.className == "cf-date") {
-      var date = node.innerHTML;
-      match = date.match(/^(\d+)\.(\d+)\.(\d+)$/)
-      if (match == null) {
-        alert(node.innerHTML);
-        return node.innerHTML;
-      } else {
-        return match[3] + "-" + match[2] + "-" + match[1];
-      }
-    } else if (node.className == "cf-user") {
-      var returnValue = node.innerHTML;
-      if (node.childNodes.length == 1) {
-        // Ex-Teilnehmer
-        returnValue = "";
-      } else if (node.childNodes.length > 1) {
-        returnValue = node.childNodes[1].innerHTML;
-      }
-      if (returnValue == undefined) {
-        console.log(node.childNodes[0].nodeValue);
-      }
-      return returnValue;
-    } else {
+    if (node.className == "cf-date")
+      return node.innerHTML.replace(/^(\d+)\.(\d+)\.(\d+)$/, '$3-$2-$1');
+    else if (node.className == "cf-user")
+      return (node.hasChildNodes() && node.firstChild.nodeType == 1 ?
+        '_' + node.firstChild.innerHTML : '~');
+    else
       return node.innerHTML;
-    }
   }
 
   $(document).ready(function() {

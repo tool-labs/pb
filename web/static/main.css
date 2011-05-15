@@ -23,13 +23,15 @@ td.cf-comment { font-style: italic; }
 td.cf-reconf { text-align: center; }
 
 table.toc th { text-align: left; }
-table.toc td { text-align: right; }
+table.toc td,
+table.users td.given,
+table.users td.taken { text-align: right; }
 
 .warning { color: #dd3333; font-weight: bold; }
-.given th { background-color: #cce; }
-.given td { background-color: #eef; }
-.taken th { background-color: #cec; }
-.taken td { background-color: #efe; }
+.given th, th.given { background-color: #cce; }
+.given td, td.given { background-color: #eef; }
+.taken th, th.taken { background-color: #cec; }
+.taken td, td.taken { background-color: #efe; }
 
 th.header { background-image: url('sort_normal.gif'); background-position: center right; background-repeat: no-repeat; padding-right: 20px; margin-right: -5px; cursor: pointer; }
 th.headerSortUp, th.headerSortDown { background-color: #aaa; }

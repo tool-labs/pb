@@ -11,7 +11,7 @@ class WPPBException:
     """
     Exception thrown by WP:PB.
     """
-    
+
     def __init__(self, msg):
         """
         Constructor.
@@ -49,18 +49,18 @@ class Database:
             if parser.has_section('client'):
                 if parser.has_option('client', 'user') and user_name is None:
                     user_name = parser.get('client', 'user')
-                if (parser.has_option('client', 'password') 
+                if (parser.has_option('client', 'password')
                     and password is None):
                     password = string.strip(parser.get('client', 'password'),
                                             '"')
                 if parser.has_option('client', 'host') and host is None:
                     host = string.strip(parser.get('client', 'host'), '"')
-            
-        
+
+
         if user_name is None or password is None or host is None:
             raise WPPBException(u'You did not specify enough information on' +
                                 u' the database connection. The .my-pb-db-****.cnf ' +
-                                u'file did not contain the required ' + 
+                                u'file did not contain the required ' +
                                 u'information.')
 
         try:
@@ -81,10 +81,21 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned` 
-                FROM `user` 
+            SELECT `user_name`, `user_id`, `user_comment`,
+                    `user_is_hidden`, `user_was_banned`,
+                    `user_participates_since`, `user_verified_since`,
+                    given.count as given_count, taken.count as taken_count
+                FROM `user`, (
+                    SELECT cf_user_id, COUNT(1) as `count`
+                        FROM confirmation
+                        GROUP BY cf_user_id) as given, (
+                    SELECT cf_confirmed_user_id, COUNT(1) as `count`
+                        FROM confirmation
+                        GROUP BY cf_confirmed_user_id) as taken
                 WHERE (? OR `user_is_hidden` = 0) AND
-                      (? OR `user_was_banned` = 0)
+                      (? OR `user_was_banned` = 0) AND
+                      given.cf_user_id = user_id AND
+                      taken.cf_confirmed_user_id = user_id
                 ORDER BY `user_name`
             ;''', (show_hidden_users, show_banned_users,))
             return curs.fetchall()
@@ -96,7 +107,7 @@ class Database:
         with self.conn as curs:
             curs.execute('''
             SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`, `user_participates_since`, `user_verified_since`
-                FROM `user` 
+                FROM `user`
                 WHERE `user_id` = ?
             ;''', (id,))
             return curs.fetchone()
@@ -108,7 +119,7 @@ class Database:
         with self.conn as curs:
             curs.execute('''
             SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`, `user_participates_since`, `user_verified_since`
-                FROM `user` 
+                FROM `user`
                 WHERE `user_name` = ?
             ;''', (name,))
             return curs.fetchone()
@@ -119,7 +130,7 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT COUNT(`user_id`) 
+            SELECT COUNT(`user_id`)
                 FROM `user`
                 WHERE ? OR `user_was_banned` = 0
             ;''', (count_banned_users,))
@@ -167,7 +178,7 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `cf_confirmed_user_id`, 
+            SELECT `user_name`, `cf_confirmed_user_id`,
                    `cf_timestamp`, `cf_comment`, `cf_was_deleted`, `user_is_hidden`
                 FROM `confirmation`
                 JOIN `user`
@@ -183,7 +194,7 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `cf_user_id`, 
+            SELECT `user_name`, `cf_user_id`,
                    `cf_timestamp`, `cf_comment`, `cf_was_deleted`, `user_is_hidden`
                 FROM `confirmation`
                 JOIN `user`
@@ -261,7 +272,7 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, COUNT(`cf_user_id`), `user_participates_since` 
+            SELECT `user_name`, COUNT(`cf_user_id`), `user_participates_since`
                 FROM `user`
                 LEFT JOIN `confirmation`
                     ON `cf_was_deleted` = 0 AND `user_id` = `cf_confirmed_user_id`
@@ -350,7 +361,7 @@ class Database:
 
         *timestamp* has to be provided as 'YYYY-MM-DD hh:mm:ss'.
         """
-        if (self.get_user_by_id(user_id) == None or 
+        if (self.get_user_by_id(user_id) == None or
             self.get_user_by_id(confirmed_id) == None):
             return False
         import re
@@ -359,9 +370,9 @@ class Database:
         with self.conn as curs:
             curs.execute('''
             INSERT INTO `confirmation` (
-                `cf_user_id`, 
-                `cf_confirmed_user_id`, 
-                `cf_timestamp`, 
+                `cf_user_id`,
+                `cf_confirmed_user_id`,
+                `cf_timestamp`,
                 `cf_comment`
             )
                 VALUES (?,?,?,?)
@@ -377,7 +388,7 @@ class Database:
 
     def get_mw_user_id(self, user_name):
         """
-        Returns the MediaWiki user id for the user *user_name* or `None` if 
+        Returns the MediaWiki user id for the user *user_name* or `None` if
         the user does not exist.
         """
         if self.wp_conn == None:
