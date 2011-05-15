@@ -178,14 +178,17 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `cf_confirmed_user_id`,
-                   `cf_timestamp`, `cf_comment`, `cf_was_deleted`, `user_is_hidden`
-                FROM `confirmation`
-                JOIN `user`
-                    ON `user_id` = `cf_confirmed_user_id`
-                WHERE `cf_user_id` = ?
-                ORDER BY `cf_timestamp` ASC
-            ;''', (user_id,))
+            SELECT user_name, user_id,
+                   cf1.cf_timestamp, cf1.cf_comment, cf1.cf_was_deleted, user_is_hidden,
+                   cf2.cf_confirmed_user_id IS NOT NULL
+                FROM confirmation AS cf1
+                JOIN user
+                    ON user_id = cf1.cf_confirmed_user_id
+                LEFT JOIN confirmation as cf2
+                    ON cf2.cf_user_id = cf1.cf_confirmed_user_id AND cf2.cf_confirmed_user_id = ?
+                WHERE cf1.cf_user_id = ?
+                ORDER BY cf1.cf_timestamp ASC
+            ;''', (user_id,user_id))
             return curs.fetchall()
 
     def get_confirmations_by_confirmed(self, user_id):
@@ -194,14 +197,17 @@ class Database:
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT `user_name`, `cf_user_id`,
-                   `cf_timestamp`, `cf_comment`, `cf_was_deleted`, `user_is_hidden`
-                FROM `confirmation`
-                JOIN `user`
-                    ON `user_id` = `cf_user_id`
-                WHERE `cf_confirmed_user_id` = ?
-                ORDER BY `cf_timestamp` ASC
-            ;''', (user_id,))
+            SELECT user_name, user_id,
+                   cf1.cf_timestamp, cf1.cf_comment, cf1.cf_was_deleted, user_is_hidden,
+                   cf2.cf_user_id IS NOT NULL
+                FROM confirmation AS cf1
+                JOIN user
+                    ON user_id = cf1.cf_user_id
+                LEFT JOIN confirmation as cf2
+                    ON cf2.cf_confirmed_user_id = cf1.cf_user_id AND cf2.cf_user_id = ?
+                WHERE cf1.cf_confirmed_user_id = ?
+                ORDER BY cf1.cf_timestamp ASC
+            ;''', (user_id,user_id))
             return curs.fetchall()
 
     def get_latest_user_list_with_confirmations(self):
@@ -424,7 +430,6 @@ class Database:
         Checks if a user is blocked and returns the reason and the duration. 
         `None` as return value means that the user is not blocked.
         """
-        
         with self.wp_conn as curs:
             curs.execute('''
             SELECT `ipb_reason`, `ipb_expiry`
@@ -434,4 +439,3 @@ class Database:
             ;''', (user_id,))
             row = curs.fetchone()
             return row
-

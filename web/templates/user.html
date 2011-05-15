@@ -30,11 +30,11 @@
 
   <table class="toc">
     <tr class="given">
-      <th><a href="#vergeben">Vergebene Bestätigungen</a></th>
+      <th><a href="#given">Vergebene Bestätigungen</a></th>
       <td>{{ format_number(db.get_cf_count_by_user(user[1])) }}</td>
     </tr>
     <tr class="taken">
-      <th><a href="#erhalten">Erhaltene Bestätigungen</a></th>
+      <th><a href="#taken">Erhaltene Bestätigungen</a></th>
       <td>{{ format_number(db.get_cf_count_by_confirmed(user[1])) }}</td>
     </tr>
     <tr class="participates-since">
@@ -60,8 +60,10 @@
     {%endif %}
   </table>
 
-  <h2><a id="vergeben">Vergebene Bestätigungen</a></h2>
-  <table class="full-width given tablesorter" id="given-confirmations">
+  {%for case in range(0, 2): %}
+    {%set table = 'given' if case == 0 else 'taken' %}
+  <h2><a id="{{ table }}">{{ 'Vergebene' if case == 0 else 'Erhaltene' }} Bestätigungen</a></h2>
+  <table class="full-width {{ table }} tablesorter" id="{{ table }}-confirmations">
     <colgroup>
       <col width="2%" />
       <col width="30%" />
@@ -72,82 +74,32 @@
     <thead>
       <tr>
 	<th></th>
-	<th>An Benutzer</th>
+	<th>{{ 'An' if case == 0 else 'Von' }} Benutzer</th>
 	<th>Datum</th>
 	<th>Kommentar</th>
 	<th>Rückbestätigt?</th>
       </tr>
     </thead>
     <tbody>
-    {%set conf_self = db.get_confirmations_by_user(user[1]) %}
-    {%for conf in conf_self: %}
-      {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden) = conf %}
-      {%set cf_reconfirmed = db.has_confirmed(cf_user_id, user[1]) %}
+    {%set confs = (db.get_confirmations_by_user(user[1]) if case == 0 else db.get_confirmations_by_confirmed(user[1])) %}
+    {%for conf in confs: %}
+      {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden, cf_reconfirmed) = conf %}
       <tr class="{%if not cf_reconfirmed: %}not-reconf{%endif %} {%if cf_was_deleted==1: %}cf_deleted{%endif%}">
-	{%set cf_reconfirmed = db.has_confirmed(cf_user_id, user[1]) %}
 	<td class="cf-detail">
 		{%if not cf_user_is_hidden: %}
-			{{ link('confirmation', 'user_one=' + str(user[1]) + 
-			'&amp;user_two=' + str(cf_user_id), '.') }}
-		{%endif%}</td>
+			{{ link('confirmation', 'user_one=' + str(user[1] if case == 0 else cf_user_id) + '&amp;user_two=' + str(cf_user_id if case == 0 else user[1]), '.') }}
+		{%endif%}
+        </td>
 	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) if not cf_user_is_hidden else 'Ex-Teilnehmer' }}</td>
 	<td class="cf-date">{{ format_date(cf_date) }}</td>
 	<td class="cf-comment">{{ cf_comment }}</td>
-	<td class="cf-reconf">
-	  {%if cf_reconfirmed: %}
-	    ja
-	  {%else: %}
-	    nein
-	  {%endif %}
-	</td>
+	<td class="cf-reconf">{{ 'ja' if cf_reconfirmed else 'nein' }}</td>
       </tr>
     {%endfor %}
     </tbody>
   </table>
+  {%endfor %}
 
-  <h2><a id="erhalten">Erhaltene Bestätigungen</a></h2>
-  <table class="full-width taken tablesorter" id="taken-confirmations">
-    <colgroup>
-      <col width="2%" />
-      <col width="30%" />
-      <col width="20%" />
-      <col width="38%" />
-      <col width="10%" />
-    </colgroup>
-    <thead>
-      <tr>
-	<th></th>
-	<th>Von Benutzer</th>
-	<th>Datum</th>
-	<th>Kommentar</th>
-	<th>Rückbestätigt?</th>
-      </tr>
-    </thead>
-    <tbody>
-    {%set conf_from = db.get_confirmations_by_confirmed(user[1]) %}
-    {%for conf in conf_from: %}
-      {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden) = conf %}
-      {%set cf_reconfirmed = db.has_confirmed(user[1], cf_user_id) %}
-      <tr class="{%if not cf_reconfirmed: %}not-reconf{%endif %} {%if cf_was_deleted==1: %}cf_deleted{%endif%}">
-	<td class="cf-detail">
-		{%if not cf_user_is_hidden: %}
-			{{ link('confirmation', 'user_one=' + str(cf_user_id) + 
-			'&amp;user_two=' + str(user[1]), '.') }}
-		{%endif%}</td>
-	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) if not cf_user_is_hidden else 'Ex-Teilnehmer' }}</td>
-	<td class="cf-date">{{ format_date(cf_date) }}</td>
-	<td class="cf-comment">{{ cf_comment }}</td>
-	<td class="cf-reconf">
-	  {%if cf_reconfirmed: %}
-	    ja
-	  {%else: %}
-	    nein
-	  {%endif %}
-	</td>
-      </tr>
-    {%endfor %}
-    </tbody>
-  </table>
 {%endif %}
 {%endblock %}
 
