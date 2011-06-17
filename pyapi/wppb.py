@@ -69,7 +69,8 @@ class Database:
             self.wp_conn = None
             if wp_database != None:
                 self.wp_conn = oursql.connect(host=host,user=user_name,
-                                              passwd=password,db=wp_database)
+                                              passwd=password,db=wp_database,
+                                              charset=None)
         except oursql.DatabaseError, e:
             raise WPPBException(u'You specified wrong database connection ' +
                                 u'data. Error message: ' + unicode(e))
@@ -399,12 +400,14 @@ class Database:
         """
         if self.wp_conn == None:
             return False
+        raw_user_name = user_name.encode('utf-8')
+        latin_user_name = raw_user_name.decode('latin-1')
 
         with self.wp_conn as curs:
             curs.execute('''
             SELECT `user_id` FROM `user`
-                WHERE `user_name` = ?
-            ;''', (user_name,))
+                 WHERE `user_name` = ?
+            ;''', (latin_user_name,))
             row = curs.fetchone()
             if row != None:
                 return int(row[0])
