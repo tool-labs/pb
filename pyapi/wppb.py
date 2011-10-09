@@ -86,17 +86,19 @@ class Database:
                     `user_is_hidden`, `user_was_banned`,
                     `user_participates_since`, `user_verified_since`,
                     given.count as given_count, taken.count as taken_count
-                FROM `user`, (
+                FROM `user`
+                LEFT JOIN (
                     SELECT cf_user_id, COUNT(1) as `count`
                         FROM confirmation
-                        GROUP BY cf_user_id) as given, (
+                        GROUP BY cf_user_id) as given
+                    ON given.cf_user_id = user_id
+                LEFT JOIN (
                     SELECT cf_confirmed_user_id, COUNT(1) as `count`
                         FROM confirmation
                         GROUP BY cf_confirmed_user_id) as taken
+                    ON taken.cf_confirmed_user_id = user_id
                 WHERE (? OR `user_is_hidden` = 0) AND
-                      (? OR `user_was_banned` = 0) AND
-                      given.cf_user_id = user_id AND
-                      taken.cf_confirmed_user_id = user_id
+                      (? OR `user_was_banned` = 0)
                 ORDER BY `user_name`
             ;''', (show_hidden_users, show_banned_users,))
             return curs.fetchall()

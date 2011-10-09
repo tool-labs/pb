@@ -27,8 +27,8 @@
 
       <tr>
         <td class="cf-user">{{ link('user', 'id='+str(u[1]), u[0]) if ex == 0 else 'Ex-Teilnehmer' }}</td>
-        <td class="given">{{ u[7] }}</td>
-        <td class="taken">{{ u[8] }}</td>
+        <td class="given">{{ u[7] if u[7] != None else 0 }}</td>
+        <td class="taken">{{ u[8] if u[8] != None else 0 }}</td>
         <td class="cf-date">{{ format_date(u[5]) }}</td>
         <td class="cf-date">{{ format_date(u[6]) if u[6] != None }}</td>
       </tr>
