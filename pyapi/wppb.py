@@ -90,17 +90,21 @@ class Database:
                 LEFT JOIN (
                     SELECT cf_user_id, COUNT(1) as `count`
                         FROM confirmation
+                        LEFT JOIN `user` AS taking ON taking.user_id = cf_confirmed_user_id
+                        WHERE (? OR `user_is_hidden` = 0)
                         GROUP BY cf_user_id) as given
                     ON given.cf_user_id = user_id
                 LEFT JOIN (
                     SELECT cf_confirmed_user_id, COUNT(1) as `count`
                         FROM confirmation
+                        LEFT JOIN `user` AS giving ON giving.user_id = cf_user_id
+                        WHERE (? OR `user_is_hidden` = 0)
                         GROUP BY cf_confirmed_user_id) as taken
                     ON taken.cf_confirmed_user_id = user_id
                 WHERE (? OR `user_is_hidden` = 0) AND
                       (? OR `user_was_banned` = 0)
                 ORDER BY `user_name`
-            ;''', (show_hidden_users, show_banned_users,))
+            ;''', (show_hidden_users, show_hidden_users, show_hidden_users, show_banned_users,))
             return curs.fetchall()
 
     def get_user_by_id(self, id):
@@ -127,7 +131,7 @@ class Database:
             ;''', (name,))
             return curs.fetchone()
 
-    def get_user_count(self, count_banned_users=False):
+    def get_user_count(self, count_banned_users=False, count_hidden_users=True):
         """
         Returns the count of all users.
         """
@@ -135,11 +139,12 @@ class Database:
             curs.execute('''
             SELECT COUNT(`user_id`)
                 FROM `user`
-                WHERE ? OR `user_was_banned` = 0
-            ;''', (count_banned_users,))
+                WHERE (? OR `user_is_hidden` = 0) AND
+                      (? OR `user_was_banned` = 0)
+            ;''', (count_hidden_users, count_banned_users,))
             return curs.fetchone()[0]
 
-    def get_confirmation_count(self, count_deleted_cf=False):
+    def get_confirmation_count(self, count_deleted_cf=False, count_hidden_users=True):
         """
         Returns the count of all confirmations.
         """
@@ -147,11 +152,15 @@ class Database:
             curs.execute('''
             SELECT COUNT(1)
                 FROM `confirmation`
-                WHERE ? OR `cf_was_deleted` = 0
-            ;''', (count_deleted_cf,))
+                LEFT JOIN `user` AS giving ON giving.user_id = cf_user_id
+                LEFT JOIN `user` AS taking ON taking.user_id = cf_confirmed_user_id
+                WHERE (? OR `cf_was_deleted` = 0) AND
+                      (? OR giving.`user_is_hidden` = 0) AND
+                      (? OR taking.`user_is_hidden` = 0)
+            ;''', (count_deleted_cf, count_hidden_users, count_hidden_users,))
             return curs.fetchone()[0]
 
-    def get_cf_count_by_user(self, user_id):
+    def get_cf_count_by_user(self, user_id, count_hidden_users=True):
         """
         Returns the count of confirmations by the user with the id *user_id*.
         """
@@ -159,11 +168,13 @@ class Database:
             curs.execute('''
             SELECT COUNT(1)
                 FROM `confirmation`
-                WHERE `cf_user_id` = ?
-            ;''', (user_id,))
+                LEFT JOIN `user` AS taking ON taking.user_id = cf_confirmed_user_id
+                WHERE (`cf_user_id` = ?) AND
+                      (? OR taking.`user_is_hidden` = 0)
+            ;''', (user_id, count_hidden_users))
             return curs.fetchone()[0]
 
-    def get_cf_count_by_confirmed(self, user_id):
+    def get_cf_count_by_confirmed(self, user_id, count_hidden_users=True):
         """
         Returns the count of confirmations of *user_id*.
         """
@@ -171,11 +182,13 @@ class Database:
             curs.execute('''
             SELECT COUNT(1)
                 FROM `confirmation`
-                WHERE `cf_confirmed_user_id` = ?
-            ;''', (user_id,))
+                LEFT JOIN `user` AS giving ON giving.user_id = cf_user_id
+                WHERE (`cf_confirmed_user_id` = ?) AND
+                      (? OR giving.`user_is_hidden` = 0)
+            ;''', (user_id, count_hidden_users))
             return curs.fetchone()[0]
 
-    def get_confirmations_by_user(self, user_id):
+    def get_confirmations_by_user(self, user_id, show_hidden_users=True):
         """
         Returns all confirmations done by *user_id*.
         """
@@ -185,16 +198,17 @@ class Database:
                    cf1.cf_timestamp, cf1.cf_comment, cf1.cf_was_deleted, user_is_hidden,
                    cf2.cf_confirmed_user_id IS NOT NULL
                 FROM confirmation AS cf1
-                JOIN user
+                LEFT JOIN user
                     ON user_id = cf1.cf_confirmed_user_id
                 LEFT JOIN confirmation as cf2
-                    ON cf2.cf_user_id = cf1.cf_confirmed_user_id AND cf2.cf_confirmed_user_id = ?
-                WHERE cf1.cf_user_id = ?
+                    ON cf2.cf_user_id = user_id AND cf2.cf_confirmed_user_id = ?
+                WHERE (cf1.cf_user_id = ?) AND
+                      (? OR `user_is_hidden` = 0)
                 ORDER BY cf1.cf_timestamp ASC
-            ;''', (user_id,user_id))
+            ;''', (user_id, user_id, show_hidden_users))
             return curs.fetchall()
 
-    def get_confirmations_by_confirmed(self, user_id):
+    def get_confirmations_by_confirmed(self, user_id, show_hidden_users=True):
         """
         Returns all confirmations for *user_id*.
         """
@@ -204,13 +218,14 @@ class Database:
                    cf1.cf_timestamp, cf1.cf_comment, cf1.cf_was_deleted, user_is_hidden,
                    cf2.cf_user_id IS NOT NULL
                 FROM confirmation AS cf1
-                JOIN user
+                LEFT JOIN user
                     ON user_id = cf1.cf_user_id
                 LEFT JOIN confirmation as cf2
-                    ON cf2.cf_confirmed_user_id = cf1.cf_user_id AND cf2.cf_user_id = ?
-                WHERE cf1.cf_confirmed_user_id = ?
+                    ON cf2.cf_confirmed_user_id = user_id AND cf2.cf_user_id = ?
+                WHERE (cf1.cf_confirmed_user_id = ?) AND
+                      (? OR `user_is_hidden` = 0)
                 ORDER BY cf1.cf_timestamp ASC
-            ;''', (user_id,user_id))
+            ;''', (user_id, user_id, show_hidden_users))
             return curs.fetchall()
 
     def get_latest_user_list_with_confirmations(self):
@@ -224,7 +239,7 @@ class Database:
                 FROM `user`
                 LEFT JOIN `confirmation`
                     ON `cf_was_deleted` = 0 AND `user_id` = `cf_confirmed_user_id`
-               WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0 AND `user_participates_since` > DATE_ADD(NOW(), INTERVAL -3 MONTH)
+                WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0 AND `user_participates_since` > DATE_ADD(NOW(), INTERVAL -3 MONTH)
                 GROUP BY `user_name`
                 ORDER BY `user_participates_since` ASC
             ;''')

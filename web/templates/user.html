@@ -28,15 +28,7 @@
     <img src="http://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/12px-Wikipedia-logo-v2.svg.png" /> <a href="http://de.wikipedia.org/wiki/Benutzer:{{ user[0] }}">Benutzerseite</a>, <a href="http://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user[0] }}">Diskussionsseite</a>
   </div>
 
-  <table class="toc">
-    <tr class="given">
-      <th><a href="#given">Vergebene Bestätigungen</a></th>
-      <td>{{ format_number(db.get_cf_count_by_user(user[1])) }}</td>
-    </tr>
-    <tr class="taken">
-      <th><a href="#taken">Erhaltene Bestätigungen</a></th>
-      <td>{{ format_number(db.get_cf_count_by_confirmed(user[1])) }}</td>
-    </tr>
+  <table class="toc dates">
     <tr class="participates-since">
       <th>Teilnehmer seit</th>
       <td>{{ format_date(user[5]) }}</td>
@@ -51,13 +43,20 @@
     {%if block != None: %}
     <tr class="block">
       <th>Gesperrt bis</th>
-      {%if block[1] != 'infinity': %}
-      <td>{{ format_date(number_to_date(block[1])) }}</td>
-      {%else %}
-      <td>unbeschränkt</td>
-      {%endif %}
+      <td>{{ format_date(number_to_date(block[1])) if block[1] != 'infinity' else 'unbeschränkt' }}</td>
     </tr>
     {%endif %}
+  </table>
+
+  <table class="toc">
+    <tr class="given">
+      <th>&darr; <a href="#given" class="down">Vergebene Bestätigungen</a></th>
+      <td>{{ format_number(db.get_cf_count_by_user(user[1], False)) }}</td>
+    </tr>
+    <tr class="taken">
+      <th>&darr; <a href="#taken" class="down">Erhaltene Bestätigungen</a></th>
+      <td>{{ format_number(db.get_cf_count_by_confirmed(user[1], False)) }}</td>
+    </tr>
   </table>
 
   {%for case in range(0, 2): %}
@@ -81,7 +80,7 @@
       </tr>
     </thead>
     <tbody>
-    {%set confs = (db.get_confirmations_by_user(user[1]) if case == 0 else db.get_confirmations_by_confirmed(user[1])) %}
+    {%set confs = (db.get_confirmations_by_user(user[1], False) if case == 0 else db.get_confirmations_by_confirmed(user[1], False)) %}
     {%for conf in confs: %}
       {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden, cf_reconfirmed) = conf %}
       <tr class="{%if not cf_reconfirmed: %}not-reconf{%endif %} {%if cf_was_deleted==1: %}cf_deleted{%endif%}">

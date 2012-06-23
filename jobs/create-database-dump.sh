@@ -3,7 +3,7 @@
 #$ -o $HOME/create-database-dump.out
 
 DB_NAME="p_wppb_trunk"
-HOST="dewiki-p.rrdb"
+HOST="sql-s2-user"
 DATE=`date +%Y-%m-%d`
 
 OUTPUT_DIRECTORY="/home/project/w/p/p/wppb/public_html/sql-dumps/"

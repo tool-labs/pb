@@ -6,8 +6,8 @@
 
 {%block content %}
 
-{%set users = db.get_all_users() %}
-  <p>Die folgenden {{users|length}} Benutzer nehmen am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
+{%set users = db.get_all_users(False) %}
+  <p>Die folgenden {{users|length}} Benutzer nehmen zurzeit am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
 
   <table class="users tablesorter">
     <thead>
@@ -50,7 +50,7 @@
       return (node.hasChildNodes() && node.firstChild.nodeType == 1 ?
         '_' + node.firstChild.innerHTML : '~');
     else
-      return node.innerHTML;
+      return '-'+node.innerHTML;
   }
 
   $(document).ready(function() {

@@ -1,13 +1,13 @@
-body { margin: 20px 0px 20px 0px; width: 800px; margin-left: auto; margin-right: auto; background-color: white; }
+body { background-color: white; color: black; margin: 20px auto; width: 800px; }
 h1 { border-bottom: 1px solid black; text-align: center; margin-top: 0px; }
 h2 { border-bottom: 1px solid black; }
 h1 span.h1-prefix { color: grey; }
-div#navi   { border-bottom: 0px solid black; font-size: 0.8em; color: grey; padding-left: 10px; padding-right: 10px; }
-div#footer { border-top: 1px solid black; font-size: 0.8em; color: grey; padding-left: 10px; padding-right: 10px; margin-top: 20px; }
+div#navi { font-size: 0.8em; color: grey; }
+div#footer { border-top: 1px solid grey; font-size: 0.8em; color: grey; margin-top: 2em; }
 div#footer a { color: grey; text-decoration: underline; }
 
-body { font-family: "Helvetica", sans; }
-h1, h2 { font-family: "Linux Libertine O", serif; }
+body { font-family: 'Helvetica', sans-serif; }
+h1, h2 { font-family: 'Linux Libertine O', serif; }
 
 a { color: #666; }
 a.ext:before { content: "» "; }
@@ -28,14 +28,20 @@ table.users td.given,
 table.users td.taken { text-align: right; }
 
 .warning { color: #dd3333; font-weight: bold; }
+table.dates { float: right; }
+table.dates th { text-align: right; }
+
 .given th, th.given { background-color: #cce; }
 .given td, td.given { background-color: #eef; }
 .taken th, th.taken { background-color: #cec; }
 .taken td, td.taken { background-color: #efe; }
+table.users tr:hover td,
+table.given tr:hover td,
+table.taken tr:hover td { background-color: #ffd; }
 
 th.header { background-image: url('sort_normal.gif'); background-position: center right; background-repeat: no-repeat; padding-right: 20px; margin-right: -5px; cursor: pointer; }
 th.headerSortUp, th.headerSortDown { background-color: #aaa; }
 th.headerSortUp { background-image: url('sort_up.gif'); }
 th.headerSortDown { background-image: url('sort_down.gif'); }
 
-div#wp-box { float:right; max-width: "200px"; }
+div#wp-box { float: right; height: 0; position: relative; text-align: right; top: -6em; width: 50%; }

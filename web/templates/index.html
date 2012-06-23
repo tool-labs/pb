@@ -9,8 +9,8 @@
 
 <h2>Aktuelle Zahlen</h2>
 <ul>
-  <li>Momentan nehmen {{ format_number(db.get_user_count()) }} Benutzer am Projekt <em>Persönliche Bekanntschaften</em> teil.</li>
-  <li>Diese haben sich untereinander insgesamt {{ format_number(db.get_confirmation_count()) }} Mal bestätigt.</li>
+  <li>Momentan nehmen {{ format_number(db.get_user_count(False, False)) }} Benutzer am Projekt <em>Persönliche Bekanntschaften</em> teil.</li>
+  <li>Diese haben sich untereinander insgesamt {{ format_number(db.get_confirmation_count(False, False)) }} Mal bestätigt.</li>
 </ul>
 
 {%set confs = db.get_latest_confirmations() %}
