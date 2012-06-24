@@ -230,8 +230,8 @@ class Database:
 
     def get_latest_user_list_with_confirmations(self):
         """
-        Returns a list of all users joined this project in the last 3 months
-		banned and hidden users are NOT shown
+        Returns a list of all users joined this project in the last 3 months.
+		Banned and hidden users are NOT shown.
         """
         with self.conn as curs:
             curs.execute('''
@@ -248,8 +248,8 @@ class Database:
     def get_yesterdays_confirmations_sorted_by_confirmed(self, day=1, delta=1):
         """
         Returns a list of all confirmations were made yesterday. This is
-             used by the bot for informing the user about the confirmations he got.
-             banned and hidden users are NOT shown
+        used by the bot for informing the user about the confirmations he got.
+        Banned and hidden users are NOT shown.
         """
         with self.conn as curs:
             curs.execute('''
@@ -269,8 +269,8 @@ class Database:
 
     def get_latest_confirmations(self, limit=8, days=30):
         """
-        Returns a list of all confirmations were made in the last ? months
-		banned and hidden users are shown
+        Returns a list of all confirmations were made in the last ? months.
+		Banned and hidden users are shown.
         """
         with self.conn as curs:
             curs.execute('''
@@ -291,8 +291,8 @@ class Database:
 
     def get_user_list_with_confirmations(self):
         """
-        Returns an overview over all users, i.e. user list + number of confirmations this user got
-		banned and hidden users are NOT shown, but we do not count the deleted confirmations here
+        Returns an overview over all users, i.e. user list + number of confirmations this user got.
+		Banned and hidden users are NOT shown, but we do not count the deleted confirmations here.
         """
         with self.conn as curs:
             curs.execute('''
@@ -354,7 +354,7 @@ class Database:
     def add_user(self, user_name, part_tstamp, comment=None):
         """
         Adds a user to the database with given timestamp of participation. Returns the success as a boolean value.
-         comment is not used here, but is useful for admin comments like "X is a sock"
+        comment is not used here, but is useful for admin comments like "X is a sock".
         """
         # check if the user exists (MW database)
         user_id = self.get_mw_user_id(user_name)
@@ -434,7 +434,7 @@ class Database:
     def touch_user(self, user_id, timestamp):
         """
         Updates `user`.`user_last_update` for *user_id*. This is used
-        after adding the user, makeing changes to the user manually or
+        after adding the user, making changes to the user manually or
         when the user gets 'verified'.
         """
         with self.wp_conn as curs:
@@ -459,3 +459,35 @@ class Database:
             ;''', (user_id,))
             row = curs.fetchone()
             return row
+
+    def get_confirmation_count_by_month(self):
+        """
+        Returns the counts of confirmations by month.
+        Confirmations of banned or hidden users are NOT count.
+        """
+        with self.conn as curs:
+            curs.execute('''
+            SELECT SUBSTRING(cf_timestamp, 1, 7), COUNT(*)
+                FROM confirmation
+                LEFT JOIN user AS giving ON giving.user_id = cf_user_id
+                LEFT JOIN user AS taking ON taking.user_id = cf_confirmed_user_id
+                WHERE (cf_was_deleted = 0) AND
+                      (giving.user_is_hidden = 0) AND
+                      (taking.user_is_hidden = 0)
+                GROUP BY 1
+                ORDER BY 1;
+            ;''')
+            return curs.fetchall()
+
+    def get_year_infos(self, month_infos):
+        """
+        """
+        year_infos = {}
+        for month_info in month_infos:
+            (month, count) = month_info
+            year = month[:4]
+            if not year in year_infos:
+                year_infos[year] = [0, 0]
+            year_infos[year][0] += 1
+            year_infos[year][1] += count
+        return year_infos
