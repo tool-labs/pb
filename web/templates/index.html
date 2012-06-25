@@ -16,7 +16,7 @@
 {%set confs = db.get_latest_confirmations() %}
 <h2>Letzte Bestätigungen</h2>
 <ul>
-{%for conf in confs: %}
+{%for conf in confs %}
   {%set (has_confirmed_name, was_confirmed_name, cf_comment, cf_was_deleted, cf_timestamp) = conf %}
   <li>{{ format_date(cf_timestamp) }}, {{ format_time(cf_timestamp) }}: {{ link('user', 'name=' + has_confirmed_name, has_confirmed_name) }} → {{ link('user', 'name=' + was_confirmed_name, was_confirmed_name) }} {%if cf_comment:%}({{ cf_comment }}){%endif%}</li>
 {%endfor %}
@@ -29,12 +29,12 @@
 <table class="stats">
   <caption>Anzahl von Bestätigungen nach Monaten</caption>
   <tr class="legend">
-{%for year in year_infos: %}
+{%for year in year_infos|sort %}
     <td colspan="{{ year_infos[year][0] }}">{{ year }}</td>
 {%endfor %}
   </tr>
   <tr class="columns">
-{%for month_info in month_infos: %}
+{%for month_info in month_infos %}
   {%set (month, count) = month_info %}
     <td {{ 'class="new_year"' if month[5:] == '01' }}>
       <div style="height:{{ count/25 }}px;" title="{{ month }}: {{ count }}"></div>
@@ -42,7 +42,7 @@
 {%endfor %}
   </tr>
   <tr class="summary">
-{%for year in year_infos: %}
+{%for year in year_infos|sort %}
     <td colspan="{{ year_infos[year][0] }}">{{ year_infos[year][1] }}</td>
 {%endfor %}
   </tr>
