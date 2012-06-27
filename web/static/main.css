@@ -7,7 +7,7 @@ div#footer { border-top: 1px solid grey; font-size: 0.8em; color: grey; margin-t
 div#footer a { color: grey; text-decoration: underline; }
 
 body { font-family: 'Helvetica', sans-serif; }
-h1, h2 { font-family: 'Linux Libertine O', serif; }
+h1, h2 { font-family: 'Linux Libertine O', Georgia, serif; }
 
 a { color: #666; }
 a.ext:before { content: "» "; }
@@ -22,13 +22,25 @@ td.cf-date { text-align: center; }
 td.cf-comment { font-style: italic; }
 td.cf-reconf { text-align: center; }
 
-table.stats { border: 1px solid #999; font-size: 0.9em; }
+table.stats { border-left: 1px solid #999; font-size: 0.8em; line-height: 1.2em; margin: 1em 0; }
+table.stats caption { font-weight: bold; padding: 0.25em 0; text-align: left; }
 table.stats td { border: none; padding: 2px; vertical-align: bottom; }
 table.stats td.new_year { border-left: 1px solid #ccc; }
-table.stats td div { background-color: #69c; width: 8px; }
-table.stats tr.legend td { border-left: 1px solid #ccc; color: #999; }
-table.stats tr.columns td { border-bottom: 1px solid #69c; padding-bottom: 0; }
-table.stats tr.summary td { border-left: 1px solid #ccc; color: #666; text-align: right; }
+table.stats td div { background-color: #999; width: 8px; }
+table.conf_stats td div { background-color: #69c; }
+table.user_stats td div.verified_0 { background-color: #c69; }
+table.user_stats td div.verified_1 { background-color: #9c6; }
+table.stats tr.group td { border-top: 1px solid #999; border-left: 1px solid #ccc; color: #999; }
+table.stats tr.columns td { border-bottom: 1px solid #999; padding: 0 2px; }
+table.conf_stats tr.columns td { border-bottom-color: #69c; }
+table.user_stats tr.columns td { border-bottom-color: #9c6; }
+table.stats tr.summary td { border-bottom: 1px solid #999; border-left: 1px solid #ccc; color: #666; text-align: right; }
+table.stats tr.columns td div { box-shadow: none; }
+table.conf_stats tr.summary { color: #369; }
+table.user_stats tr.summary .verified_0 { color: #936; white-space: nowrap; }
+table.user_stats tr.summary .verified_1 { color: #693; white-space: nowrap; }
+table.stats tr td.legend { border: none; border-left: 1px solid #999; padding-left: 1ex; text-align: left; }
+table.stats tr td.legend span.total { display: inline-block; text-align: right; width: 4ex; }
 
 table.toc th { text-align: left; }
 table.toc td,

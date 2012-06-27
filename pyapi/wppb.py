@@ -460,14 +460,34 @@ class Database:
             row = curs.fetchone()
             return row
 
-    def get_confirmation_count_by_month(self):
+    def get_months(self):
         """
-        Returns the counts of confirmations by month.
+        Returns statistics about users and confirmations by month
+        Banned and hidden users are NOT count.
+        """
+        from datetime import date
+        months = {}
+        years_months = []
+        year = 2008
+        month = 2
+        while date(year, month, 1) < date.today():
+            if not year in months:
+                months[year] = 0
+            months[year] += 1
+            years_months.append(str(year)+'-'+str(month).zfill(2))
+            month = month%12+1
+            if month == 1:
+                year += 1
+        return [months, years_months]
+
+    def get_confirmations_by_month(self):
+        """
+        Returns the number of confirmations by month.
         Confirmations of banned or hidden users are NOT count.
         """
         with self.conn as curs:
             curs.execute('''
-            SELECT SUBSTRING(cf_timestamp, 1, 7), COUNT(*)
+            SELECT SUBSTRING(cf_timestamp, 1, 7), 0, COUNT(*)
                 FROM confirmation
                 LEFT JOIN user AS giving ON giving.user_id = cf_user_id
                 LEFT JOIN user AS taking ON taking.user_id = cf_confirmed_user_id
@@ -475,19 +495,43 @@ class Database:
                       (giving.user_is_hidden = 0) AND
                       (taking.user_is_hidden = 0)
                 GROUP BY 1
-                ORDER BY 1;
+                ORDER BY 1
             ;''')
             return curs.fetchall()
 
-    def get_year_infos(self, month_infos):
+    def get_users_by_month(self):
         """
+        Returns the number of new users by month.
+        Banned and hidden users are NOT count.
         """
-        year_infos = {}
-        for month_info in month_infos:
-            (month, count) = month_info
-            year = month[:4]
-            if not year in year_infos:
-                year_infos[year] = [0, 0]
-            year_infos[year][0] += 1
-            year_infos[year][1] += count
-        return year_infos
+        with self.conn as curs:
+            curs.execute('''
+            SELECT SUBSTRING(user_participates_since, 1, 7), user_verified_since IS NOT NULL, COUNT(*)
+                FROM user
+                WHERE (user_is_hidden = 0) AND (user_was_banned = 0)
+                GROUP BY 1, 2
+                ORDER BY 1, 2
+            ;''')
+            return curs.fetchall()
+
+    def get_stats(self, year_months, result):
+        """
+        Calculates counts, sums and totals from a databas result set
+        """
+        counts = {}
+        sums = {}
+        totals = [0, 0]
+        for year_month in year_months:
+            counts[year_month] = {}
+        for (year_month, mode, count) in result:
+            counts[year_month][mode] = count
+            year = int(year_month[:4])
+            if not year in sums:
+                sums[year] = [0, 0]
+            sums[year][mode] += count
+            totals[mode] += count
+        return (counts, sums, totals)
+
+    def get_confirmations_per_day(self, confirmations):
+        from datetime import date
+        return int(round(float(confirmations)/(date.today()-date(2008, 2, 8)).days))

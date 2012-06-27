@@ -7,10 +7,16 @@
 {%block content %}
 <p>Herzlich willkommen auf der Datenbankseite des <em>Persönliche-Bekanntschaften</em>-Projekts! Mehr Informationen zu dem Projekt findest du auf der <a href="http://de.wikipedia.org/wiki/WP:PB" class="ext">Wikipedia-Projektseite</a>.</p>
 
+{%set confirmations = db.get_confirmation_count(False, False) %}
 <h2>Aktuelle Zahlen</h2>
 <ul>
-  <li>Momentan nehmen {{ format_number(db.get_user_count(False, False)) }} Benutzer am Projekt <em>Persönliche Bekanntschaften</em> teil.</li>
-  <li>Diese haben sich untereinander insgesamt {{ format_number(db.get_confirmation_count(False, False)) }} Mal bestätigt.</li>
+  <li>
+    Momentan nehmen {{ format_number(db.get_user_count(False, False)) }} Benutzer
+    am Projekt <em>Persönliche Bekanntschaften</em> teil.</li>
+  <li>
+    Diese haben sich untereinander insgesamt {{ format_number(confirmations) }} Mal bestätigt,
+    im Schnitt rund {{ db.get_confirmations_per_day(confirmations) }} Mal täglich.
+  </li>
 </ul>
 
 {%set confs = db.get_latest_confirmations() %}
@@ -23,28 +29,69 @@
   <li>{{ link('recent_changes', '', 'Weitere neue Bestätigungen') }}</li>
 </ul>
 
-{%set month_infos = db.get_confirmation_count_by_month() %}
-{%set year_infos = db.get_year_infos(month_infos) %}
-<h2>Statistik</h2>
-<table class="stats">
-  <caption>Anzahl von Bestätigungen nach Monaten</caption>
-  <tr class="legend">
-{%for year in year_infos|sort %}
-    <td colspan="{{ year_infos[year][0] }}">{{ year }}</td>
+{%set (months, year_months) = db.get_months() %}
+<h2>Statistiken</h2>
+
+{%set (counts, sums, totals) = db.get_stats(year_months, db.get_confirmations_by_month()) %}
+<table class="stats conf_stats">
+  <caption>Anzahlen von Bestätigungen nach Monat</caption>
+  <tr class="group">
+{%for year in months %}
+    <td colspan="{{ months[year] }}">{{ year }}</td>
 {%endfor %}
+    <td class="legend">Jahr</td>
   </tr>
   <tr class="columns">
-{%for month_info in month_infos %}
-  {%set (month, count) = month_info %}
-    <td {{ 'class="new_year"' if month[5:] == '01' }}>
-      <div style="height:{{ count/25 }}px;" title="{{ month }}: {{ count }}"></div>
+{%for year_month in year_months %}
+    <td {{ 'class="new_year"' if year_month[5:] == '01' }}>
+    {%set count = counts[year_month][0] if counts[year_month][0] else 0 %}
+      <div style="height:{{ count//20 }}px;" title="{{ year_month }}: {{ count }}"></div>
     </td>
 {%endfor %}
+    <td class="legend"></td>
   </tr>
   <tr class="summary">
-{%for year in year_infos|sort %}
-    <td colspan="{{ year_infos[year][0] }}">{{ year_infos[year][1] }}</td>
+{%for year in months %}
+    <td colspan="{{ months[year] }}">{{ sums[year][0] }}</td>
 {%endfor %}
+    <td class="legend">{{ totals[0] }} Bestätigungen</td>
+  </tr>
+</table>
+
+{%set (counts, sums, totals) = db.get_stats(year_months, db.get_users_by_month()) %}
+<table class="stats user_stats">
+  <caption>Anzahlen neuer Teilnehmer nach Einstiegsmonat</caption>
+  <tr class="group">
+{%for year in months %}
+    <td colspan="{{ months[year] }}">{{ year }}</td>
+{%endfor %}
+    <td class="legend">Jahr</td>
+  </tr>
+  <tr class="columns">
+{%for year_month in year_months %}
+    <td {{ 'class="new_year"' if year_month[5:] == '01' }}>
+  {%for mode in range(0, 2) %}
+    {%set count = counts[year_month][mode] if counts[year_month][mode] else 0 %}
+      <div class="verified_{{ mode }}" style="height:{{ count }}px;" title="{{ year_month }}: {{ count }}"></div>
+  {%endfor %}
+    </td>
+{%endfor %}
+    <td class="legend"></td>
+  </tr>
+  <tr class="summary">
+{%for year in months %}
+    <td colspan="{{ months[year] }}">
+  {%for mode in range(0, 2) %}
+      <span class="verified_{{ mode }}">{{ sums[year][mode] }}</span><br/>
+  {%endfor %}
+      <span>{{ sums[year]|sum }}</span>
+    </td>
+{%endfor %}
+    <td class="legend">
+      <span class="verified_0"><span class="total">{{ totals[0] }}</span> unbestätigte &hellip;</span><br/>
+      <span class="verified_1"><span class="total">{{ totals[1] }}</span> bestätigte &hellip;</span><br/>
+      <span><span class="total">{{ totals|sum }}</span> Teilnehmer</span>
+    </td>
   </tr>
 </table>
 
