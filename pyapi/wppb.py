@@ -470,7 +470,7 @@ class Database:
         years_months = []
         year = 2008
         month = 2
-        while date(year, month, 1) < date.today():
+        while date(year, month, 1) <= date.today():
             if not year in months:
                 months[year] = 0
             months[year] += 1
@@ -523,13 +523,13 @@ class Database:
         totals = [0, 0]
         for year_month in year_months:
             counts[year_month] = {}
-        for (year_month, mode, count) in result:
-            counts[year_month][mode] = count
+        for (year_month, group, count) in result:
+            counts[year_month][group] = count
             year = int(year_month[:4])
             if not year in sums:
                 sums[year] = [0, 0]
-            sums[year][mode] += count
-            totals[mode] += count
+            sums[year][group] += count
+            totals[group] += count
         return (counts, sums, totals)
 
     def get_confirmations_per_day(self, confirmations):
