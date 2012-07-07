@@ -61,7 +61,7 @@
 
   {%for case in range(0, 2): %}
     {%set table = 'given' if case == 0 else 'taken' %}
-  <h2><a id="{{ table }}">{{ 'Vergebene' if case == 0 else 'Erhaltene' }} Bestätigungen</a></h2>
+  <h2><span id="{{ table }}">{{ 'Vergebene' if case == 0 else 'Erhaltene' }} Bestätigungen</span></h2>
   <table class="full-width {{ table }} tablesorter" id="{{ table }}-confirmations">
     <colgroup>
       <col width="2%" />

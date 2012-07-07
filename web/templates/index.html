@@ -8,7 +8,7 @@
 <p>Herzlich willkommen auf der Datenbankseite des <em>Persönliche-Bekanntschaften</em>-Projekts! Mehr Informationen zu dem Projekt findest du auf der <a href="http://de.wikipedia.org/wiki/WP:PB" class="ext">Wikipedia-Projektseite</a>.</p>
 
 {%set confirmations = db.get_confirmation_count(False, False) %}
-<h2>Aktuelle Zahlen</h2>
+<h2><span id="aktuelle_zahlen">Aktuelle Zahlen</span></h2>
 <ul>
   <li>
     Momentan nehmen {{ format_number(db.get_user_count(False, False)) }} Benutzer
@@ -20,7 +20,7 @@
 </ul>
 
 {%set confs = db.get_latest_confirmations() %}
-<h2>Letzte Bestätigungen</h2>
+<h2><span id="letzte_bestaetigungen">Letzte Bestätigungen</span></h2>
 <ul>
 {%for conf in confs %}
   {%set (has_confirmed_name, was_confirmed_name, cf_comment, cf_was_deleted, cf_timestamp) = conf %}
@@ -30,7 +30,7 @@
 </ul>
 
 {%set (months, year_months) = db.get_months() %}
-<h2>Statistiken</h2>
+<h2><span id="statistiken">Statistiken</span></h2>
 
 {%set (counts, sums, totals) = db.get_stats(year_months, db.get_confirmations_by_month()) %}
 <table class="stats conf_stats">
@@ -39,12 +39,12 @@
 {%for year in months %}
     <td colspan="{{ months[year] }}">{{ year }}</td>
 {%endfor %}
-    <td class="legend">Jahr</td>
+    <td class="legend"></td>
   </tr>
   <tr class="columns">
 {%for year_month in year_months %}
-    <td {{ 'class="new_year"' if year_month[5:] == '01' }}>
-    {%set count = counts[year_month][0] if counts[year_month][0] else 0 %}
+  {%set count = counts[year_month][0] if counts[year_month][0] else 0 %}
+    <td {{ 'class="new_year"' if year_month[5:] == '01' }} onmouseover="show_confs('{{ year_month }}', {{ count }})" onmouseout="show_confs('', 0)">
       <div style="height:{{ count//20 }}px;" title="{{ year_month }}: {{ count }}"></div>
     </td>
 {%endfor %}
@@ -54,7 +54,7 @@
 {%for year in months %}
     <td colspan="{{ months[year] }}">{{ sums[year][0] }}</td>
 {%endfor %}
-    <td class="legend">{{ totals[0] }} Bestätigungen</td>
+    <td class="legend"><span class="total">{{ totals[0] }}</span> Bestätigungen</td>
   </tr>
 </table>
 
@@ -65,14 +65,14 @@
 {%for year in months %}
     <td colspan="{{ months[year] }}">{{ year }}</td>
 {%endfor %}
-    <td class="legend">Jahr</td>
+    <td class="legend"></td>
   </tr>
   <tr class="columns">
 {%for year_month in year_months %}
-    <td {{ 'class="new_year"' if year_month[5:] == '01' }}>
-  {%for mode in range(0, 2) %}
-    {%set count = counts[year_month][mode] if counts[year_month][mode] else 0 %}
-      <div class="verified_{{ mode }}" style="height:{{ count }}px;" title="{{ year_month }}: {{ count }}"></div>
+    <td {{ 'class="new_year"' if year_month[5:] == '01' }} onmouseover="show_users('{{ year_month }}', {{ counts[year_month][0] if counts[year_month][0] else 0 }}, {{ counts[year_month][1] if counts[year_month][1] else 0 }})" onmouseout="show_users('', 0, 0)">
+  {%for group in range(0, 2) %}
+    {%set count = counts[year_month][group] if counts[year_month][group] else 0 %}
+      <div class="verified_{{ group }}" style="height:{{ count }}px;" title="{{ year_month }}: {{ count }}"></div>
   {%endfor %}
     </td>
 {%endfor %}
@@ -81,18 +81,36 @@
   <tr class="summary">
 {%for year in months %}
     <td colspan="{{ months[year] }}">
-  {%for mode in range(0, 2) %}
-      <span class="verified_{{ mode }}">{{ sums[year][mode] }}</span><br/>
+  {%for group in range(0, 2) %}
+      <span class="verified_{{ group }}">{{ sums[year][group] }}</span><br/>
   {%endfor %}
-      <span>{{ sums[year]|sum }}</span>
+      {{ sums[year]|sum }}
     </td>
 {%endfor %}
     <td class="legend">
       <span class="verified_0"><span class="total">{{ totals[0] }}</span> unbestätigte &hellip;</span><br/>
       <span class="verified_1"><span class="total">{{ totals[1] }}</span> bestätigte &hellip;</span><br/>
-      <span><span class="total">{{ totals|sum }}</span> Teilnehmer</span>
+      <span class="total">{{ totals|sum }}</span> Teilnehmer
     </td>
   </tr>
 </table>
+
+{%endblock %}
+
+{%block javascript %}
+
+function show_confs(year_month, count) {
+  $('table.conf_stats tr.group td.legend').html(year_month);
+  $('table.conf_stats tr.columns td.legend').html(count ?
+    '<span class="total">'+count+'</span> Bestätigungen' : '');
+}
+
+function show_users(year_month, count0, count1) {
+  $('table.user_stats tr.group td.legend').html(year_month);
+  $('table.user_stats tr.columns td.legend').html(count0+count1 ?
+    '<span class="verified_0"><span class="total">'+count0+'</span> unbestätigte &hellip;</span><br/>'+
+    '<span class="verified_1"><span class="total">'+count1+'</span> bestätigte &hellip;</span><br/>'+
+    '<span class="total">'+(count0+count1)+'</span> Teilnehmer' : '');
+}
 
 {%endblock %}

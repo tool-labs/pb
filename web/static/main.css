@@ -26,21 +26,26 @@ table.stats { border-left: 1px solid #999; font-size: 0.8em; line-height: 1.2em;
 table.stats caption { font-weight: bold; padding: 0.25em 0; text-align: left; }
 table.stats td { border: none; padding: 2px; vertical-align: bottom; }
 table.stats td.new_year { border-left: 1px solid #ccc; }
-table.stats td div { background-color: #999; width: 8px; }
-table.conf_stats td div { background-color: #69c; }
-table.user_stats td div.verified_0 { background-color: #c69; }
-table.user_stats td div.verified_1 { background-color: #9c6; }
 table.stats tr.group td { border-top: 1px solid #999; border-left: 1px solid #ccc; color: #999; }
+table.stats tr.columns td div { background-color: #999; width: 8px; }
+table.stats tr.columns td:hover { outline: 1px dotted #ccc; }
+table.stats tr.columns td.legend:hover { outline: none; }
+table.stats tr.columns td div:hover { background-color: #cc3 !important; }
+table.conf_stats tr.columns td div { background-color: #69c; }
+table.user_stats tr.columns td div.verified_0 { background-color: #c69; }
+table.user_stats tr.columns td div.verified_1 { background-color: #9c6; }
 table.stats tr.columns td { border-bottom: 1px solid #999; padding: 0 2px; }
+table.stats tr.columns td.legend { color: #999; }
+table.user_stats tr.columns .verified_0 { color: #c69; }
+table.user_stats tr.columns .verified_1 { color: #9c6; }
 table.conf_stats tr.columns td { border-bottom-color: #69c; }
 table.user_stats tr.columns td { border-bottom-color: #9c6; }
-table.stats tr.summary td { border-bottom: 1px solid #999; border-left: 1px solid #ccc; color: #666; text-align: right; }
-table.stats tr.columns td div { box-shadow: none; }
+table.stats tr.summary td { border-bottom: 1px solid #999; border-left: 1px solid #ccc; color: #666; text-align: right; white-space: nowrap; }
 table.conf_stats tr.summary { color: #369; }
-table.user_stats tr.summary .verified_0 { color: #936; white-space: nowrap; }
-table.user_stats tr.summary .verified_1 { color: #693; white-space: nowrap; }
+table.user_stats tr.summary .verified_0 { color: #936; }
+table.user_stats tr.summary .verified_1 { color: #693; }
 table.stats tr td.legend { border: none; border-left: 1px solid #999; padding-left: 1ex; text-align: left; }
-table.stats tr td.legend span.total { display: inline-block; text-align: right; width: 4ex; }
+table.stats tr td.legend span.total { display: inline-block; text-align: right; width: 5ex; }
 
 table.toc th { text-align: left; }
 table.toc td,
