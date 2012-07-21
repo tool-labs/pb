@@ -462,8 +462,7 @@ class Database:
 
     def get_months(self):
         """
-        Returns statistics about users and confirmations by month
-        Banned and hidden users are NOT count.
+        Returns numbers of months in each year and all months in iso format.
         """
         from datetime import date
         months = {}
@@ -482,7 +481,7 @@ class Database:
 
     def get_confirmations_by_month(self):
         """
-        Returns the number of confirmations by month.
+        Returns the numbers of confirmations by month.
         Confirmations of banned or hidden users are NOT count.
         """
         with self.conn as curs:
@@ -501,7 +500,7 @@ class Database:
 
     def get_users_by_month(self):
         """
-        Returns the number of new users by month.
+        Returns the numbers of new users by month.
         Banned and hidden users are NOT count.
         """
         with self.conn as curs:
@@ -516,7 +515,7 @@ class Database:
 
     def get_stats(self, year_months, result):
         """
-        Calculates counts, sums and totals from a databas result set
+        Calculates counts, sums and totals from a database result set
         """
         counts = {}
         sums = {}
@@ -533,5 +532,8 @@ class Database:
         return (counts, sums, totals)
 
     def get_confirmations_per_day(self, confirmations):
+        """
+        Returns average number of confirmations per day.
+        """
         from datetime import date
-        return int(round(float(confirmations)/(date.today()-date(2008, 2, 8)).days))
+        return round(float(confirmations)/(date.today()-date(2008, 2, 8)).days, 3)

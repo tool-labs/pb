@@ -8,6 +8,7 @@
 <p>Herzlich willkommen auf der Datenbankseite des <em>Persönliche-Bekanntschaften</em>-Projekts! Mehr Informationen zu dem Projekt findest du auf der <a href="http://de.wikipedia.org/wiki/WP:PB" class="ext">Wikipedia-Projektseite</a>.</p>
 
 {%set confirmations = db.get_confirmation_count(False, False) %}
+{%set avg_per_day = db.get_confirmations_per_day(confirmations) %}
 <h2><span id="aktuelle_zahlen">Aktuelle Zahlen</span></h2>
 <ul>
   <li>
@@ -15,7 +16,7 @@
     am Projekt <em>Persönliche Bekanntschaften</em> teil.</li>
   <li>
     Diese haben sich untereinander insgesamt {{ format_number(confirmations) }} Mal bestätigt,
-    im Schnitt rund {{ db.get_confirmations_per_day(confirmations) }} Mal täglich.
+    im Schnitt rund <abbr title="{{ avg_per_day }}">{{ avg_per_day|round|int }}</abbr> Mal täglich.
   </li>
 </ul>
 
