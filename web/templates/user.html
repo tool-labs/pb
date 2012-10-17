@@ -19,14 +19,14 @@
 {%if user == None: %}
   <p>Ein Fehler ist aufgetreten: Entweder hast du keinen Benutzer angegeben oder der angegebene Benutzer existiert nicht.</p>
 {%else: %}
-  {%if user[2] != None: %}
-    <p><b>Kommentar:</b> {{ user[2] }}</p>
-    {%if user[3] == 0: %}<span class="warning">{{ user[0] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>{%endif%}
-  {%endif %}
-
   <div id="wp-box">
     <img src="http://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/12px-Wikipedia-logo-v2.svg.png" /> <a href="http://de.wikipedia.org/wiki/Benutzer:{{ user[0] }}">Benutzerseite</a>, <a href="http://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user[0] }}">Diskussionsseite</a>
   </div>
+
+  {%if user[2] != None: %}
+    <p><b>Kommentar:</b> {{ user[2] }}</p>
+    {%if user[4] == 1: %}<span class="warning">{{ user[0] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>{%endif%}
+  {%endif %}
 
   <table class="toc dates">
     <tr class="participates-since">
