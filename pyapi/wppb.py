@@ -431,6 +431,33 @@ class Database:
             else:
                 return None
 
+    def get_mw_last_user_name_by_name(self, user_name):
+        """
+        Returs the old MediaWiki user name (after renaming) for the current *user_name*.
+        The name is shown only if he/she was renamed after the first participation in PB.
+        This should avoid revealing possible old real names.
+        """
+        if self.wp_conn == None:
+            return False
+        with self.wp_conn as curs:
+            curs.execute('''
+            SELECT `log_title` FROM `dewiki_p`.`logging`
+            WHERE `log_namespace`=2 AND `log_timestamp` >= (
+               SELECT YEAR(`user_participates_since`) * 100 * 100 * 100 * 100 * 100 +
+               MONTH(`user_participates_since`) * 100 * 100 * 100 * 100 +
+               DAYOFMONTH(`user_participates_since`) * 100 * 100 * 100 +
+               HOUR(`user_participates_since`)  * 100 * 100 +
+               MINUTE(`user_participates_since`) * 100
+               FROM `p_wppb_trunk`.`user` WHERE `user_name` = ? LIMIT 1
+            ) AND `log_type` = 'renameuser' AND `log_action` = 'renameuser'
+            AND SUBSTRING( `log_params` , 1, 260 ) = ?
+            ;''', (user_name, user_name,))
+            row = curs.fetchone()
+            if row != None:
+                return str(row[0])
+            else:
+                return None
+
     def touch_user(self, user_id, timestamp):
         """
         Updates `user`.`user_last_update` for *user_id*. This is used

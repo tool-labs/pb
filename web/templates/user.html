@@ -46,6 +46,14 @@
       <td>{{ format_date(number_to_date(block[1])) if block[1] != 'infinity' else 'unbeschränkt' }}</td>
     </tr>
     {%endif %}
+
+    {%set previous_user_name = db.get_mw_last_user_name_by_name(user[0]) %}
+    {%if previous_user_name != None: %}
+    <tr class="previous-name">
+      <th>Früherer Nutzername</th>
+      <td>{{ previous_user_name }}</td>
+    </tr>
+    {%endif %}
   </table>
 
   <table class="toc">
