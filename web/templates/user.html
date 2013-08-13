@@ -8,11 +8,11 @@
 {%endif %}
 
 {%block page_title %}
-	{%if user == None: %}Fehler{%else: %}Benutzerdetails für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
+	{%if user == None: %}Fehler{%else: %}Teilnehmerinformationen für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
 {%endif %}{%endblock %}
 
 {%block heading %}
-	{%if user == None: %}Fehler{%else: %}Benutzerdetails für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
+	{%if user == None: %}Fehler{%else: %}Teilnehmerinformationen für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
 {%endif %}{%endblock %}
 
 {%block content %}
@@ -50,7 +50,7 @@
     {%set previous_user_name = db.get_mw_last_user_name_by_name(user[0]) %}
     {%if previous_user_name != None: %}
     <tr class="previous-name">
-      <th>Früherer Nutzername</th>
+      <th>Früherer Benutzername</th>
       <td>{{ previous_user_name }}</td>
     </tr>
     {%endif %}

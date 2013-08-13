@@ -2,7 +2,7 @@ body { background-color: white; color: black; margin: 20px auto; width: 800px; }
 h1 { border-bottom: 1px solid black; text-align: center; margin-top: 0px; }
 h2 { border-bottom: 1px solid black; }
 h1 span.h1-prefix { color: grey; }
-div#navi { font-size: 0.8em; color: grey; }
+div#navi { /* font-size: 0.8em; */ color: grey; }
 div#footer { border-top: 1px solid grey; font-size: 0.8em; color: grey; margin-top: 2em; }
 div#footer a { color: grey; text-decoration: underline; }
 
@@ -34,7 +34,7 @@ table.stats tr.columns td div:hover { background-color: #cc3 !important; }
 table.conf_stats tr.columns td div { background-color: #69c; }
 table.user_stats tr.columns td div.verified_0 { background-color: #c69; }
 table.user_stats tr.columns td div.verified_1 { background-color: #9c6; }
-table.stats tr.columns td { border-bottom: 1px solid #999; padding: 0 2px 0 1px; }
+table.stats tr.columns td { border-bottom: 1px solid #999; padding: 0 1px; }
 table.stats tr.columns td.legend { color: #999; }
 table.user_stats tr.columns .verified_0 { color: #c69; }
 table.user_stats tr.columns .verified_1 { color: #9c6; }
@@ -45,7 +45,7 @@ table.conf_stats tr.summary { color: #369; }
 table.user_stats tr.summary .verified_0 { color: #936; }
 table.user_stats tr.summary .verified_1 { color: #693; }
 table.stats tr td.legend { border: none; border-left: 1px solid #999; padding-left: 1ex; text-align: left; }
-table.stats tr td.legend span.total { display: inline-block; text-align: right; width: 5ex; }
+table.stats tr td.legend span.total { display: inline-block; text-align: right; width: 6ex; }
 
 table.toc th { text-align: left; }
 table.toc td,
