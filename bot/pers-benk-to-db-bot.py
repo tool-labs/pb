@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 	Wikipedia-pybot-framework is needed!
-	author: [[:de:User:Euku]]
 """
 import sys              # To not have wikipedia and this in one dir we'll import sys
 import re               # Used for regular expressions
@@ -13,8 +12,7 @@ import pagegenerators
 import locale			# German
 from time import localtime, strftime, mktime    # strftime-Function and related
 import time
-import oursql
-
+#import eukuhelp
 ENV = "production" # for now there is no difference
 if ENV == "trunc":
 	sys.path.append('/home/euku/wppb/code/p_wppb/trunk/pyapi') # TODO make this a relative path
@@ -83,7 +81,8 @@ def writeUserListToWikipedia(db, editSummary):
 		editSummary = u"Aktualisiere Benutzerliste"
 	
 	# laad list
-	userList = db.get_user_list_with_confirmations()
+	userList = db.get_user_list_with_confirmations() 
+	#print userList
 	#############################################
 	# prepare the raw user list for JavaScripts #
 	#############################################
@@ -95,7 +94,7 @@ def writeUserListToWikipedia(db, editSummary):
 	# save RAW-list
 	page = wikipedia.Page(wikipedia.getSite(), userRAWListPage)
 	rawText = page.get()
-	output(u"newRawText fertig")
+	print newRawText
 	if newRawText != rawText + u"\n":
 		output(u"RAW-Benutzerliste:")
 		wikipedia.showDiff(rawText, newRawText)
@@ -122,7 +121,7 @@ Hier geht es zu den einzelnen Unterlisten der derzeitigen \'\'\'' + str(len(user
 		if ((currentLetter == u"0–9") and (u[0] == u"A")):
 			currentLetter = u"A"
 			newRawText += classTemplate2 + (classTemplate1 % currentLetter)
-		elif (currentLetter != u"0–9" and u[0] > currentLetter and u[0] <= u"Z"):
+		elif (currentLetter != u"0–9" and u[0] > currentLetter and u[0] < u"Z"):
 			currentLetter = u[0]
 			newRawText += classTemplate2 + (classTemplate1 % currentLetter)
 		elif userList[0] != u:
@@ -134,7 +133,7 @@ Hier geht es zu den einzelnen Unterlisten der derzeitigen \'\'\'' + str(len(user
 			status = u""
 		newRawText += userTemplate % (u, status)
 	newRawText += classTemplate2
-	output(u"newRawText 2 fertig")
+	print newRawText
 	# save it
 	page = wikipedia.Page(wikipedia.getSite(), userListPage)
 	rawText = page.get()
@@ -168,9 +167,10 @@ Hier geht es zu den einzelnen Unterlisten der derzeitigen \'\'\'' + str(len(user
 	# save it
 	page = wikipedia.Page(wikipedia.getSite(), newUserListPage)
 	rawText = page.get()
-	if newRawText != rawText + u" ":
+	print newRawText
+	if newRawText != rawText + u"\n":
 	   output(u"Teilnehmerliste:")
-	   wikipedia.showDiff(rawText + u" ", newRawText)
+	   wikipedia.showDiff(rawText, newRawText)
 	   if not DONOTSAVE:
 		  page.put(newRawText, editSummary, False, minorEdit=True, force=True, botflag=False, maxTries=2)
 
@@ -207,7 +207,8 @@ def divideIntoTasks(pageText):
 def addConfirmation(db, data):
 	bestaetigerName, bestaetigterName, comment, hour, minutes, day, month, year = data
 
-	#print data
+	print data
+	print db.get_user_by_name(bestaetigerName)
 	bestaetigerID  = db.get_user_by_name(bestaetigerName)[1]
 	bestaetigterID = db.get_user_by_name(bestaetigterName)[1]
 	bestaetigerCfCount = db.get_cf_count_by_confirmed(bestaetigerID)
@@ -217,20 +218,17 @@ def addConfirmation(db, data):
 	###### write to DB
 	output(u"send it to DB API...")
 	timestamp = "%s-%02d-%02d %02d:%02d:00" % (year, month, day, hour, minutes)
-	#print "db.get_user_by_name(bestaetigerName)[1]", bestaetigerID
-	#print "db.get_user_by_name(bestaetigterName)[1]", bestaetigterID
+	print "db.get_user_by_name(bestaetigerName)[1]", bestaetigerID
+	print "db.get_user_by_name(bestaetigterName)[1]", bestaetigterID
+	print u"am", timestamp
+	print u" db.get_cf_count_by_confirmed(bestaetigterID):",  db.get_cf_count_by_confirmed(bestaetigterID)
 	if not DONOTSAVEDB:
-		try:
-			db.add_confirmation(bestaetigerID, bestaetigterID, comment, timestamp)
-		except oursql.IntegrityError:
-			# already in ... TODO change the edit comment
-			output(u"confirmation %s -> %s already in" % (bestaetigerID, bestaetigterID))
+		db.add_confirmation(bestaetigerID, bestaetigterID, comment, timestamp)
 	
 	### check if 'bestaetigterName' is allowed to write ACKs now and leave a message on his/her talk page
 	if db.get_cf_count_by_confirmed(bestaetigterID) == 3:
 		# ok, write a message
-		msgText = u"{{subst:Wikipedia:Persönliche Bekanntschaften/Botvorlage:Info zur dritten Bestätigung|Dritter=" + bestaetigerName + u"}}"
-#		msgText = u"\n==[[Wikipedia:Persönliche Bekanntschaften]] ==\nHallo " + bestaetigterName + u".\nDu wurdest vor ein paar Minuten von " + bestaetigerName + u" bestätigt und hast damit insgesamt drei Bestätigungen. D.h. von nun an darfst du [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|selber Bestätigungen verteilen]] an Wikipedianer, die du persönlich kennengelernt hast. Bei Fragen wende dich [[Wikipedia Diskussion:Persönliche Bekanntschaften|hier]] hin. Gruß --~~~~"
+		msgText = u"\n==[[Wikipedia:Persönliche Bekanntschaften]] ==\nHallo " + bestaetigterName + u".\nDu wurdest vor ein paar Minuten von " + bestaetigerName + u" bestätigt und hast damit insgesamt drei Bestätigungen. D.h. von nun an darfst du [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|selber Bestätigungen verteilen]] an Wikipedianer, die du persönlich kennengelernt hast. Bei Fragen wende dich [[Wikipedia Diskussion:Persönliche Bekanntschaften|hier]] hin. Gruß --~~~~"
 		output(u"war unbestaetigt und darf nun selber bestaetigen")
 		UserTalkPage = wikipedia.Page(wikipedia.getSite(), u"Benutzer_Diskussion:" + bestaetigterName)
 		if DONOTSAVE: return
@@ -246,6 +244,9 @@ def addConfirmation(db, data):
 """
 output(strftime("########## timestamp: %Y-%m-%d %H:%M:%S ############",localtime()))
 db = wppb.Database(database=pb_db_config.db_name)
+
+#addConfirmation(db, (u"Euku", u"Euku", u"hat doofe Ohren", 18, 15, 11, 11, 2008))
+#print 3/0 # fehler, ende
 
 generator = [wikipedia.Page(wikipedia.getSite(), workList)]
 generator = pagegenerators.PreloadingGenerator(generator, pageNumber = 1, lookahead=1)
@@ -264,28 +265,19 @@ commentShortNewAlreadyIn = 0 # for new users
 
 for page in generator: print u"" # take last element of iterator
 rawText = page.get()
-#rawText = u"<noinclude>{{/}}</noinclude>\n{{Wikipedia:Persönliche Bekanntschaften/neuer Benutzer|Name=Eukus Testköñto|Zeit=15:54, 31. Mai 2011 (CEST)}}"
 newRawText = rawText
 
 if not page.canBeEdited():
    output(u"Seite gesperrt")
    wikipedia.stopme()
 
-#print db.get_mw_user_id(u"Eukus Testköñto")
 newUsers, newACKs = divideIntoTasks(rawText)
 for currentUser in newUsers:
-	userName, minutes, hours, day, month, year = currentUser
-	timestamp = "%s-%02d-%02d %02d:%02d:00" % (year, month, day, minutes, hours)
-	output(u"füge %s hinzu.. " % userName)
-	output(u"timestamp " + timestamp)
-	entry = newUserReplRegex % re.escape(userName)
-	output(u"entry:" + entry)
-	
-	try:
-		if not DONOTSAVEDB: db.add_user(userName, timestamp)
-	except oursql.IntegrityError:
-		# already in ... TODO change the edit comment
-		output(u"user " + userName + " already in")
+	output(u"füge %s hinzu.. " % currentUser[0])
+	entry = newUserReplRegex % re.escape(currentUser[0])
+        print u"currentUser", currentUser
+
+	if not DONOTSAVEDB: db.add_user(userName, timestamp)
 	newRawText = wikipedia.replaceExcept(newRawText, entry, u"", [u"comment", u"nowiki"])
 
 	# build comments for edit summary
@@ -355,7 +347,7 @@ for currentACK in newACKs:
 editSummary = u"In Datenbank übertragen:"
 commentPreAdded = u" Bestätigungen: "
 commentPreRefused = u" abgelehnt: " # TODO clean up, or remove this...
-commentPreNewUsers = u" neue(r) Benutzer: "
+commentPreNewUsers = u" neuer Benutze(r): "
 commentPreACKAlreadyIn = u" Bestätigungen schon vorhanden: "
 commentPreNewAlreadyIn = u" Benutzer schon hinzugefügt: "
 
@@ -379,7 +371,7 @@ else:
 	editSummary = commentLong
 
 ## update wikipedia: delete requests
-if newRawText != rawText or (time.localtime()[3] in [3,15] and time.localtime()[4] in [0,1,2,3,4,5,6,7,8,9]):
+if newRawText != rawText:
 	output(u"Anfragen:")
 	wikipedia.showDiff(rawText, newRawText)
 	if not DONOTSAVE:
@@ -388,6 +380,6 @@ if newRawText != rawText or (time.localtime()[3] in [3,15] and time.localtime()[
 	output(u"Zusammenfassung: " + editSummary + u"\n")
 else:
 	output(u"nichts zu tun")
-	# write userlist 2 times a day
-	if True or time.localtime()[3] in [3,15] and time.localtime()[4] in [0,1,2,3,4,5,6,7,8,9]:
+	# write userlist 4 times per day
+	if time.localtime()[3] in [3,15] and time.localtime()[4] in [0,1,2,3,4,5,6,7,8,9]:
 		writeUserListToWikipedia(db, commentLongNewUsers)

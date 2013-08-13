@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 	Wikipedia-pybot-framework is needed!
-	author: [[:de:User:Euku]]
 """
 import sys              # To not have wikipedia and this in one dir we'll import sys
 import re               # Used for regular expressions
@@ -30,16 +29,6 @@ localLogFile = os.getcwd() + strftime("/logs/pb-info-bot-%Y-%m.log",localtime())
 DONOTSAVE = False # if True => no changes will be made on Wikipedia
 diffDays = 1 # to check e.g. yesterday set this to 1. Attention to the first day of a month! It doesn't work.
 
-def isIn(text, regex):
-	return re.search(regex, text, re.UNICODE)
-	
-def search(text, regex):
-	m = re.search(regex, text, re.UNICODE)
-	if m:
-	  return m.groups()[0]
-	else:
-	  return u""
-
 def output(text):
 	fd = open(localLogFile, 'a')
 	writeMe = text + u"\n" 
@@ -47,24 +36,6 @@ def output(text):
 	fd.write(writeMe)
 	fd.close()
 	wikipedia.output(text)
-
-"""
-	return the number of the days for a month
-"""
-def countDays(year, month):
-	if month == 1 or month == 3 or month == 5 or month == 7 or month == 8 or month == 10 or month == 12:
-		return 31
-	elif (month == 4 or month == 6 or month == 9 or month == 11):
-		return 30
-	elif month == 2:
-		if (year % 4 and not (year % 100) and not (year % 400)): # schalt jahr
-			return 29
-		else:
-			return 28
-	else:
-		output(u"countDays(year, month) got: %s, %s" % (year, month))
-		return u"ERROR"
-
 
 """
 	opt-in list
@@ -111,7 +82,10 @@ for userWaitingForMsg in usersWaitingForMsg:
 
 	# write a message
 	userTalkPage = wikipedia.Page(wikipedia.getSite(), u"Benutzer_Diskussion:" + userWaitingForMsg)
-	userTalkPageRaw = userTalkPage.get()
+	try:
+		userTalkPageRaw = userTalkPage.get()
+	except wikipedia.NoPage:
+		userTalkPageRaw = u""
 	usersVeriedThisUserText = u""
 	# concat a string with 'user1, user2, ... and userN'
 	if len(usersVeriedThisUser) == 1:
@@ -134,21 +108,12 @@ for userWaitingForMsg in usersWaitingForMsg:
 	else:
 		forThisDayText = u"vor %s Tagen" % diffDays
 
-	pastYear = localtime()[0]
-	pastDay = localtime()[2]-diffDays
-	pastMonth = localtime()[1]
-	if pastDay < 1:
-		pastDay = countDays(pastYear, pastMonth)
-		pastMonth -= 1
-	if pastMonth < 1:
-		pastYear -= 1
-		pastMonth = 12
 	if len(usersVeriedThisUser) == 1:
-		msgToUser = u"\n== neue Bestätigung am %s.%s.%s ==\nHallo! Du hast %s eine neue Bestätigung von %s bei [[WP:Persönliche Bekanntschaften|]] erhalten. [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|Hier]] kannst du selber bestätigen. Du bekommst diese Nachricht, weil du in [[Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen|dieser Liste]] stehst. Gruß --~~~~" % (pastDay, pastMonth, pastYear, forThisDayText, usersVeriedThisUserText)
-		userTalkSummary = u"Neuer Abschnitt /* neue Bestätigung am %s.%s.%s */" % (pastDay, pastMonth, pastYear)
+		msgToUser = u"\n== neue Bestätigung am %s.%s.%s ==\nHallo! Du hast %s eine neue Bestätigung von %s bei [[WP:Persönliche Bekanntschaften|]] erhalten. [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|Hier]] kannst du selber bestätigen. Du bekommst diese Nachricht, weil du in [[Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen|dieser Liste]] stehst. Gruß --~~~~" % (localtime()[2]-diffDays, localtime()[1], localtime()[0], forThisDayText, usersVeriedThisUserText)
+		userTalkSummary = u"Neuer Abschnitt /* neue Bestätigung am %s.%s.%s */" % (localtime()[2]-diffDays, localtime()[1], localtime()[0])
 	else:
-		msgToUser = u"\n== neue Bestätigungen am %s.%s.%s ==\nHallo! Du hast %s neue Bestätigungen von %s bei [[WP:Persönliche Bekanntschaften|]] erhalten. [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|Hier]] kannst du selber bestätigen. Du bekommst diese Nachricht, weil du in [[Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen|dieser Liste]] stehst. Gruß --~~~~" % (pastDay, pastMonth, pastYear, forThisDayText, usersVeriedThisUserText)
-		userTalkSummary = u"Neuer Abschnitt /* neue Bestätigungen am %s.%s.%s */" % (pastDay, pastMonth, pastYear)
+		msgToUser = u"\n== neue Bestätigungen am %s.%s.%s ==\nHallo! Du hast %s neue Bestätigungen von %s bei [[WP:Persönliche Bekanntschaften|]] erhalten. [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|Hier]] kannst du selber bestätigen. Du bekommst diese Nachricht, weil du in [[Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen|dieser Liste]] stehst. Gruß --~~~~" % (localtime()[2]-diffDays, localtime()[1], localtime()[0], forThisDayText, usersVeriedThisUserText)
+		userTalkSummary = u"Neuer Abschnitt /* neue Bestätigungen am %s.%s.%s */" % (localtime()[2]-diffDays, localtime()[1], localtime()[0])
 
 	output(u"Writing message to " + userWaitingForMsg + u"...")
 	output(u"message: " + msgToUser)
