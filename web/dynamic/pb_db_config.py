@@ -7,14 +7,14 @@ configuration.
 
 import os.path
 # path to www index.py
-index_path = "http://toolserver.org/~wppb/web/%(page)s/%(args)s"
+index_path = "https://tools.wmflabs.org/pb/index.py?p=%(page)s&%(args)s"
 # path to the www static directory
-static_path = "http://toolserver.org/~wppb/static/"
+static_path = "https://tools.wmflabs.org/pb/static/"
 # path to the local base directory
-base_path = os.path.expanduser("~wppb/code/p_wppb/branches/production/web/")
+base_path = os.path.expanduser("~local-pb/pb/web/")
 # path to the logging directory
-log_path = os.path.expanduser("~wppb/log")
+log_path = os.path.expanduser("~local-pb/log")
 # path to the database conf file
-db_conf_file = os.path.expanduser("~/.my-pb-db-prod.cnf")
-# database 
-db_name = "p_wppb_trunk"
+db_conf_file = os.path.expanduser("~local-pb/replica.my.cnf")
+# database
+db_name = "p50380g50752__pb"

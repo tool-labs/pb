@@ -48,13 +48,14 @@ class Database:
             parser.read(p)
             if parser.has_section('client'):
                 if parser.has_option('client', 'user') and user_name is None:
-                    user_name = parser.get('client', 'user')
+                    user_name = string.strip(parser.get('client', 'user'),
+				             '"\'')
                 if (parser.has_option('client', 'password')
                     and password is None):
                     password = string.strip(parser.get('client', 'password'),
-                                            '"')
+                                            '"\'')
                 if parser.has_option('client', 'host') and host is None:
-                    host = string.strip(parser.get('client', 'host'), '"')
+                    host = string.strip(parser.get('client', 'host'), '"\'')
 
 
         if user_name is None or password is None or host is None:
@@ -66,6 +67,8 @@ class Database:
         try:
             self.conn = oursql.connect(host=host, user=user_name,
                                        passwd=password, db=database)
+            self.pb_database_name = database
+
             self.wp_conn = None
             if wp_database != None:
                 self.wp_conn = oursql.connect(host=host,user=user_name,
@@ -448,7 +451,7 @@ class Database:
                DAYOFMONTH(`user_participates_since`) * 100 * 100 * 100 +
                HOUR(`user_participates_since`)  * 100 * 100 +
                MINUTE(`user_participates_since`) * 100
-               FROM `p_wppb_trunk`.`user` WHERE `user_name` = ? LIMIT 1
+               FROM `''' + self.pb_database_name + '''`.`user` WHERE `user_name` = ? LIMIT 1
             ) AND `log_type` = 'renameuser' AND `log_action` = 'renameuser'
             AND SUBSTRING( `log_params` , 1, 260 ) = ?
             ;''', (user_name, user_name,))
