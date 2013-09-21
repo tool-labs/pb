@@ -37,7 +37,7 @@ class Database:
         *wp_database* may be `None`. Otherwise it should be the wiki’s database
         name, e. g. 'dewiki_p'.
         """
-        # try to read the .my.cnf
+        # try to read the replica.pb-db.cnf
         import ConfigParser
         import os.path
         import pb_db_config
@@ -45,7 +45,7 @@ class Database:
         p = pb_db_config.db_conf_file
         if os.path.exists(p):
             parser = ConfigParser.ConfigParser()
-            parser.read(p)
+            parser.readfp(open(p))
             if parser.has_section('client'):
                 if parser.has_option('client', 'user') and user_name is None:
                     user_name = string.strip(parser.get('client', 'user'),
@@ -60,7 +60,7 @@ class Database:
 
         if user_name is None or password is None or host is None:
             raise WPPBException(u'You did not specify enough information on' +
-                                u' the database connection. The .my-pb-db-****.cnf ' +
+                                u' the database connection. The ~/replica.pb-db.cnf ' +
                                 u'file did not contain the required ' +
                                 u'information.')
 

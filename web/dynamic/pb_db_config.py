@@ -15,6 +15,6 @@ base_path = os.path.expanduser("~local-pb/pb/web/")
 # path to the logging directory
 log_path = os.path.expanduser("~local-pb/log")
 # path to the database conf file
-db_conf_file = os.path.expanduser("~local-pb/replica.my.cnf")
+db_conf_file = os.path.expanduser("~/replica.pb-db.cnf")
 # database
 db_name = "p50380g50752__pb"
