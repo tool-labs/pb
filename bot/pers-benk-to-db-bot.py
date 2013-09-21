@@ -1,26 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-	Wikipedia-pybot-framework is needed!
+	pywikibot framework is needed!
 """
 import sys              # To not have wikipedia and this in one dir we'll import sys
 import re               # Used for regular expressions
 import os               # used for os.getcwd()
-import wikipedia        # Wikipedia-pybot-framework
-#import httplib
-import pagegenerators
+import pywikibot        # pywikibot framework
+from pywikibot import config
+from pywikibot import pagegenerators
 import locale			# German
 from time import localtime, strftime, mktime    # strftime-Function and related
 import time
-#import eukuhelp
-ENV = "production" # for now there is no difference
-if ENV == "trunc":
-	sys.path.append('/home/euku/wppb/code/p_wppb/trunk/pyapi') # TODO make this a relative path
-	sys.path.append('/home/euku/wppb/code/p_wppb/trunk/web/dynamic') # TODO make this a relative path
-elif ENV == "production":
-	sys.path.append('/home/euku/wppb/code/p_wppb/branches/production/pyapi') # TODO make this a relative path
-	sys.path.append('/home/euku/wppb/code/p_wppb/branches/production/web/dynamic') # TODO make this a relative path
+
+sys.path.append('/data/project/pb/pb/pyapi') # TODO make this a relative path
 import wppb
+sys.path.append('/data/project/pb/pb/web/dynamic') # TODO make this a relative path
 import pb_db_config
 
 # templates and WP paths
@@ -66,12 +61,13 @@ def search(text, regex):
 	  return u""
 
 def output(text):
-	fd = open(localLogFile, 'a')
-	writeMe = text + u"\n" 
-	writeMe = writeMe.encode('utf-8')
-	fd.write(writeMe)
-	fd.close()
-	wikipedia.output(text)
+# OLD:
+#	fd = open(localLogFile, 'a')
+#	writeMe = text + u"\n" 
+#	writeMe = writeMe.encode('utf-8')
+#	fd.write(writeMe)
+#	fd.close()
+	pywikibot.output(text)
 
 
 def writeUserListToWikipedia(db, editSummary):
@@ -92,12 +88,12 @@ def writeUserListToWikipedia(db, editSummary):
 		# former and bannen users are already left out
 		newRawText += u + u"\n"
 	# save RAW-list
-	page = wikipedia.Page(wikipedia.getSite(), userRAWListPage)
+	page = pywikibot.Page(pywikibot.getSite(), userRAWListPage)
 	rawText = page.get()
 	print newRawText
 	if newRawText != rawText + u"\n":
 		output(u"RAW-Benutzerliste:")
-		wikipedia.showDiff(rawText, newRawText)
+		pywikibot.showDiff(rawText, newRawText)
 	 	if not DONOTSAVE:
 			page.put(newRawText, editSummary, False, minorEdit=True, force=True, maxTries=2)
 
@@ -135,11 +131,11 @@ Hier geht es zu den einzelnen Unterlisten der derzeitigen \'\'\'' + str(len(user
 	newRawText += classTemplate2
 	print newRawText
 	# save it
-	page = wikipedia.Page(wikipedia.getSite(), userListPage)
+	page = pywikibot.Page(pywikibot.getSite(), userListPage)
 	rawText = page.get()
 	if newRawText != rawText + u"\n":
 	   output(u"Teilnehmerliste:")
-	   wikipedia.showDiff(rawText, newRawText)
+	   pywikibot.showDiff(rawText, newRawText)
 	   if not DONOTSAVE:
 		  page.put(newRawText, editSummary, False, minorEdit=True, force=True, botflag=False, maxTries=2)
 	
@@ -165,12 +161,12 @@ Hier geht es zu den einzelnen Unterlisten der derzeitigen \'\'\'' + str(len(user
 			output(u + " not found in dictionary")
 	
 	# save it
-	page = wikipedia.Page(wikipedia.getSite(), newUserListPage)
+	page = pywikibot.Page(pywikibot.getSite(), newUserListPage)
 	rawText = page.get()
 	print newRawText
 	if newRawText != rawText + u"\n":
 	   output(u"Teilnehmerliste:")
-	   wikipedia.showDiff(rawText, newRawText)
+	   pywikibot.showDiff(rawText, newRawText)
 	   if not DONOTSAVE:
 		  page.put(newRawText, editSummary, False, minorEdit=True, force=True, botflag=False, maxTries=2)
 
@@ -230,17 +226,16 @@ def addConfirmation(db, data):
 		# ok, write a message
 		msgText = u"\n==[[Wikipedia:Persönliche Bekanntschaften]] ==\nHallo " + bestaetigterName + u".\nDu wurdest vor ein paar Minuten von " + bestaetigerName + u" bestätigt und hast damit insgesamt drei Bestätigungen. D.h. von nun an darfst du [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|selber Bestätigungen verteilen]] an Wikipedianer, die du persönlich kennengelernt hast. Bei Fragen wende dich [[Wikipedia Diskussion:Persönliche Bekanntschaften|hier]] hin. Gruß --~~~~"
 		output(u"war unbestaetigt und darf nun selber bestaetigen")
-		UserTalkPage = wikipedia.Page(wikipedia.getSite(), u"Benutzer_Diskussion:" + bestaetigterName)
+		UserTalkPage = pywikibot.Page(pywikibot.getSite(), u"Benutzer_Diskussion:" + bestaetigterName)
 		if DONOTSAVE: return
 		try:
 			UserTalkPage.put(UserTalkPage.get() + msgText, u"du wurdest zum dritten Mal bestätigt", False, minorEdit=False, force=True, botflag=False, maxTries=9)
-		except wikipedia.NoPage:
+		except pywikibot.NoPage:
 			UserTalkPage.put(msgText, u"du wurdest zum dritten Mal bestätigt", False, minorEdit=False, force=True, botflag=False, maxTries=9)
 
 
 """
   MAIN
-  gogogo
 """
 output(strftime("########## timestamp: %Y-%m-%d %H:%M:%S ############",localtime()))
 db = wppb.Database(database=pb_db_config.db_name)
@@ -248,7 +243,7 @@ db = wppb.Database(database=pb_db_config.db_name)
 #addConfirmation(db, (u"Euku", u"Euku", u"hat doofe Ohren", 18, 15, 11, 11, 2008))
 #print 3/0 # fehler, ende
 
-generator = [wikipedia.Page(wikipedia.getSite(), workList)]
+generator = [pywikibot.Page(pywikibot.getSite(), workList)]
 generator = pagegenerators.PreloadingGenerator(generator, pageNumber = 1, lookahead=1)
 page = u""
 # variables for concatenating a reasonable edit summary
@@ -269,7 +264,7 @@ newRawText = rawText
 
 if not page.canBeEdited():
    output(u"Seite gesperrt")
-   wikipedia.stopme()
+   pywikibot.stopme()
 
 newUsers, newACKs = divideIntoTasks(rawText)
 for currentUser in newUsers:
@@ -278,7 +273,7 @@ for currentUser in newUsers:
         print u"currentUser", currentUser
 
 	if not DONOTSAVEDB: db.add_user(userName, timestamp)
-	newRawText = wikipedia.replaceExcept(newRawText, entry, u"", [u"comment", u"nowiki"])
+	newRawText = pywikibot.replaceExcept(newRawText, entry, u"", [u"comment", u"nowiki"])
 
 	# build comments for edit summary
 	if commentLongNewUsers != u"": commentLongNewUsers = commentLongNewUsers + u", "
@@ -289,78 +284,27 @@ for currentACK in newACKs:
 	output(u"füge Bestätigung: %s >> %s (Kommentar: %s) am %s:%s, %s. %s %s hinzu.." % currentACK)
 	entry = newACKReplRegex % (re.escape(currentACK[0]), re.escape(currentACK[1]))
 	addConfirmation(db, currentACK)
-	newRawText = wikipedia.replaceExcept(newRawText, entry, u"", [u"comment", u"nowiki"])
+	newRawText = pywikibot.replaceExcept(newRawText, entry, u"", [u"comment", u"nowiki"])
 	# build comments for edit summary
 	if commentLongAdded != u"": commentLongAdded = commentLongAdded + u", "
 	commentLongAdded = commentLongAdded + u"[[User:%s|%s]] → [[User:%s|%s]]" % (currentACK[0], currentACK[0], currentACK[1], currentACK[1])
 	commentShortAdded = commentShortAdded + 1
-# Müll?
-#	except NoSuchUser:
-#		newRawText = wikipedia.replaceExcept(newRawText, entry, u"", [u"comment", u"nowiki"])
-#		output(u"Berichte Fehler")
-#		if not DONOTSAVE:
-#			# write error to WP
-#			MainTalkPage = wikipedia.Page(wikipedia.getSite(), u"Wikipedia_Diskussion:Persönliche Bekanntschaften/neue Anfragen")
-#			errorText = u"\n==Fehler ~~~~~ ==\nBeim Versuch eine Bestätigung in die Datenbank zu übertragen wurde ein Fehler festgestellt. Die Anfrage war: [[Benutzer:%s]] bestätigt [[Benutzer:%s]], mit Kommentar \"%s\" am %s:%s %s.%s.%s. Benutzer wurde nicht gefunden. --~~~~" % (currentACK)
-#			try:
-#				MainTalkPage.put(MainTalkPage.get() + errorText, u"Berichte Fehler", False, minorEdit=False, force=True)
-#			except wikipedia.NoPage:
-#				MainTalkPage.put(errorText, u"Berichte Fehler", False, minorEdit=False, force=True)
-#				continue # ignore
-#			# build comments for edit summary
-#			if commentLongRefused != u"": commentLongRefused = commentLongRefused + u", "
-#			commentLongRefused = commentLongRefused + u"[[User:%s|%s]] → [[User:%s|%s]]" % (currentACK[0], currentACK[0], currentACK[1], currentACK[1])
-#			commentShortRefused = commentShortRefused + 1
-#		continue
-#	except ACKalreadyIn:
-#		newRawText = wikipedia.replaceExcept(newRawText, entry, u"", [u"comment", u"nowiki"])
-#		output(u"Doppelte Bestätigung ignoriert")
-#		
-#		# build comments for edit summary
-#		if commentLongACKAlreadyIn != u"": commentLongACKAlreadyIn = commentLongACKAlreadyIn + u", "
-#		commentLongACKAlreadyIn = commentLongACKAlreadyIn + u"[[User:%s|%s]] → [[User:%s|%s]]" % (currentACK[0], currentACK[0], currentACK[1], currentACK[1])
-#		commentShortACKAlreadyIn = commentShortACKAlreadyIn + 1
-#		continue
-#	except illegalACK:
-#		newRawText = wikipedia.replaceExcept(newRawText, entry, u"", [u"comment", u"nowiki"])
-#		output(u"darf noch nicht bestätigen")
-#		if not DONOTSAVE:
-#		  # write error to WP
-#		  middleText = u"Du hast vor ein paar Minuten auf [[Wikipedia:Persönliche_Bekanntschaften/neue Anfragen]] einen anderen Benutzer bestätigt. Momentan darfst du noch nicht bestätigen, weil du selber noch keine drei Bestätigungen erhalten hast. Sobald du diese erhalten hast, bekommst du eine Nachricht von mir auf deine Diskussionsseite."
-#		  errorText = u"\n==[[Wikipedia:Persönliche Bekanntschaften]] ==\nHallo " + currentACK[0] + u".\n" + middleText + u" Bei Fragen wende dich [[Wikipedia Diskussion:Persönliche Bekanntschaften|hier]] hin. Gruß --~~~~"
-#		  if not isIn(newRawText, middleText):
-#			UserTalkPage = wikipedia.Page(wikipedia.getSite(), u"Benutzer_Diskussion:" + currentACK[0])
-#			if DONOTSAVE: continue
-#			try:
-#				UserTalkPage.put(UserTalkPage.get() + errorText, u"du darfst noch nicht bestätigen", False, minorEdit=False, force=True, botflag=False, maxTries=9)
-#			except wikipedia.NoPage:
-#				UserTalkPage.put(errorText, u"du darfst noch nicht bestätigen", False, minorEdit=False, force=True, botflag=False, maxTries=9)
-#				continue # ignore
-#
-#		# build comments for edit summary
-#		if commentLongRefused != u"": commentLongRefused = commentLongRefused + u", "
-#		commentLongRefused = commentLongRefused + u"[[User:%s|%s]] → [[User:%s|%s]]" % (currentACK[0], currentACK[0], currentACK[1], currentACK[1])
-#		commentShortRefused = commentShortRefused + 1
-#		continue
 
 ##### edit comments
 editSummary = u"In Datenbank übertragen:"
 commentPreAdded = u" Bestätigungen: "
-commentPreRefused = u" abgelehnt: " # TODO clean up, or remove this...
 commentPreNewUsers = u" neuer Benutze(r): "
 commentPreACKAlreadyIn = u" Bestätigungen schon vorhanden: "
 commentPreNewAlreadyIn = u" Benutzer schon hinzugefügt: "
 
 commentLong = editSummary
 if commentLongAdded != u"":		commentLong = commentLong + commentPreAdded + commentLongAdded
-if commentLongRefused != u"":		commentLong = commentLong + commentPreRefused + commentLongRefused
 if commentLongACKAlreadyIn != u"":	commentLong = commentLong + commentPreACKAlreadyIn + commentLongACKAlreadyIn
 if commentLongNewUsers != u"":		commentLong = commentLong + commentPreNewUsers + commentLongNewUsers
 if commentLongNewAlreadyIn != u"":	commentLong = commentLong + commentPreNewAlreadyIn + commentLongNewAlreadyIn
 
 commentShort = editSummary
 if commentShortAdded != 0:		commentShort = commentShort + commentPreAdded + str(commentShortAdded)
-if commentShortRefused != 0:		commentShort = commentShort + commentPreRefused + str(commentShortRefused)
 if commentShortACKAlreadyIn != 0:	commentShort = commentShort + commentPreACKAlreadyIn + str(commentShortACKAlreadyIn)
 if commentShortNewUsers != 0:		commentShort = commentShort + commentPreNewUsers + str(commentShortNewUsers)
 if commentShortNewAlreadyIn != 0:	commentShort = commentShort + commentPreNewAlreadyIn + str(commentShortNewAlreadyIn)
@@ -373,7 +317,7 @@ else:
 ## update wikipedia: delete requests
 if newRawText != rawText:
 	output(u"Anfragen:")
-	wikipedia.showDiff(rawText, newRawText)
+	pywikibot.showDiff(rawText, newRawText)
 	if not DONOTSAVE:
 		page.put(newRawText, editSummary, False, False, True)
 	writeUserListToWikipedia(db, commentLongNewUsers)
