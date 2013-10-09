@@ -1,24 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-	Wikipedia-pybot-framework is needed!
+	pywikibot framework is needed!
 """
 import sys              # To not have wikipedia and this in one dir we'll import sys
 import re               # Used for regular expressions
 import os               # used for os.getcwd()
-import wikipedia        # Wikipedia-pybot-framework
-import pagegenerators
+import pywikibot        # pywikibot framework
+from pywikibot import pagegenerators
 import locale			# German
 from time import localtime, strftime, mktime    # strftime-Function and related
 import time
-ENV = "production" # for now there is no difference
-if ENV == "trunc":
-	sys.path.append('/home/euku/wppb/code/p_wppb/trunk/pyapi') # TODO make this a relative path
-	sys.path.append('/home/euku/wppb/code/p_wppb/trunk/web/dynamic') # TODO make this a relative path
-elif ENV == "production":
-	sys.path.append('/home/euku/wppb/code/p_wppb/branches/production/pyapi') # TODO make this a relative path
-	sys.path.append('/home/euku/wppb/code/p_wppb/branches/production/web/dynamic') # TODO make this a relative path
+
+sys.path.append('/data/project/pb/pb/pyapi') # TODO make this a relative path
 import wppb
+sys.path.append('/data/project/pb/pb/web/dynamic') # TODO make this a relative path
 import pb_db_config
 
 wpOptInList = u"Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen"
@@ -30,18 +26,18 @@ DONOTSAVE = False # if True => no changes will be made on Wikipedia
 diffDays = 1 # to check e.g. yesterday set this to 1. Attention to the first day of a month! It doesn't work.
 
 def output(text):
-	fd = open(localLogFile, 'a')
-	writeMe = text + u"\n" 
-	writeMe = writeMe.encode('utf-8')
-	fd.write(writeMe)
-	fd.close()
-	wikipedia.output(text)
+#	fd = open(localLogFile, 'a')
+#	writeMe = text + u"\n" 
+#	writeMe = writeMe.encode('utf-8')
+#	fd.write(writeMe)
+#	fd.close()
+	pywikibot.output(text)
 
 """
 	opt-in list
 """
 def usersToCheck():
-	optInPage = wikipedia.Page(wikipedia.getSite(), wpOptInList)
+	optInPage = pywikibot.Page(pywikibot.getSite(), wpOptInList)
 	optInRawText = optInPage.get()
 
 	p = re.compile(wpOptInListRegEx, re.UNICODE)
@@ -49,7 +45,7 @@ def usersToCheck():
 	result = []
 	for user in userIterator:
 		# "_" is the same as " " for Wikipedia URls
-		result.append(wikipedia.replaceExcept(user.group('username'), u"_", u" ", []))
+		result.append(pywikibot.replaceExcept(user.group('username'), u"_", u" ", []))
 	return result
 
 
@@ -81,10 +77,10 @@ for userWaitingForMsg in usersWaitingForMsg:
 			usersVeriedThisUser.append(has_confirmed_name)
 
 	# write a message
-	userTalkPage = wikipedia.Page(wikipedia.getSite(), u"Benutzer_Diskussion:" + userWaitingForMsg)
+	userTalkPage = pywikibot.Page(pywikibot.getSite(), u"Benutzer_Diskussion:" + userWaitingForMsg)
 	try:
 		userTalkPageRaw = userTalkPage.get()
-	except wikipedia.NoPage:
+	except pywikibot.NoPage:
 		userTalkPageRaw = u""
 	usersVeriedThisUserText = u""
 	# concat a string with 'user1, user2, ... and userN'
