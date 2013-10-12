@@ -33,7 +33,7 @@
   {%endif %}
 
   {%if cf_two_one: %}
-    <p>{{ user_two[0] }} hat {{ user_one[0] }} am {{ format_date(cf_two[0]) }} umd {{ format_time(cf_two[0]) }} Uhr bestätigt{%if cf_two[1] != None and not empty(cf_two[1]): %}: {{ cf_two[1] }}{%else %}.{%endif %}</p>
+    <p>{{ user_two[0] }} hat {{ user_one[0] }} am {{ format_date(cf_two[0]) }} um {{ format_time(cf_two[0]) }} Uhr bestätigt{%if cf_two[1] != None and not empty(cf_two[1]): %}: {{ cf_two[1] }}{%else %}.{%endif %}</p>
   {%else %}
     <p>{{ user_two[0] }} hat {{ user_one[0] }} noch nicht bestätigt.</p>
   {%endif %}
