@@ -39,6 +39,12 @@ def number_to_date(number):
     import datetime
     return datetime.datetime.strptime(number, '%Y%m%d%H%M%S')
 
+def comment_to_html(comment):
+    import re
+    p = re.compile('\[\[ ( [^}]* ) \]\]', re.VERBOSE)
+    r = r'<a href="https://de.wikipedia.org/wiki/\1">[[\1]]</a>'
+    return p.sub(r, comment)
+
 
 import pb_db_config
 
@@ -63,5 +69,5 @@ if 'p' in field:
 args = {'config':pb_db_config, 'link':link, 'db': db, 'href':href, 'str':str,
         'field':field, 'empty':empty, 'format_date':format_date, 'int':int,
         'format_time':format_time, 'format_number':format_number,
-        'number_to_date':number_to_date}
+	'number_to_date':number_to_date, 'comment_to_html':comment_to_html}
 serve_page(page + ".html", dict(field, **args))

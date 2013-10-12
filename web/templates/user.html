@@ -99,7 +99,7 @@
         </td>
 	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) if not cf_user_is_hidden else 'Ex-Teilnehmer' }}</td>
 	<td class="cf-date">{{ format_date(cf_date) }}</td>
-	<td class="cf-comment">{{ cf_comment }}</td>
+	<td class="cf-comment">{{ comment_to_html(cf_comment) }}</td>
 	<td class="cf-reconf">{{ 'ja' if cf_reconfirmed else 'nein' }}</td>
       </tr>
     {%endfor %}
