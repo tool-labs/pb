@@ -72,8 +72,7 @@ class Database:
             self.wp_conn = None
             if wp_database != None:
                 self.wp_conn = oursql.connect(host=host,user=user_name,
-                                              passwd=password,db=wp_database,
-                                              charset=None)
+                                              passwd=password,db=wp_database)
         except oursql.DatabaseError, e:
             raise WPPBException(u'You specified wrong database connection ' +
                                 u'data. Error message: ' + unicode(e))
