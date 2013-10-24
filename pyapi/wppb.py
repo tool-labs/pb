@@ -243,7 +243,7 @@ class Database:
                     ON `cf_was_deleted` = 0 AND `user_id` = `cf_confirmed_user_id`
                 WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0 AND `user_participates_since` > DATE_ADD(NOW(), INTERVAL -3 MONTH)
                 GROUP BY `user_name`
-                ORDER BY `user_participates_since` ASC
+                ORDER BY `user_participates_since` ASC, `user_name`
             ;''')
             return curs.fetchall()
 
