@@ -14,7 +14,7 @@ import time
 import logging
 logger = logging.FileHandler('/data/project/pb/pb-2.0-error.log')
 pb.web.app.logger.setLevel(logging.DEBUG)
-pb.web.app.logger.setHandler(logger)
+pb.web.app.logger.addHandler(logger)
 pb.web.app.logger.debug("Flask server started at: " + time.asctime())
 
 if __name__ == '__main__':
