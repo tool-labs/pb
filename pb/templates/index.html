@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block page_title %}Startseite{% endblock %}
+{% block page_heading %}Wikipedia:Persönliche Bekanntschaften{% endblock %}
+
+{% block page_body %}
+    <p>Herzlich willkommen auf der Datenbankseite des <em>Persönliche-Bekanntschaften</em>-Projekts! Mehr Informationen zu dem Projekt findest du auf der <a href="https://de.wikipedia.org/wiki/Wikipedia:Persönliche_Bekanntschaften">Wikipedia-Projektseite</a>.</p>
+
+    <h2><span id="aktuelle_zahlen">Aktuelle Zahlen</span></h2>
+    <ul>
+      <li>Momentan nehmen {{ user_count | format_number }} Benutzer am Projekt <em>Persönliche Bekanntschaften</em> teil.</li>
+      <li>Diese haben sich untereinander insgesamt {{ confirmation_count | format_number }} Mal bestätigt, im Schnitt rund <abbr title="{{ confirmations_per_day }}">{{ confirmations_per_day | round | int }}</abbr> Mal täglich.
+      </li>
+    </ul>
+
+    <h2><span id="letzte_bestaetigungen">Letzte Bestätigungen</span></h2>
+    <ul>
+    {% for conf in latest_confirmations %}
+      {% set (has_confirmed_name, was_confirmed_name, cf_comment, cf_was_deleted, cf_timestamp) = conf %}
+      <li>{{ cf_timestamp | format_date }}, {{ cf_timestamp | format_time }}: <a href="{{ url_for('user', user_name=has_confirmed_name) }}">{{ has_confirmed_name }}</a> → <a href="{{ url_for('user', user_name=was_confirmed_name) }}">{{ was_confirmed_name }}</a> {% if cf_comment %}({{ cf_comment | parse_comment }}){% endif %}</li>
+    {% endfor %}
+      <!-- <li><a href="{{ url_for('confirmations') }}">Weitere neue Bestätigungen</a></li> -->
+    </ul>
+{% endblock %}

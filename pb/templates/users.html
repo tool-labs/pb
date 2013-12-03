@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block page_title %}Teilnehmerliste{% endblock %}
+{% block page_heading %}Teilnehmerliste{% endblock %}
+
+{% block page_body %}
+    <p>Die folgenden {{ users | length }} Benutzer nehmen zurzeit am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
+
+    <div class="table-responsive">
+        <table class="users tablesorter table table-hover">
+            <thead>
+                <tr>
+                    <th>Benutzer</th>
+                    <th class="given">Vergebene Bestätigungen</th>
+                    <th class="taken">Erhaltene Bestätigungen</th>
+                    <th>Teilnehmer seit</th>
+                    <th>Bestätigt seit</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for u in users: %}
+                <tr>
+                    <td class="cf-user"><a href="{{ url_for('user', user_name=u[0]) }}">{{ u[0] }}</a></td>
+                    <td class="given">{{ u[7] if u[7] != None else 0 }}</td>
+                    <td class="taken">{{ u[8] if u[8] != None else 0 }}</td>
+                    <td class="cf-date">{{ u[5] | format_date }}</td>
+                    <td class="cf-date">{{ u[6] | format_date if u[6] != None }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
