@@ -30,10 +30,15 @@
   <li>{{ link('recent_changes', '', 'Weitere neue Bestätigungen') }}</li>
 </ul>
 
-{%set (months, year_months) = db.get_months() %}
+{% set data = db.unpickle_stats() %}
+{% set months = data['months'] %}
+{% set year_months = data['year_months'] %}
+
 <h2><span id="statistiken">Statistiken</span></h2>
 
-{%set (counts, sums, totals) = db.get_stats(year_months, db.get_confirmations_by_month()) %}
+{% set counts = data['confirmations']['counts'] %}
+{% set sums = data['confirmations']['sums'] %}
+{% set totals = data['confirmations']['totals'] %}
 <table class="stats conf_stats">
   <caption>Anzahlen von Bestätigungen nach Monat</caption>
   <tr class="group">
@@ -59,7 +64,9 @@
   </tr>
 </table>
 
-{%set (counts, sums, totals) = db.get_stats(year_months, db.get_users_by_month()) %}
+{% set counts = data['users']['counts'] %}
+{% set sums = data['users']['sums'] %}
+{% set totals = data['users']['totals'] %}
 <table class="stats user_stats">
   <caption>Anzahlen neuer Teilnehmer nach Einstiegsmonat</caption>
   <tr class="group">

@@ -566,3 +566,8 @@ class Database:
         """
         from datetime import date
         return round(float(confirmations)/(date.today()-date(2008, 2, 8)).days, 3)
+
+    def unpickle_stats(self):
+        import pickle
+        return pickle.load(open('/data/project/pb/stats.pickle', 'r'))
+
