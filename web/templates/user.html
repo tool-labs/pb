@@ -51,7 +51,7 @@
     {%if previous_user_name != None: %}
     <tr class="previous-name">
       <th>Früherer Benutzername</th>
-      <td>{{ previous_user_name }}</td>
+      <td>{{ previous_user_name.decode('utf-8') }}</td>
     </tr>
     {%endif %}
   </table>
