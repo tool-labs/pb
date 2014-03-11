@@ -4,6 +4,7 @@ import flask
 import jinja2
 import locale
 import os
+import pyintuition
 import re
 
 import api
@@ -26,28 +27,6 @@ def prettify_html(html):
 
 app = flask.Flask(__name__)
 app.secret_key = 'secret'
-
-@app.context_processor
-def template_methods():
-    def create_navbar_item(page, title, starts_with=False):
-        active_class = u''
-        target_url = flask.url_for(page)
-        if flask.request.path == target_url or \
-                (starts_with and flask.request_path.starts_with(target_url)):
-            active_class = u' class="active"'
-        return u'<li{}><a href="{}">{}</a></li>'.format(active_class, target_url, title)
-    return dict(create_navbar_item=create_navbar_item)
-
-@app.before_request
-def before_request():
-    flask.g.db = api.Database(confirmation_db='pb', mediawiki_db=None, login_db='pb_login',
-                              host='localhost', user='pb', password='pb')
-
-@app.teardown_request
-def teardown_request(request):
-    db = getattr(flask.g, 'db', None)
-    if db is not None:
-        db.close()
 
 
 @app.template_filter('format_date')
@@ -78,6 +57,38 @@ def format_comment(comment):
     p = re.compile('\[\[ ( [^}]* ) \]\]', re.VERBOSE)
     r = r'<a href="https://de.wikipedia.org/wiki/\1">[[\1]]</a>'
     return p.sub(r, comment)
+
+
+@app.context_processor
+def template_methods():
+    def create_navbar_item(page, title, starts_with=False):
+        active_class = u''
+        target_url = flask.url_for(page)
+        if flask.request.path == target_url or \
+                (starts_with and flask.request_path.starts_with(target_url)):
+            active_class = u' class="active"'
+        return u'<li{}><a href="{}">{}</a></li>'.format(active_class, target_url, title)
+    return dict(create_navbar_item=create_navbar_item,
+		format_number=format_number,
+		len=len,
+		round=round,
+		int=int)
+
+
+@app.before_request
+def before_request():
+    flask.g.db = api.Database(confirmation_db='p50380g50752__pb', mediawiki_db=None, login_db=None,
+                              host='dewiki.labsdb', user='p50380g50752', password='ueyoyiebeiviusoh')
+    lang = flask.request.cookies.get('TsIntuition_userlang')
+    if 'uselang' in flask.request.args:
+        lang = flask.request.args['uselang']
+    pyintuition.init('pb', app.jinja_env, language=lang)
+
+@app.teardown_request
+def teardown_request(request):
+    db = getattr(flask.g, 'db', None)
+    if db is not None:
+        db.close()
 
 
 @app.route('/')
