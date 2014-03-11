@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 
-{% block page_title %}Teilnehmerliste{% endblock %}
-{% block page_heading %}Teilnehmerliste{% endblock %}
+{% block page_title %}{{ msg('pb-users-title') }}{% endblock %}
+{% block page_heading %}{{ msg('pb-users-title') }}{% endblock %}
 
 {% block page_body %}
-    <p>Die folgenden {{ users | length }} Benutzer nehmen zurzeit am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
+    <p>{{ msg('pb-users-overview', context=[len(users)]) | safe }}</p>
 
     <div class="table-responsive">
         <table class="users tablesorter table table-hover">
             <thead>
                 <tr>
-                    <th>Benutzer</th>
-                    <th class="given">Vergebene Bestätigungen</th>
-                    <th class="taken">Erhaltene Bestätigungen</th>
-                    <th>Teilnehmer seit</th>
-                    <th>Bestätigt seit</th>
+                    <th>{{ msg('pb-user') }}</th>
+		    <th class="given">{{ msg('pb-confirmations-given') }}</th>
+		    <th class="taken">{{ msg('pb-confirmations-taken') }}</th>
+		    <th>{{ msg('pb-participates-since') }}</th>
+		    <th>{{ msg('pb-verified-since') }}</th>
                 </tr>
             </thead>
             <tbody>

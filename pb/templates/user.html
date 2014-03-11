@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block page_title %}Teilnehmerinformationen für {{ user['name'] }}{% endblock %}
-{% block page_heading %}Teilnehmerinformationen für <a href="https://de.wikipedia.org/wiki/Benutzer:{{ user['name'] }}" title="Benutzerseite des Teilnehmers {{ user['name'] }}">{{ user['name'] }}</a>{% endblock %}
+{% block page_title %}{{ msg('pb-user-title', context= [user['name']]) }}{% endblock %}
+{% block page_heading %}{{ msg('pb-user-heading', context=[user['name'], 'https://de.wikipedia.org/wiki/Benutzer:' + user['name']]) | safe }}{% endblock %}
 
 {% block javascript %}
 {% endblock %}
@@ -11,11 +11,11 @@
     <div class="col-md-6">
         <table class="table">
             <tr>
-                <th><a href="#given" title="Zu den vergebenen Bestätigungen springen"><i class="glyphicon glyphicon-chevron-right"> </i> Vergebene Bestätigungen</a></th>
+		    <th><a href="#given" title="{{ msg('pb-confirmations-given') }}"><i class="glyphicon glyphicon-chevron-right"> </i> {{ msg('pb-confirmations-given') }}</a></th>
                 <td>{{ confirmations_given | length }}</td>
             </tr>
             <tr>
-                <th><a href="#taken" title="Zu den erhaltenen Bestätigungen springen"><i class="glyphicon glyphicon-chevron-right"> </i> Erhaltene Bestätigungen</a></th>
+		    <th><a href="#taken" title="{{ msg('pb-confirmations-taken') }}"><i class="glyphicon glyphicon-chevron-right"> </i> {{ msg('pb-confirmations-taken') }}</a></th>
                 <td>{{ confirmations_received | length }}</td>
             </tr>
         </table>
@@ -23,11 +23,11 @@
     <div class="col-md-6">
         <table class="table">
             <tr>
-                <th>Teilnehmer seit</th>
+		<th>{{ msg('pb-participates-since') }}</th>
                 <td>{{ user['participates_since'] | format_date }}</td>
             </tr>
             <tr>
-                <th>Bestätigt seit</th>
+    	        <th>{{ msg('pb-verified-since') }}</th>
                 <td>{{ user['verified_since'] | format_date }}</td>
             </tr>
         </table>
@@ -44,17 +44,17 @@
         </colgroup>
         <thead>
             <tr>
-                <th>Benutzer</th>
-                <th>Datum</th>
-                <th>Kommentar</th>
-                <th>Rückbestätigt?</th>
+		    <th>{{ msg('pb-user') }}</th>
+		    <th>{{ msg('pb-date') }}</th>
+		    <th>{{ msg('pb-comment') }}</th>
+		    <th>{{ msg('pb-reconfirmed') }}</th>
             </tr>
         </thead>
         <tbody>
             {% for confirmation in confirmations %}
                 {% set back = confirmation[6] == 1 %}
                 <tr class="{% if back %}success{% else %}danger{% endif %}">
-                    <td class="cf-t-user"><a href="{{ url_for('user', user_name=confirmation[0]) }}" title="Details zu Teilnehmer {{ confirmation[0] }}">{{ confirmation[0] }}</a></td>
+                    <td class="cf-t-user"><a href="{{ url_for('user', user_name=confirmation[0]) }}" title="{{ msg('pb-user-link-title', context=[confirmation[0]]) }}">{{ confirmation[0] }}</a></td>
                     <td class="cf-t-date" data-string="{{ confirmation[2] }}">{{ confirmation[2] | format_date }}</td>
                     <td class="cf-t-comment">{{ confirmation[3] }}</td>
                     <td class="cf-t-back">{{ back | format_boolean }}</td>
@@ -64,11 +64,11 @@
     </table>
 {%- endmacro %}
 
-<h2 id="given">Vergebene Bestätigungen</h2>
+<h2 id="given">{{ msg('pb-confirmations-given') }}</h2>
 
 {{ print_confirmation_table(confirmations_given) }}
 
-<h2 id="taken">Erhaltene Bestätigungen</h2>
+<h2 id="taken">{{ msg('pb-confirmations-taken') }}</h2>
 
 {{ print_confirmation_table(confirmations_received, given=False) }}
 

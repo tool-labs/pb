@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block page_title %}Startseite{% endblock %}
-{% block page_heading %}Wikipedia:Persönliche Bekanntschaften{% endblock %}
+{% block page_title %}{{ msg('pb-home') }}{% endblock %}
+{% block page_heading %}{{ msg('pb-name') }}{% endblock %}
 
 {% block page_body %}
-    <p>Herzlich willkommen auf der Datenbankseite des <em>Persönliche-Bekanntschaften</em>-Projekts! Mehr Informationen zu dem Projekt findest du auf der <a href="https://de.wikipedia.org/wiki/Wikipedia:Persönliche_Bekanntschaften">Wikipedia-Projektseite</a>.</p>
+    <p>{{ msg('pb-home-welcome') | safe }}</p>
 
-    <h2><span id="aktuelle_zahlen">Aktuelle Zahlen</span></h2>
+    <h2><span id="aktuelle_zahlen">{{ msg('pb-current-figures') }}</span></h2>
     <ul>
-      <li>Momentan nehmen {{ user_count | format_number }} Benutzer am Projekt <em>Persönliche Bekanntschaften</em> teil.</li>
-      <li>Diese haben sich untereinander insgesamt {{ confirmation_count | format_number }} Mal bestätigt, im Schnitt rund <abbr title="{{ confirmations_per_day }}">{{ confirmations_per_day | round | int }}</abbr> Mal täglich.
+      <li>{{ msg('pb-current-users', context=[user_count]) | safe }}</li>
+      <li>{{ msg('pb-current-confirmations', context=[format_number(confirmation_count), confirmations_per_day, int(round(confirmations_per_day))]) | safe }}</li>
       </li>
     </ul>
 
-    <h2><span id="letzte_bestaetigungen">Letzte Bestätigungen</span></h2>
+    <h2><span id="letzte_bestaetigungen">{{ msg('pb-recent-confirmations') }}</span></h2>
     <ul>
     {% for conf in latest_confirmations %}
       {% set (has_confirmed_name, was_confirmed_name, cf_comment, cf_was_deleted, cf_timestamp) = conf %}
