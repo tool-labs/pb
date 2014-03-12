@@ -19,6 +19,6 @@
       {% set (has_confirmed_name, was_confirmed_name, cf_comment, cf_was_deleted, cf_timestamp) = conf %}
       <li>{{ cf_timestamp | format_date }}, {{ cf_timestamp | format_time }}: <a href="{{ url_for('user', user_name=has_confirmed_name) }}">{{ has_confirmed_name }}</a> → <a href="{{ url_for('user', user_name=was_confirmed_name) }}">{{ was_confirmed_name }}</a> {% if cf_comment %}({{ cf_comment | parse_comment }}){% endif %}</li>
     {% endfor %}
-      <!-- <li><a href="{{ url_for('confirmations') }}">Weitere neue Bestätigungen</a></li> -->
+      <li><a href="{{ url_for('recent_confirmations') }}">All recent confirmations</a></li>
     </ul>
 {% endblock %}
