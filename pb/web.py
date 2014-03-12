@@ -112,6 +112,17 @@ def about():
 def confirmations():
     return render_template('confirmations.html')
 
+@app.route('/recent/')
+@app.route('/recent/<int:page>/')
+def recent_confirmations(page=1):
+    if page < 1:
+	flask.abort(404)
+
+    confirmations = flask.g.db.get_recent_confirmations(page, 50)
+    return render_template('recent.html',
+		           confirmations=confirmations,
+			   page=page)
+
 @app.route('/user/name/<user_name>/')
 def user(user_name=None):
     user = flask.g.db.get_user_dict_by_name(user_name)

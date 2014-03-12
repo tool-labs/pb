@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block page_title %}Recent confirmations{% endblock %}
+{% block page_heading %}Recent confirmations{% endblock %}
+
+{% block page_body %}
+
+{% macro print_pager() -%}
+    <ul class="pager">
+        <li class="previous{% if page == 1: %} disabled{% endif %}"><a href="{{ url_for('recent_confirmations', page=page - 1) }}">← Newer</a></li>
+	<li class="next"><a href="{{ url_for('recent_confirmations', page=page + 1) }}">Older →</a></li>
+</ul>
+{%- endmacro %}
+
+    {{ print_pager() }}
+
+    <table class="table table-hover table-bordered tablesorter">
+        <colgroup>
+            <col width="20%" />
+	    <col width="20%" />
+	    <col width="20%" />
+	    <col width="40%" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Confirming user</th>
+		<th>Confirmed user</th>
+		<th>{{ msg('pb-date') }}</th>
+		<th>{{ msg('pb-comment') }}</th>
+	    </tr>
+	</thead>
+	{% for confirmation in confirmations: %}
+	    <tr>
+                <td><a href="{{ url_for('user', user_name=confirmation[0]) }}" title="{{ msg('pb-user-link-title', context=[confirmation[0]]) }}">{{ confirmation[0] }}</a></td>
+		<td><a href="{{ url_for('user', user_name=confirmation[1]) }}" title="{{ msg('pb-user-link-title', context=[confirmation[1]]) }}">{{ confirmation[1] }}</a></td>
+		<td>{{ confirmation[3] | format_date }}</td>
+		<td>{{ confirmation[2] }}</td>
+        {% endfor %}
+    </table>
+
+    {{ print_pager() }}
+{% endblock %}

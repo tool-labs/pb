@@ -52,6 +52,7 @@
                     <div class="collapse navbar-collapse">
                         <ul class="nav navbar-nav">
                             {{ create_navbar_item('users', msg('pb-users-navi')) | safe }}
+			    {{ create_navbar_item('recent_confirmations', 'Recent confirmations') | safe }}
                             {{ create_navbar_item('about', msg('pb-about-pb-navi')) | safe }}
                         </ul>
 

@@ -240,6 +240,30 @@ class Database(object):
                ;''', (day,day-delta))
             return curs.fetchall()
 
+    def get_recent_confirmations(self, page, count):
+	"""
+        Returns a paginated list of all confirmations with `count` entries.
+	"""
+	with self.conn as curs:
+	    curs.execute('''
+            SELECT
+	        has_confirmed_t.user_name AS has_confirmed_name,
+		was_confirmed_t.user_name AS was_confirmed_name,
+		cf_comment, cf_timestamp
+	    FROM
+	        ''' + self.confirmation_db + '''.confirmation
+	    JOIN
+	        ''' + self.confirmation_db + '''.user AS was_confirmed_t
+		ON cf_confirmed_user_id = was_confirmed_t.user_id AND was_confirmed_t.user_is_hidden = 0
+	    JOIN
+                ''' + self.confirmation_db + '''.user AS has_confirmed_t
+		ON cf_user_id = has_confirmed_t.user_id AND has_confirmed_t.user_is_hidden = 0
+	    WHERE cf_was_deleted = 0
+	    ORDER BY cf_timestamp DESC
+	    LIMIT ? OFFSET ?
+	    ''', (count, (page - 1)*count))
+	    return curs.fetchall()
+
     def get_latest_confirmations(self, limit=8, days=30):
         """
         Returns a list of all confirmations were made in the last ? months.
