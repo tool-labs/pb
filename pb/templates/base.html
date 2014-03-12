@@ -5,14 +5,15 @@
 
         <meta charset="utf-8" />
 
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+	<link rel="stylesheet" href="//tools.wmflabs.org/static/res/bootstrap/3.1.1/css/bootstrap.min.css" />
         <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" />
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.bootstrap.css') }}" />
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.bootstrap.css') }}" />
+        <link rel="stylesheet" href="//tools.wmflabs.org/static/res/bootstrap/3.1.1/css/bootstrap-theme.min.css" />
 
-        <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+        <script src="//tools.wmflabs.org/static/res/jquery/2.1.0/jquery.min.js"></script>
         <script src="{{ url_for('static', filename='js/jquery.tablesorter.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/jquery.tablesorter.widgets.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+        <script src="//tools.wmflabs.org/static/res/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
         <script>
             $(document).ready(function() {
@@ -97,7 +98,7 @@
 
         <div id="footer">
             <div class="container">
-		    <a href="https://tools.wmflabs.org"><img id="footer-icon" src="{{ url_for('static', filename='img/powered-by-tool-labs.png') }}" title="{{ msg('pb-powered-by-labs') }}" alt="{{ msg('pb-powered-by-labs') }}" /></a>
+		    <a href="https://tools.wmflabs.org"><img id="footer-icon" src="//tools.wmflabs.org/static/res/logos/powered-by-tool-labs.png" title="{{ msg('pb-powered-by-labs') }}" alt="{{ msg('pb-powered-by-labs') }}" /></a>
 		    <p class="text-muted">
 		    	{{ msg('pb-footer', context=[url_for('about')]) | safe }}
 		    </p>
