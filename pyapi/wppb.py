@@ -403,11 +403,11 @@ class Database:
             )
                 VALUES (?,?,?,?)
             ;''', (user_id,confirmed_id,timestamp,comment))
-            if (len(self.get_confirmations_by_confirmed(confirmed_id))==3):
+            if (len(self.get_confirmations_by_confirmed(confirmed_id))>=3):
                 curs.execute('''
                 UPDATE `user` SET
                      `user_verified_since` = ?
-                WHERE `user`.`user_id` = ? LIMIT 1
+                WHERE `user`.`user_id` = ? AND `user_verified_since` IS NULL LIMIT 1
                 ;''', (timestamp, confirmed_id,))
                 self.touch_user(confirmed_id, timestamp)
                 return True
