@@ -31,11 +31,15 @@ app.secret_key = 'secret'
 
 @app.template_filter('format_date')
 def format_date(date):
+    if date is None:
+        return ""
     date_format = locale.nl_langinfo(locale.D_FMT)
     return date.strftime(date_format)
 
 @app.template_filter('format_time')
 def format_time(time):
+    if time is None:
+        return ""
     time_format = locale.nl_langinfo(locale.T_FMT)
     return time.strftime(time_format)
 
@@ -45,6 +49,8 @@ def format_number(number):
 
 @app.template_filter('format_datetime')
 def format_datetime(dt):
+    if dt is None:
+        return ""
     dt_format = locale.nl_langinfo(locale.D_T_FMT)
     return dt.strftime(dt_format)
 
