@@ -40,6 +40,8 @@ def number_to_date(number):
     return datetime.datetime.strptime(number, '%Y%m%d%H%M%S')
 
 def comment_to_html(comment):
+    if comment == None:
+        comment = ''
     import re
     p = re.compile('\[\[ ( [^}]* ) \]\]', re.VERBOSE)
     r = r'<a href="https://de.wikipedia.org/wiki/\1">[[\1]]</a>'
