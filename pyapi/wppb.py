@@ -453,8 +453,8 @@ class Database:
                MINUTE(`user_participates_since`) * 100
                FROM `''' + self.pb_database_name + '''`.`user` WHERE `user_name` = ? LIMIT 1
             ) AND `log_type` = 'renameuser' AND `log_action` = 'renameuser'
-            AND SUBSTRING( `log_params` , 1, 260 ) = ?
-            ;''', (user_name, user_name,))
+            AND `log_params` LIKE '%::newuser";s:3:"''' + user_name + '''";%'
+            ;''', (user_name,))
             row = curs.fetchone()
             if row != None:
                 return str(row[0])
