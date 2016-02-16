@@ -42,7 +42,7 @@
 <table class="stats conf_stats">
   <caption>Anzahlen von Bestätigungen nach Monat</caption>
   <tr class="group">
-{%for year in months %}
+{%for year in months|sort %}
     <td colspan="{{ months[year] }}">{{ year }}</td>
 {%endfor %}
     <td class="legend"></td>
@@ -57,7 +57,7 @@
     <td class="legend"></td>
   </tr>
   <tr class="summary">
-{%for year in months %}
+{%for year in months|sort %}
     <td colspan="{{ months[year] }}">{{ sums[year][0] }}</td>
 {%endfor %}
     <td class="legend"><span class="total">{{ totals[0] }}</span> Bestätigungen</td>
@@ -70,7 +70,7 @@
 <table class="stats user_stats">
   <caption>Anzahlen neuer Teilnehmer nach Einstiegsmonat</caption>
   <tr class="group">
-{%for year in months %}
+{%for year in months|sort %}
     <td colspan="{{ months[year] }}">{{ year }}</td>
 {%endfor %}
     <td class="legend"></td>
@@ -87,7 +87,7 @@
     <td class="legend"></td>
   </tr>
   <tr class="summary">
-{%for year in months %}
+{%for year in months|sort %}
     <td colspan="{{ months[year] }}">
   {%for group in range(0, 2) %}
       <span class="verified_{{ group }}">{{ sums[year][group] }}</span><br/>
