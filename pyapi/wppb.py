@@ -65,7 +65,9 @@ class Database:
                                 u'information.')
 
         try:
-            self.conn = oursql.connect(host=host, user=user_name,
+            # Workaround for the outage of c2.labsdb:  the project database is
+            # moved to tools-db.  ireas/2016-02-16
+            self.conn = oursql.connect(host='tools-db', user=user_name,
                                        passwd=password, db=database)
             self.pb_database_name = database
 
@@ -440,21 +442,21 @@ class Database:
         The name is shown only if he/she was renamed after the first participation in PB.
         This should avoid revealing possible old real names.
         """
+        # FIXME(incident-c2)
+        # euku[2017-09-09]: too slow => disabled
+        return None
+
+        user_participates_since = self.get_user_by_name(user_name)[5]
+        user_participates_since = user_participates_since.strftime("%Y%m%d%H%M%S")
         if self.wp_conn == None:
             return False
         with self.wp_conn as curs:
             curs.execute('''
             SELECT `log_title` FROM `dewiki_p`.`logging`
-            WHERE `log_namespace`=2 AND `log_timestamp` >= (
-               SELECT YEAR(`user_participates_since`) * 100 * 100 * 100 * 100 * 100 +
-               MONTH(`user_participates_since`) * 100 * 100 * 100 * 100 +
-               DAYOFMONTH(`user_participates_since`) * 100 * 100 * 100 +
-               HOUR(`user_participates_since`)  * 100 * 100 +
-               MINUTE(`user_participates_since`) * 100
-               FROM `''' + self.pb_database_name + '''`.`user` WHERE `user_name` = ? LIMIT 1
-            ) AND `log_type` = 'renameuser' AND `log_action` = 'renameuser'
+            WHERE `log_namespace`=2 AND `log_timestamp` >= ?
+            AND `log_type` = 'renameuser' AND `log_action` = 'renameuser'
             AND `log_params` LIKE '%::newuser";s:3:"''' + user_name + '''";%'
-            ;''', (user_name,))
+            ;''', (user_participates_since,))
             row = curs.fetchone()
             if row != None:
                 return str(row[0])
