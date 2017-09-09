@@ -17,4 +17,7 @@ log_path = os.path.expanduser("~tools.pb/log/pb")
 # path to the database conf file
 db_conf_file = os.path.expanduser("~/replica.pb-db.cnf")
 # database
-db_name = "p50380g50752__pb"
+# Due to the outage of c2.labsdb, I created a new database on tools-db with the
+# backup as of 2016-02-14.
+# db_name = "p50380g50752__pb"
+db_name = "s51344__pb"
