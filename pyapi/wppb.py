@@ -208,7 +208,7 @@ class Database:
                     ON cf2.cf_user_id = user_id AND cf2.cf_confirmed_user_id = ?
                 WHERE (cf1.cf_user_id = ?) AND
                       (? OR `user_is_hidden` = 0)
-                ORDER BY cf1.cf_timestamp ASC
+                ORDER BY cf1.cf_timestamp DESC
             ;''', (user_id, user_id, show_hidden_users))
             return curs.fetchall()
 
@@ -228,7 +228,7 @@ class Database:
                     ON cf2.cf_confirmed_user_id = user_id AND cf2.cf_user_id = ?
                 WHERE (cf1.cf_confirmed_user_id = ?) AND
                       (? OR `user_is_hidden` = 0)
-                ORDER BY cf1.cf_timestamp ASC
+                ORDER BY cf1.cf_timestamp DESC
             ;''', (user_id, user_id, show_hidden_users))
             return curs.fetchall()
 
