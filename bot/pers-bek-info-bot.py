@@ -7,18 +7,17 @@ import sys              # To not have wikipedia and this in one dir we'll import
 import re               # Used for regular expressions
 import os               # used for os.getcwd()
 import pywikibot        # pywikibot framework
-from pywikibot import pagegenerators
+from pywikibot import pagegenerators, textlib
 import locale			# German
 from time import localtime, strftime, mktime    # strftime-Function and related
-import time
-
+from datetime import datetime, timedelta
 sys.path.append('/data/project/pb/pb/pyapi') # TODO make this a relative path
 import wppb
 sys.path.append('/data/project/pb/pb/web/dynamic') # TODO make this a relative path
 import pb_db_config
 
 wpOptInList = u"Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen"
-wpOptInListRegEx = u"\[\[(?:[uU]ser|[bB]enutzer)\:(?P<username>[^\|\]]+)(?:\|[^\]]+)?\]\]"
+wpOptInListRegEx = u"\[\[(?:[uU]ser|[bB]enutzer|[bB]enutzerin)\:(?P<username>[^\|\]]+)(?:\|[^\]]+)?\]\]"
 localLogFile = os.getcwd() + strftime("/logs/pb-info-bot-%Y-%m.log",localtime())
 
 # debugging
@@ -37,7 +36,7 @@ def output(text):
 	opt-in list
 """
 def usersToCheck():
-	optInPage = pywikibot.Page(pywikibot.getSite(), wpOptInList)
+	optInPage = pywikibot.Page(pywikibot.Site(), wpOptInList)
 	optInRawText = optInPage.get()
 
 	p = re.compile(wpOptInListRegEx, re.UNICODE)
@@ -45,9 +44,24 @@ def usersToCheck():
 	result = []
 	for user in userIterator:
 		# "_" is the same as " " for Wikipedia URls
-		result.append(pywikibot.replaceExcept(user.group('username'), u"_", u" ", []))
+		username = textlib.replaceExcept(user.group('username'), u"_", u" ", [])
+		if len(username) == 1:
+			username = username[0].capitalize()
+		elif len(username) > 1:
+			username = username[0].capitalize() + username[1:]
+		result.append(username)
 	return result
 
+
+def isIn(text, regex):
+	return re.search(regex, text, re.UNICODE)
+
+def search(text, regex):
+        m = re.search(regex, text, re.UNICODE)
+        if m:
+          return m.groups()[0]
+        else:
+          return u""
 
 """
   MAIN
@@ -77,7 +91,7 @@ for userWaitingForMsg in usersWaitingForMsg:
 			usersVeriedThisUser.append(has_confirmed_name)
 
 	# write a message
-	userTalkPage = pywikibot.Page(pywikibot.getSite(), u"Benutzer_Diskussion:" + userWaitingForMsg)
+	userTalkPage = pywikibot.Page(pywikibot.Site(), u"Benutzer_Diskussion:" + userWaitingForMsg)
 	try:
 		userTalkPageRaw = userTalkPage.get()
 	except pywikibot.NoPage:
@@ -85,11 +99,13 @@ for userWaitingForMsg in usersWaitingForMsg:
 	usersVeriedThisUserText = u""
 	# concat a string with 'user1, user2, ... and userN'
 	if len(usersVeriedThisUser) == 1:
-		usersVeriedThisUserText = u"[[Benutzer:%s|]]" % usersVeriedThisUser[0]
+		u = usersVeriedThisUser[0]
+		usersVeriedThisUserText = u"{{noping|%s|%s}}" % (u, u)
 	else:
 		for u in usersVeriedThisUser[:len(usersVeriedThisUser)-1]:
-			usersVeriedThisUserText += u", [[Benutzer:%s|]]" % u
-		usersVeriedThisUserText += u" und [[Benutzer:%s|]]" % usersVeriedThisUser[len(usersVeriedThisUser)-1]
+			usersVeriedThisUserText += u", {{noping|%s|%s}}" % (u, u)
+		lastU = usersVeriedThisUser[len(usersVeriedThisUser)-1]
+		usersVeriedThisUserText += u" und {{noping|%s|%s}}" % (lastU, lastU)
 		# remove ', ' at the beginning
 		usersVeriedThisUserText = usersVeriedThisUserText[2:]
 
@@ -103,13 +119,14 @@ for userWaitingForMsg in usersWaitingForMsg:
 		forThisDayText = u"vorgestern"
 	else:
 		forThisDayText = u"vor %s Tagen" % diffDays
+	prevDate = datetime.now() - timedelta(diffDays)
 
 	if len(usersVeriedThisUser) == 1:
-		msgToUser = u"\n== neue Bestätigung am %s.%s.%s ==\nHallo! Du hast %s eine neue Bestätigung von %s bei [[WP:Persönliche Bekanntschaften|]] erhalten. [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|Hier]] kannst du selber bestätigen. Du bekommst diese Nachricht, weil du in [[Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen|dieser Liste]] stehst. Gruß --~~~~" % (localtime()[2]-diffDays, localtime()[1], localtime()[0], forThisDayText, usersVeriedThisUserText)
-		userTalkSummary = u"Neuer Abschnitt /* neue Bestätigung am %s.%s.%s */" % (localtime()[2]-diffDays, localtime()[1], localtime()[0])
+		msgToUser = u"\n== neue Bestätigung am %s.%s.%s ==\nHallo! Du hast %s eine neue Bestätigung von %s bei [[WP:Persönliche Bekanntschaften|]] erhalten. [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|Hier]] kannst du selber bestätigen. Du bekommst diese Nachricht, weil du in [[Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen|dieser Liste]] stehst. Gruß --~~~~" % (prevDate.day, prevDate.month, prevDate.year, forThisDayText, usersVeriedThisUserText)
+		userTalkSummary = u"Neuer Abschnitt /* neue Bestätigung am %s.%s.%s */" % (prevDate.day, prevDate.month, prevDate.year)
 	else:
-		msgToUser = u"\n== neue Bestätigungen am %s.%s.%s ==\nHallo! Du hast %s neue Bestätigungen von %s bei [[WP:Persönliche Bekanntschaften|]] erhalten. [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|Hier]] kannst du selber bestätigen. Du bekommst diese Nachricht, weil du in [[Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen|dieser Liste]] stehst. Gruß --~~~~" % (localtime()[2]-diffDays, localtime()[1], localtime()[0], forThisDayText, usersVeriedThisUserText)
-		userTalkSummary = u"Neuer Abschnitt /* neue Bestätigungen am %s.%s.%s */" % (localtime()[2]-diffDays, localtime()[1], localtime()[0])
+		msgToUser = u"\n== neue Bestätigungen am %s.%s.%s ==\nHallo! Du hast %s neue Bestätigungen von %s bei [[WP:Persönliche Bekanntschaften|]] erhalten. [[Wikipedia:Persönliche Bekanntschaften/neue Anfragen|Hier]] kannst du selber bestätigen. Du bekommst diese Nachricht, weil du in [[Wikipedia:Persönliche Bekanntschaften/Opt-in: Benachrichtigungen|dieser Liste]] stehst. Gruß --~~~~" % (prevDate.day, prevDate.month, prevDate.year, forThisDayText, usersVeriedThisUserText)
+		userTalkSummary = u"Neuer Abschnitt /* neue Bestätigungen am %s.%s.%s */" % (prevDate.day, prevDate.month, prevDate.year)
 
 	output(u"Writing message to " + userWaitingForMsg + u"...")
 	output(u"message: " + msgToUser)
@@ -119,4 +136,7 @@ for userWaitingForMsg in usersWaitingForMsg:
 	elif (isIn(userTalkPageRaw, u"\{\{\ *[Aa]utoarchiv\-Erledigt")):
 		archiveHelp = u"\n{{Erledigt|1=~~~~}}"
 	if not DONOTSAVE:
-		userTalkPage.put(userTalkPageRaw + msgToUser + archiveHelp, userTalkSummary, False, minorEdit=False, force=True, botflag=False, maxTries=2)
+		try:
+			userTalkPage.put(userTalkPageRaw + msgToUser + archiveHelp, userTalkSummary, False, minorEdit=False, force=True, botflag=True)
+		except:
+			output("Exception mache weiter...")
