@@ -27,7 +27,7 @@ table.stats caption { font-weight: bold; padding: 0.25em 0; text-align: left; }
 table.stats td { border: none; padding: 2px; vertical-align: bottom; }
 table.stats td.new_year { border-left: 1px solid #ccc; }
 table.stats tr.group td { border-top: 1px solid #999; border-left: 1px solid #ccc; color: #999; }
-table.stats tr.columns td div { background-color: #999; width: 5px; }
+table.stats tr.columns td div { background-color: #999; width: 4px; }
 table.stats tr.columns td:hover { outline: 1px dotted #ccc; }
 table.stats tr.columns td.legend:hover { outline: none; }
 table.stats tr.columns td div:hover { background-color: #cc3 !important; }

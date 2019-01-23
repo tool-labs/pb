@@ -8,11 +8,11 @@
 {%endif %}
 
 {%block page_title %}
-	{%if user == None: %}Fehler{%else: %}Teilnehmerinformationen für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
+  {%if user == None: %}Fehler{%else: %}Teilnehmerinformationen für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
 {%endif %}{%endblock %}
 
 {%block heading %}
-	{%if user == None: %}Fehler{%else: %}Teilnehmerinformationen für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
+  {%if user == None: %}Fehler{%else: %}Teilnehmerinformationen für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
 {%endif %}{%endblock %}
 
 {%block content %}
@@ -57,17 +57,17 @@
   </table>
 
   <table class="toc">
-    <tr class="given">
-      <th>&darr; <a href="#given" class="down">Vergebene Bestätigungen</a></th>
-      <td>{{ format_number(db.get_cf_count_by_user(user[1], False)) }}</td>
-    </tr>
     <tr class="taken">
       <th>&darr; <a href="#taken" class="down">Erhaltene Bestätigungen</a></th>
       <td>{{ format_number(db.get_cf_count_by_confirmed(user[1], False)) }}</td>
     </tr>
+    <tr class="given">
+      <th>&darr; <a href="#given" class="down">Vergebene Bestätigungen</a></th>
+      <td>{{ format_number(db.get_cf_count_by_user(user[1], False)) }}</td>
+    </tr>
   </table>
 
-  {%for case in range(0, 2): %}
+  {%for case in range(-1, 1): %}
     {%set table = 'given' if case == 0 else 'taken' %}
   <h2><span id="{{ table }}">{{ 'Vergebene' if case == 0 else 'Erhaltene' }} Bestätigungen</span></h2>
   <table class="full-width {{ table }} tablesorter" id="{{ table }}-confirmations">
@@ -80,11 +80,11 @@
     </colgroup>
     <thead>
       <tr>
-	<th></th>
-	<th>{{ 'An' if case == 0 else 'Von' }} Benutzer</th>
-	<th>Datum</th>
-	<th>Kommentar</th>
-	<th>Rückbestätigt?</th>
+        <th></th>
+        <th>{{ 'An' if case == 0 else 'Von' }} Benutzer</th>
+        <th>Datum</th>
+        <th>Kommentar</th>
+        <th>Rückbestätigt?</th>
       </tr>
     </thead>
     <tbody>
@@ -92,15 +92,15 @@
     {%for conf in confs: %}
       {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden, cf_reconfirmed) = conf %}
       <tr class="{%if not cf_reconfirmed: %}not-reconf{%endif %} {%if cf_was_deleted==1: %}cf_deleted{%endif%}">
-	<td class="cf-detail">
-		{%if not cf_user_is_hidden: %}
-			{{ link('confirmation', 'user_one=' + str(user[1] if case == 0 else cf_user_id) + '&amp;user_two=' + str(cf_user_id if case == 0 else user[1]), '.') }}
-		{%endif%}
+        <td class="cf-detail">
+      {%if not cf_user_is_hidden: %}
+        {{ link('confirmation', 'user_one=' + str(user[1] if case == 0 else cf_user_id) + '&amp;user_two=' + str(cf_user_id if case == 0 else user[1]), '.') }}
+      {%endif%}
         </td>
-	<td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) if not cf_user_is_hidden else 'Ex-Teilnehmer' }}</td>
-	<td class="cf-date">{{ format_date(cf_date) }}</td>
-	<td class="cf-comment">{{ comment_to_html(cf_comment) }}</td>
-	<td class="cf-reconf">{{ 'ja' if cf_reconfirmed else 'nein' }}</td>
+        <td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) if not cf_user_is_hidden else 'Ex-Teilnehmer' }}</td>
+        <td class="cf-date">{{ format_date(cf_date) }}</td>
+        <td class="cf-comment">{{ comment_to_html(cf_comment) }}</td>
+        <td class="cf-reconf">{{ 'ja' if cf_reconfirmed else 'nein' }}</td>
       </tr>
     {%endfor %}
     </tbody>
