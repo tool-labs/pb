@@ -19,10 +19,44 @@ th { background-color: #dddddd; }
 tr.not-reconf td { background-color: #fee; }
 tr.cf_deleted { text-decoration: line-through; }
 td.cf-date { text-align: center; }
-td.cf-comment { font-style: italic; }
+td.cf-comment { font-style: italic; word-wrap: anywhere; }
 td.cf-reconf { text-align: center; }
 
-table.stats { border-left: 1px solid #999; font-size: 0.8em; line-height: 1.2em; margin: 1em 0; }
+#stats_switch { float: right; font-size: smaller; height: 0; position: relative; top: -1em; }
+table.stats.stats_ { background-color: #fff; border-bottom: 1px solid #999; border-left: none; width: 100%; }
+table.stats_ th { background-color: #fff; border: none; }
+table.stats_ th div { font-size: smaller; font-weight: normal; }
+table.stats_ th.user,
+table.stats_ th.conf { width: 50%; }
+table.stats_ th.user .total { color: #666; }
+table.stats_ th.user .total_0 { color: #936; }
+table.stats_ th.user .total_1 { color: #693; }
+table.stats_ th.conf .total { color: #369; }
+table.stats_ tr.new_year td { border-top: 1px solid #ccc;}
+table.stats.stats_ td { padding: 4px; vertical-align: top; }
+table.stats_ td.time { color: #999; }
+table.stats_ td.bar { line-height: 0; padding: 1px 0; position: relative; }
+table.stats_ tr:hover td.bar { background-color: #eee; }
+table.stats_ td.bar.user { border-right: 1px solid #9c6; text-align: right; }
+table.stats_ td.bar.conf { border-left: 1px solid #69c; }
+table.stats_ td.bar div { display: inline-block; height: 10px; }
+table.stats_ td.bar.user .bar_0 { background-color: #c69; }
+table.stats_ td.bar.user .bar_1 { background-color: #9c6; }
+table.stats_ td.bar.conf div { background-color: #69c; }
+table.stats_ td.bar span { display: none; font-size: 11px; position: absolute; top: 6px; }
+table.stats_:hover td.bar span { display: block; }
+table.stats_:hover td.bar.user span { text-align: right; width: 2em; }
+table.stats_ td.bar.conf .month { color: #ccc; left: -24px; }
+table.stats_ td.bar.user .count { color: #999; left: 0; }
+table.stats_ td.bar.user .count_0 { color: #c69; left: 2em; }
+table.stats_ td.bar.user .count_1 { color: #9c6; left: 4em; }
+table.stats_ td.bar.conf .count { color: #69c; right: 0.5em; }
+table.stats_ td.number { color: #666; text-align: right; }
+table.stats_ td.number.user { border-left: 1px solid #999; }
+table.stats_ td.number.conf { border-right: 1px solid #999; color: #369; }
+
+.old_stats { display: none; }
+table.stats { border-left: 1px solid #999; font-size: 0.8em; line-height: 1.2em; margin: 2em 0 1em; }
 table.stats caption { font-weight: bold; padding: 0.25em 0; text-align: left; }
 table.stats td { border: none; padding: 2px; vertical-align: bottom; }
 table.stats td.new_year { border-left: 1px solid #ccc; }
