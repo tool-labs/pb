@@ -7,9 +7,9 @@ configuration.
 
 import os.path
 # path to www index.py
-index_path = "https://tools.wmflabs.org/pb/index.py?p=%(page)s&%(args)s"
+index_path = "/index.py?p=%(page)s&%(args)s"
 # path to the www static directory
-static_path = "https://tools.wmflabs.org/pb/static/"
+static_path = "/static/"
 # path to the local base directory
 base_path = os.path.expanduser("~tools.pb/pb/web/")
 # path to the logging directory
