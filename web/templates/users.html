@@ -44,17 +44,17 @@
 
 {%block javascript %}
   var textExtractor = function(node) {
-    if (node.className == "cf-date")
+    if (node.className == 'cf-date')
       return node.innerHTML.replace(/^(\d+)\.(\d+)\.(\d+)$/, '$3-$2-$1');
-    else if (node.className == "cf-user")
+    else if (node.className == 'cf-user')
       return (node.hasChildNodes() && node.firstChild.nodeType == 1 ?
         '_' + node.firstChild.innerHTML : '~');
     else
       return '-'+node.innerHTML;
   }
 
-  $(document).ready(function() {
-    $(".tablesorter").tablesorter({textExtraction: textExtractor});
+  $(function() {
+    $('.tablesorter').tablesorter({textExtraction: textExtractor});
   });
 
 {%endblock %}

@@ -1,74 +1,75 @@
-{%extends "base.html" %}
+{% extends "base.html" %}
 
-{%set user = None %}
-{%if 'id' in field: %}
-  {%set user = db.get_user_by_id(field['id'].value) %}
-{%elif 'name' in field: %}
-  {%set user = db.get_user_by_name(field['name'].value.decode('utf8')) %}
-{%endif %}
+{% set user = None %}
+{% if 'id' in field: %}
+  {% set user = db.get_user_by_id(field['id'].value) %}
+{% elif 'name' in field: %}
+  {% set user = db.get_user_by_name(field['name'].value.decode('utf8')) %}
+{% endif %}
 
-{%block page_title %}
-  {%if user == None: %}Fehler{%else: %}Teilnehmerinformationen für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
-{%endif %}{%endblock %}
+{% block page_title %}
+  {% if user == None: %}Fehler{% else: %}Teilnehmerinformationen für {% if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{% endif%}
+{% endif %}{% endblock %}
 
-{%block heading %}
-  {%if user == None: %}Fehler{%else: %}Teilnehmerinformationen für {%if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{%endif%}
-{%endif %}{%endblock %}
+{% block heading %}
+  {% if user == None: %}Fehler{% else: %}Teilnehmerinformationen für {% if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{% endif%}
+{% endif %}{% endblock %}
 
-{%block content %}
-{%if user == None: %}
+{% block content %}
+{% if user == None: %}
   <p>Ein Fehler ist aufgetreten: Entweder hast du keinen Benutzer angegeben oder der angegebene Benutzer existiert nicht.</p>
-{%else: %}
+{% else: %}
   <div id="wp-box">
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/12px-Wikipedia-logo-v2.svg.png" /> <a href="https://de.wikipedia.org/wiki/Benutzer:{{ user[0] }}">Benutzerseite</a>, <a href="https://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user[0] }}">Diskussionsseite</a>
   </div>
 
-  {%if user[2] != None: %}
+  {% if user[2] != None: %}
     <p><b>Kommentar:</b> {{ user[2] }}</p>
-    {%if user[4] == 1: %}<span class="warning">{{ user[0] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>{%endif%}
-  {%endif %}
+    {% if user[4] == 1: %}<span class="warning">{{ user[0] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>{% endif%}
+  {% endif %}
 
   <table class="toc dates">
     <tr class="participates-since">
       <th>Teilnehmer seit</th>
       <td>{{ format_date(user[5]) }}</td>
     </tr>
-    {%if user[6] != None: %}
+    {% if user[6] != None: %}
     <tr class="verified-since">
       <th>Bestätigt seit</th>
       <td>{{ format_date(user[6]) }}</td>
     </tr>
-    {%endif %}
-    {%set block = db.user_blocked(user[1]) %}
-    {%if block != None: %}
+    {% endif %}
+{#
+    {% set block = db.user_blocked(user[1]) %}
+    {% if block != None: %}
     <tr class="block">
       <th>Gesperrt bis</th>
       <td>{{ format_date(number_to_date(block[1])) if block[1] != 'infinity' else 'unbeschränkt' }}</td>
     </tr>
-    {%endif %}
-
-    {%set previous_user_name = db.get_mw_last_user_name_by_name(user[0]) %}
-    {%if previous_user_name != None: %}
+    {% endif %}
+#}
+    {% set previous_user_name = db.get_mw_last_user_name_by_name(user[0]) %}
+    {% if previous_user_name != None: %}
     <tr class="previous-name">
       <th>Früherer Benutzername</th>
       <td>{{ previous_user_name.decode('utf-8') }}</td>
     </tr>
-    {%endif %}
+    {% endif %}
   </table>
 
   <table class="toc">
     <tr class="taken">
       <th>&darr; <a href="#taken" class="down">Erhaltene Bestätigungen</a></th>
-      <td>{{ format_number(db.get_cf_count_by_confirmed(user[1], False)) }}</td>
+      <td>{{ db.get_cf_count_by_confirmed(user[1], False) }}</td>
     </tr>
     <tr class="given">
       <th>&darr; <a href="#given" class="down">Vergebene Bestätigungen</a></th>
-      <td>{{ format_number(db.get_cf_count_by_user(user[1], False)) }}</td>
+      <td>{{ db.get_cf_count_by_user(user[1], False) }}</td>
     </tr>
   </table>
 
-  {%for case in range(-1, 1): %}
-    {%set table = 'given' if case == 0 else 'taken' %}
+  {% for case in range(-1, 1): %}
+    {% set table = 'given' if case == 0 else 'taken' %}
   <h2><span id="{{ table }}">{{ 'Vergebene' if case == 0 else 'Erhaltene' }} Bestätigungen</span></h2>
   <table class="full-width {{ table }} tablesorter" id="{{ table }}-confirmations">
     <colgroup>
@@ -88,29 +89,29 @@
       </tr>
     </thead>
     <tbody>
-    {%set confs = (db.get_confirmations_by_user(user[1], False) if case == 0 else db.get_confirmations_by_confirmed(user[1], False)) %}
-    {%for conf in confs: %}
-      {%set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden, cf_reconfirmed) = conf %}
-      <tr class="{%if not cf_reconfirmed: %}not-reconf{%endif %} {%if cf_was_deleted==1: %}cf_deleted{%endif%}">
+    {% set confs = (db.get_confirmations_by_user(user[1], False) if case == 0 else db.get_confirmations_by_confirmed(user[1], False)) %}
+    {% for conf in confs: %}
+      {% set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden, cf_reconfirmed) = conf %}
+      <tr class="{% if not cf_reconfirmed: %}not-reconf{% endif %} {% if cf_was_deleted==1: %}cf_deleted{% endif%}">
         <td class="cf-detail">
-      {%if not cf_user_is_hidden: %}
+      {% if not cf_user_is_hidden: %}
         {{ link('confirmation', 'user_one=' + str(user[1] if case == 0 else cf_user_id) + '&amp;user_two=' + str(cf_user_id if case == 0 else user[1]), '.') }}
-      {%endif%}
+      {% endif%}
         </td>
         <td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) if not cf_user_is_hidden else 'Ex-Teilnehmer' }}</td>
         <td class="cf-date">{{ format_date(cf_date) }}</td>
         <td class="cf-comment">{{ comment_to_html(cf_comment) }}</td>
         <td class="cf-reconf">{{ 'ja' if cf_reconfirmed else 'nein' }}</td>
       </tr>
-    {%endfor %}
+    {% endfor %}
     </tbody>
   </table>
-  {%endfor %}
+  {% endfor %}
 
-{%endif %}
-{%endblock %}
+{% endif %}
+{% endblock %}
 
-{%block javascript %}
+{% block javascript %}
   var textExtractor = function(node) {
     if (node.className == "cf-date")
       return node.innerHTML.replace(/^(\d+)\.(\d+)\.(\d+)$/, '$3-$2-$1');
@@ -126,4 +127,4 @@
     $("#given-confirmations").tablesorter(opts);
     $("#taken-confirmations").tablesorter(opts);
   });
-{%endblock %}
+{% endblock %}
