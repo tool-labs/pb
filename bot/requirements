@@ -1,7 +1,7 @@
 HOWTO
-- you need a WMFLabs account that is in the service group of 'pb': https://tools.wmflabs.org/
+- you need a WMFLabs account that is in the service group of 'pb': https://pb.toolforge.org/
 - get the https://www.mediawiki.org/wiki/Manual:Pywikibot
 - copy these two files from the project repository into your pybot folder
 - configure your bot & update the file path to the pyapi (https://github.com/tool-labs/pb/blob/master/pyapi/wppb.py)
 - create a cron job using SGE and have fun:
-	jsub -once -N pers-bek-to-db-bot -mem 70m -cwd python pers-bek-to-db-bot.sh
+	jsub -once -N pers-bek-to-db-bot -mem 70m -cwd python3 pers-bek-to-db-bot.sh
