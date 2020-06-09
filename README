@@ -13,10 +13,7 @@ More information are available in Czech [3], Dutch [4], French [5], German [6].
 [6] https://de.wikipedia.org/wiki/Wikipedia:Persönliche_Bekanntschaften
 
 ## Requirements
-  - Python:
-     - oursql
+  - Python 3:
+     - PyMySQL: https://pypi.org/project/PyMySQL/
      - jinja2
   - MySQL
-
-## To do
-  - Check on error in confirmation.html and user.html
