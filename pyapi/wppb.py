@@ -4,7 +4,8 @@
 This class provides all necessary functionality for accessing WP:PB’s database.
 """
 
-import oursql
+# https://pypi.org/project/PyMySQL/#installation
+import pymysql.cursors
 import string
 
 class WPPBException:
@@ -38,46 +39,44 @@ class Database:
         name, e. g. 'dewiki_p'.
         """
         # try to read the replica.pb-db.cnf
-        import ConfigParser
+        import configparser
         import os.path
         import pb_db_config
 
         p = pb_db_config.db_conf_file
         if os.path.exists(p):
-            parser = ConfigParser.ConfigParser()
+            parser = configparser.ConfigParser()
             parser.readfp(open(p))
             if parser.has_section('client'):
                 if parser.has_option('client', 'user') and user_name is None:
-                    user_name = string.strip(parser.get('client', 'user'),
-				             '"\'')
+                    user_name = parser.get('client', 'user').strip('"\'')
                 if (parser.has_option('client', 'password')
                     and password is None):
-                    password = string.strip(parser.get('client', 'password'),
-                                            '"\'')
+                    password = parser.get('client', 'password').strip('"\'')
                 if parser.has_option('client', 'host') and host is None:
-                    host = string.strip(parser.get('client', 'host'), '"\'')
+                    host = parser.get('client', 'host').strip('"\'')
 
 
         if user_name is None or password is None or host is None:
-            raise WPPBException(u'You did not specify enough information on' +
-                                u' the database connection. The ~/replica.pb-db.cnf ' +
-                                u'file did not contain the required ' +
-                                u'information.')
+            raise WPPBException('You did not specify enough information on' +
+                                ' the database connection. The ~/replica.pb-db.cnf ' +
+                                'file did not contain the required ' +
+                                'information.')
 
         try:
             # Workaround for the outage of c2.labsdb:  the project database is
             # moved to tools-db.  ireas/2016-02-16
-            self.conn = oursql.connect(host='tools-db', user=user_name,
-                                       passwd=password, db=database)
+            self.conn = pymysql.connect(host='tools-db', user=user_name,
+                           password=password, db=database, charset='utf8', use_unicode=True)
             self.pb_database_name = database
 
             self.wp_conn = None
             if wp_database != None:
-                self.wp_conn = oursql.connect(host=host,user=user_name,
-                           passwd=password,db=wp_database, charset='utf8', use_unicode=True)
-        except oursql.DatabaseError, e:
-            raise WPPBException(u'You specified wrong database connection ' +
-                                u'data. Error message: ' + unicode(e))
+                self.wp_conn = pymysql.connect(host=host,user=user_name,
+                           password=password,db=wp_database, charset='utf8', use_unicode=True)
+        except pymysql.DatabaseError as e:
+            raise WPPBException('You specified wrong database connection ' +
+                                'data. Error message: ' + unicode(e))
 
 
     def get_all_users(self, show_hidden_users=True, show_banned_users=False):
@@ -95,18 +94,18 @@ class Database:
                     SELECT cf_user_id, COUNT(1) as `count`
                         FROM confirmation
                         LEFT JOIN `user` AS taking ON taking.user_id = cf_confirmed_user_id
-                        WHERE (? OR `user_is_hidden` = 0)
+                        WHERE (%s OR `user_is_hidden` = 0)
                         GROUP BY cf_user_id) as given
                     ON given.cf_user_id = user_id
                 LEFT JOIN (
                     SELECT cf_confirmed_user_id, COUNT(1) as `count`
                         FROM confirmation
                         LEFT JOIN `user` AS giving ON giving.user_id = cf_user_id
-                        WHERE (? OR `user_is_hidden` = 0)
+                        WHERE (%s OR `user_is_hidden` = 0)
                         GROUP BY cf_confirmed_user_id) as taken
                     ON taken.cf_confirmed_user_id = user_id
-                WHERE (? OR `user_is_hidden` = 0) AND
-                      (? OR `user_was_banned` = 0)
+                WHERE (%s OR `user_is_hidden` = 0) AND
+                      (%s OR `user_was_banned` = 0)
                 ORDER BY `user_name`
             ;''', (show_hidden_users, show_hidden_users, show_hidden_users, show_banned_users,))
             return curs.fetchall()
@@ -119,7 +118,7 @@ class Database:
             curs.execute('''
             SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`, `user_participates_since`, `user_verified_since`
                 FROM `user`
-                WHERE `user_id` = ?
+                WHERE `user_id` = %s
             ;''', (id,))
             return curs.fetchone()
 
@@ -131,7 +130,7 @@ class Database:
             curs.execute('''
             SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`, `user_participates_since`, `user_verified_since`
                 FROM `user`
-                WHERE `user_name` = ?
+                WHERE `user_name` = %s
             ;''', (name,))
             return curs.fetchone()
 
@@ -143,8 +142,8 @@ class Database:
             curs.execute('''
             SELECT COUNT(`user_id`)
                 FROM `user`
-                WHERE (? OR `user_is_hidden` = 0) AND
-                      (? OR `user_was_banned` = 0)
+                WHERE (%s OR `user_is_hidden` = 0) AND
+                      (%s OR `user_was_banned` = 0)
             ;''', (count_hidden_users, count_banned_users,))
             return curs.fetchone()[0]
 
@@ -158,9 +157,9 @@ class Database:
                 FROM `confirmation`
                 LEFT JOIN `user` AS giving ON giving.user_id = cf_user_id
                 LEFT JOIN `user` AS taking ON taking.user_id = cf_confirmed_user_id
-                WHERE (? OR `cf_was_deleted` = 0) AND
-                      (? OR giving.`user_is_hidden` = 0) AND
-                      (? OR taking.`user_is_hidden` = 0)
+                WHERE (%s OR `cf_was_deleted` = 0) AND
+                      (%s OR giving.`user_is_hidden` = 0) AND
+                      (%s OR taking.`user_is_hidden` = 0)
             ;''', (count_deleted_cf, count_hidden_users, count_hidden_users,))
             return curs.fetchone()[0]
 
@@ -173,8 +172,8 @@ class Database:
             SELECT COUNT(1)
                 FROM `confirmation`
                 LEFT JOIN `user` AS taking ON taking.user_id = cf_confirmed_user_id
-                WHERE (`cf_user_id` = ?) AND
-                      (? OR taking.`user_is_hidden` = 0)
+                WHERE (`cf_user_id` = %s) AND
+                      (%s OR taking.`user_is_hidden` = 0)
             ;''', (user_id, count_hidden_users))
             return curs.fetchone()[0]
 
@@ -187,8 +186,8 @@ class Database:
             SELECT COUNT(1)
                 FROM `confirmation`
                 LEFT JOIN `user` AS giving ON giving.user_id = cf_user_id
-                WHERE (`cf_confirmed_user_id` = ?) AND
-                      (? OR giving.`user_is_hidden` = 0)
+                WHERE (`cf_confirmed_user_id` = %s) AND
+                      (%s OR giving.`user_is_hidden` = 0)
             ;''', (user_id, count_hidden_users))
             return curs.fetchone()[0]
 
@@ -205,9 +204,9 @@ class Database:
                 LEFT JOIN user
                     ON user_id = cf1.cf_confirmed_user_id
                 LEFT JOIN confirmation as cf2
-                    ON cf2.cf_user_id = user_id AND cf2.cf_confirmed_user_id = ?
-                WHERE (cf1.cf_user_id = ?) AND
-                      (? OR `user_is_hidden` = 0)
+                    ON cf2.cf_user_id = user_id AND cf2.cf_confirmed_user_id = %s
+                WHERE (cf1.cf_user_id = %s) AND
+                      (%s OR `user_is_hidden` = 0)
                 ORDER BY cf1.cf_timestamp DESC
             ;''', (user_id, user_id, show_hidden_users))
             return curs.fetchall()
@@ -225,9 +224,9 @@ class Database:
                 LEFT JOIN user
                     ON user_id = cf1.cf_user_id
                 LEFT JOIN confirmation as cf2
-                    ON cf2.cf_confirmed_user_id = user_id AND cf2.cf_user_id = ?
-                WHERE (cf1.cf_confirmed_user_id = ?) AND
-                      (? OR `user_is_hidden` = 0)
+                    ON cf2.cf_confirmed_user_id = user_id AND cf2.cf_user_id = %s
+                WHERE (cf1.cf_confirmed_user_id = %s) AND
+                      (%s OR `user_is_hidden` = 0)
                 ORDER BY cf1.cf_timestamp DESC
             ;''', (user_id, user_id, show_hidden_users))
             return curs.fetchall()
@@ -266,14 +265,14 @@ class Database:
                  ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
                JOIN `user` AS has_confirmed_t
                  ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
-               WHERE `cf_timestamp` > DATE_ADD(CURDATE(), INTERVAL -? DAY) AND `cf_timestamp` < DATE_ADD(CURDATE(), INTERVAL -? DAY) AND `cf_was_deleted`=0
+               WHERE `cf_timestamp` > DATE_ADD(CURDATE(), INTERVAL - %s DAY) AND `cf_timestamp` < DATE_ADD(CURDATE(), INTERVAL -%s DAY) AND `cf_was_deleted`=0
                ORDER BY was_confirmed_name
                ;''', (day,day-delta))
             return curs.fetchall()
 
     def get_latest_confirmations(self, limit=8, days=30):
         """
-        Returns a list of all confirmations were made in the last ? months.
+        Returns a list of all confirmations were made in the last months.
 		Banned and hidden users are shown.
         """
         with self.conn as curs:
@@ -287,8 +286,8 @@ class Database:
                  ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
                JOIN `user` AS has_confirmed_t
                  ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
-               WHERE `cf_timestamp` > DATE_ADD(NOW(), INTERVAL -? DAY)
-               ORDER BY `cf_timestamp` DESC LIMIT ?
+               WHERE `cf_timestamp` > DATE_ADD(NOW(), INTERVAL - %s DAY)
+               ORDER BY `cf_timestamp` DESC LIMIT %s
             ;''', (days,limit))
             return curs.fetchall()
 
@@ -318,8 +317,8 @@ class Database:
             curs.execute('''
             SELECT COUNT(1)
                 FROM `confirmation`
-                WHERE `cf_user_id` = ?
-                    AND `cf_confirmed_user_id` = ?
+                WHERE `cf_user_id` = %s
+                    AND `cf_confirmed_user_id` = %s
             ;''', (user_id,confirmed_id))
             return bool(curs.fetchone()[0])
 
@@ -331,8 +330,8 @@ class Database:
             curs.execute('''
             SELECT `cf_timestamp`, `cf_comment`
                 FROM `confirmation`
-                WHERE `cf_user_id` = ?
-                    AND `cf_confirmed_user_id` = ?
+                WHERE `cf_user_id` = %s
+                    AND `cf_confirmed_user_id` = %s
             ;''', (user_id,confirmed_id))
             return curs.fetchone()
 
@@ -350,7 +349,7 @@ class Database:
             with self.conn as curs:
                 curs.execute('''
                 INSERT INTO `user` (`user_id`, `user_name`)
-                    VALUES (?,?)
+                    VALUES (%s,%s)
                 ;''', (user_id,user_name))
                 # self.touch_user(user_id, timestamp) not neccessary
                 return True
@@ -373,7 +372,7 @@ class Database:
             with self.conn as curs:
                 curs.execute('''
                 INSERT INTO `user` (`user_id`, `user_name`, `user_participates_since`, `user_last_update`)
-                    VALUES (?,?,?,?)
+                    VALUES (%s,%s,%s,%s)
                 ;''', (user_id,user_name,part_tstamp,part_tstamp))
                 # self.touch_user(user_id, timestamp) not neccessary
                 return True
@@ -403,13 +402,13 @@ class Database:
                 `cf_timestamp`,
                 `cf_comment`
             )
-                VALUES (?,?,?,?)
+                VALUES (%s,%s,%s,%s)
             ;''', (user_id,confirmed_id,timestamp,comment))
             if (len(self.get_confirmations_by_confirmed(confirmed_id))>=3):
                 curs.execute('''
                 UPDATE `user` SET
-                     `user_verified_since` = ?
-                WHERE `user`.`user_id` = ? AND `user_verified_since` IS NULL LIMIT 1
+                     `user_verified_since` = %s
+                WHERE `user`.`user_id` = %s AND `user_verified_since` IS NULL LIMIT 1
                 ;''', (timestamp, confirmed_id,))
                 self.touch_user(confirmed_id, timestamp)
                 return True
@@ -428,7 +427,7 @@ class Database:
         with self.wp_conn as curs:
             curs.execute('''
             SELECT `user_id` FROM `user`
-                 WHERE `user_name` = ?
+                 WHERE `user_name` = %s
             ;''', (user_name,))
             row = curs.fetchone()
             if row != None:
@@ -453,7 +452,7 @@ class Database:
         with self.wp_conn as curs:
             curs.execute('''
             SELECT `log_title` FROM `dewiki_p`.`logging`
-            WHERE `log_namespace`=2 AND `log_timestamp` >= ?
+            WHERE `log_namespace`=2 AND `log_timestamp` >= %s
             AND `log_type` = 'renameuser' AND `log_action` = 'renameuser'
             AND `log_params` LIKE '%::newuser";s:3:"''' + user_name + '''";%'
             ;''', (user_participates_since,))
@@ -472,8 +471,8 @@ class Database:
         with self.wp_conn as curs:
             curs.execute('''
             UPDATE `user` SET
-                `user_last_update` = ?
-            WHERE `user`.`user_id` = ? LIMIT 1
+                `user_last_update` = %s
+            WHERE `user`.`user_id` = %s LIMIT 1
             ;''', (timestamp, user_id,))
             return True
 
@@ -486,7 +485,7 @@ class Database:
             curs.execute('''
             SELECT `ipb_reason`, `ipb_expiry`
                 FROM `ipblocks`
-                WHERE `ipb_user` = ?
+                WHERE `ipb_user` = %s
                 LIMIT 1
             ;''', (user_id,))
             row = curs.fetchone()

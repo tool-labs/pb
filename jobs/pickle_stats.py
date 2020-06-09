@@ -7,9 +7,9 @@ sys.path.append('/data/project/pb/pb/web/dynamic/')
 import pb_db_config
 sys.path.append(os.path.abspath(pb_db_config.base_path + '../pyapi'))
 
-import wppb
+import wppb_s3
 
-db = wppb.Database(database=pb_db_config.db_name)
+db = wppb_s3.Database(database=pb_db_config.db_name)
 
 (months, year_months) = db.get_months()
 (counts_cf, sums_cf, totals_cf) = db.get_stats(year_months, db.get_confirmations_by_month())
