@@ -31,7 +31,7 @@ class Database:
     """
 
     def __init__(self, user_name=None, password=None, host=None,
-                 database='p_wppb', wp_database='dewiki_p'):
+		    database=None, wp_database='dewiki_p'):
         """
         Constructor.
 
@@ -66,14 +66,12 @@ class Database:
         try:
             # Workaround for the outage of c2.labsdb:  the project database is
             # moved to tools-db.  ireas/2016-02-16
-            self.conn = pymysql.connect(host='tools-db', user=user_name,
-                           password=password, db=database, charset='utf8', use_unicode=True)
-            self.pb_database_name = database
-
-            self.wp_conn = None
-            if wp_database != None:
-                self.wp_conn = pymysql.connect(host=host,user=user_name,
-                           password=password,db=wp_database, charset='utf8', use_unicode=True)
+            self.conn = pymysql.connections.Connection(host='tools-db', user=user_name, password=password, db=database,
+                           charset='utf8', use_unicode=True, defer_connect=True)
+            self.wp_conn = pymysql.connections.Connection(host=host, user=user_name, password=password, db=wp_database,
+                           charset='utf8', use_unicode=True, defer_connect=True)
+            self.conn.ping()  # reconnecting mysql, https://stackoverflow.com/a/61152360
+            self.wp_conn.ping()  # reconnecting mysql
         except pymysql.DatabaseError as e:
             raise WPPBException('You specified wrong database connection ' +
                                 'data. Error message: ' + unicode(e))
@@ -83,7 +81,7 @@ class Database:
         """
         Returns a list of all users.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT `user_name`, `user_id`, `user_comment`,
                     `user_is_hidden`, `user_was_banned`,
@@ -114,7 +112,7 @@ class Database:
         """
         Returns the user identified by *id*.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`, `user_participates_since`, `user_verified_since`
                 FROM `user`
@@ -126,7 +124,7 @@ class Database:
         """
         Returns the user *name*.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`, `user_participates_since`, `user_verified_since`
                 FROM `user`
@@ -138,7 +136,7 @@ class Database:
         """
         Returns the count of all users.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT COUNT(`user_id`)
                 FROM `user`
@@ -151,7 +149,7 @@ class Database:
         """
         Returns the count of all confirmations.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT COUNT(1)
                 FROM `confirmation`
@@ -167,7 +165,7 @@ class Database:
         """
         Returns the count of confirmations by the user with the id *user_id*.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT COUNT(1)
                 FROM `confirmation`
@@ -181,7 +179,7 @@ class Database:
         """
         Returns the count of confirmations of *user_id*.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT COUNT(1)
                 FROM `confirmation`
@@ -195,7 +193,7 @@ class Database:
         """
         Returns all confirmations done by *user_id*.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT user_name, user_id,
                    cf1.cf_timestamp, cf1.cf_comment, cf1.cf_was_deleted, user_is_hidden,
@@ -215,7 +213,7 @@ class Database:
         """
         Returns all confirmations for *user_id*.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT user_name, user_id,
                    cf1.cf_timestamp, cf1.cf_comment, cf1.cf_was_deleted, user_is_hidden,
@@ -236,7 +234,7 @@ class Database:
         Returns a list of all users joined this project in the last 3 months.
 		Banned and hidden users are NOT shown.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT `user_name`, COUNT(`cf_user_id`), `user_participates_since`
                 FROM `user`
@@ -254,7 +252,7 @@ class Database:
         used by the bot for informing the user about the confirmations he got.
         Banned and hidden users are NOT shown.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
                SELECT
                   was_confirmed_t.`user_name` AS was_confirmed_name,
@@ -275,7 +273,7 @@ class Database:
         Returns a list of all confirmations were made in the last months.
 		Banned and hidden users are shown.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT
                   has_confirmed_t.`user_name` AS has_confirmed_name,
@@ -297,7 +295,7 @@ class Database:
         Returns an overview over all users, i.e. user list + number of confirmations this user got.
 		Banned and hidden users are NOT shown, but we do not count the deleted confirmations here.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT `user_name`, COUNT(`cf_user_id`), `user_participates_since`
                 FROM `user`
@@ -313,7 +311,7 @@ class Database:
         """
         Returns true if *user_id* confirmed *confirmed_id*.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT COUNT(1)
                 FROM `confirmation`
@@ -326,7 +324,7 @@ class Database:
         """
         Returns the confirmation of *confirmed_id* by *user_id*.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT `cf_timestamp`, `cf_comment`
                 FROM `confirmation`
@@ -334,25 +332,6 @@ class Database:
                     AND `cf_confirmed_user_id` = %s
             ;''', (user_id,confirmed_id))
             return curs.fetchone()
-
-    def add_user(self, user_name):
-        """
-        Adds a user to the database. Returns the success as a boolean value.
-        """
-        # check if the user exists (MW database)
-        user_id = self.get_mw_user_id(user_name)
-        if len(user_name) == 0 or user_id == None:
-            # user does not exist
-            return False
-        else:
-            # user does exist
-            with self.conn as curs:
-                curs.execute('''
-                INSERT INTO `user` (`user_id`, `user_name`)
-                    VALUES (%s,%s)
-                ;''', (user_id,user_name))
-                # self.touch_user(user_id, timestamp) not neccessary
-                return True
 
     def add_user(self, user_name, part_tstamp, comment=None):
         """
@@ -369,12 +348,12 @@ class Database:
             return False
         else:
             # user does exist
-            with self.conn as curs:
+            with self.conn.cursor() as curs:
                 curs.execute('''
                 INSERT INTO `user` (`user_id`, `user_name`, `user_participates_since`, `user_last_update`)
                     VALUES (%s,%s,%s,%s)
                 ;''', (user_id,user_name,part_tstamp,part_tstamp))
-                # self.touch_user(user_id, timestamp) not neccessary
+                self.conn.commit()
                 return True
 
     def add_confirmation(self, user_id, confirmed_id, comment, timestamp):
@@ -394,7 +373,7 @@ class Database:
         import re
         if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d", timestamp) == None:
             return False
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             INSERT INTO `confirmation` (
                 `cf_user_id`,
@@ -411,6 +390,7 @@ class Database:
                 WHERE `user`.`user_id` = %s AND `user_verified_since` IS NULL LIMIT 1
                 ;''', (timestamp, confirmed_id,))
                 self.touch_user(confirmed_id, timestamp)
+                self.conn.commit()
                 return True
 
     def get_mw_user_id(self, user_name):
@@ -424,7 +404,7 @@ class Database:
         #raw_user_name = user_name.encode('utf-8')
         #latin_user_name = raw_user_name.decode('latin-1')
 
-        with self.wp_conn as curs:
+        with self.wp_conn.cursor() as curs:
             curs.execute('''
             SELECT `user_id` FROM `user`
                  WHERE `user_name` = %s
@@ -449,7 +429,7 @@ class Database:
         user_participates_since = user_participates_since.strftime("%Y%m%d%H%M%S")
         if self.wp_conn == None:
             return False
-        with self.wp_conn as curs:
+        with self.wp_conn.cursor() as curs:
             curs.execute('''
             SELECT `log_title` FROM `dewiki_p`.`logging`
             WHERE `log_namespace`=2 AND `log_timestamp` >= %s
@@ -468,12 +448,13 @@ class Database:
         after adding the user, making changes to the user manually or
         when the user gets 'verified'.
         """
-        with self.wp_conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             UPDATE `user` SET
                 `user_last_update` = %s
             WHERE `user`.`user_id` = %s LIMIT 1
             ;''', (timestamp, user_id,))
+            self.conn.commit()
             return True
 
     def user_blocked(self, user_id):
@@ -481,7 +462,7 @@ class Database:
         Checks if a user is blocked and returns the reason and the duration. 
         `None` as return value means that the user is not blocked.
         """
-        with self.wp_conn as curs:
+        with self.wp_conn.cursor() as curs:
             curs.execute('''
             SELECT `ipb_reason`, `ipb_expiry`
                 FROM `ipblocks`
@@ -515,7 +496,7 @@ class Database:
         Returns the numbers of confirmations by month.
         Confirmations of banned or hidden users are NOT count.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT SUBSTRING(cf_timestamp, 1, 7), 0, COUNT(*)
                 FROM confirmation
@@ -534,7 +515,7 @@ class Database:
         Returns the numbers of new users by month.
         Banned and hidden users are NOT count.
         """
-        with self.conn as curs:
+        with self.conn.cursor() as curs:
             curs.execute('''
             SELECT SUBSTRING(user_participates_since, 1, 7), user_verified_since IS NOT NULL, COUNT(*)
                 FROM user
