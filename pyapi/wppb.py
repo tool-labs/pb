@@ -6,7 +6,7 @@ This class provides all necessary functionality for accessing WP:PB’s database
 
 # https://pypi.org/project/PyMySQL/#installation
 import pymysql.cursors
-import string
+import string, re
 
 class WPPBException:
     """
@@ -370,7 +370,6 @@ class Database:
         if (self.get_user_by_id(user_id) == None or
             self.get_user_by_id(confirmed_id) == None):
             return False
-        import re
         if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d", timestamp) == None:
             return False
         with self.conn.cursor() as curs:
@@ -390,8 +389,8 @@ class Database:
                 WHERE `user`.`user_id` = %s AND `user_verified_since` IS NULL LIMIT 1
                 ;''', (timestamp, confirmed_id,))
                 self.touch_user(confirmed_id, timestamp)
-                self.conn.commit()
-                return True
+            self.conn.commit()
+        return True
 
     def get_mw_user_id(self, user_name):
         """
@@ -459,7 +458,7 @@ class Database:
 
     def user_blocked(self, user_id):
         """
-        Checks if a user is blocked and returns the reason and the duration. 
+        Checks if a user is blocked and returns the reason and the duration.
         `None` as return value means that the user is not blocked.
         """
         with self.wp_conn.cursor() as curs:
