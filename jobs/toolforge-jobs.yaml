@@ -1,0 +1,35 @@
+# https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework
+---
+- name: pickle-stats
+  command: pyvenv/bin/python ~/pb/jobs/pickle_stats.py
+  image: python3.11
+  no-filelog: false
+  schedule: "*/10 *   *   *   *"
+  emails: onfailure
+  filelog-stdout: logs/pickle_stats.out
+  filelog-stderr: logs/pickle_stats.err
+
+- name: remove-old-logs
+  command: sh ~/pb/jobs/remove-old-logs.sh
+  image: bullseye
+  no-filelog: false
+  schedule: "0    0   *   *   *"
+  emails: onfailure
+  filelog-stdout: logs/remove-old-logs.out
+  filelog-stderr: logs/remove-old-logs.err
+- name: create-database-dump
+  command: sh ~/pb/jobs/create-database-dump.sh
+  image: bullseye
+  no-filelog: false
+  schedule: "0    0   *   *   *"
+  emails: onfailure
+  filelog-stdout: logs/create-database-dump.out
+  filelog-stderr: logs/create-database-dump.err
+- name: delete-old-database-dump
+  command: sh ~/pb/jobs/delete-old-database-dump.sh
+  image: bullseye
+  no-filelog: false
+  schedule: "0    0   *   *   *"
+  emails: onfailure
+  filelog-stdout: logs/delete-old-database-dump.out
+  filelog-stderr: logs/delete-old-database-dump.err
