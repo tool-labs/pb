@@ -6,7 +6,21 @@ This class provides all necessary functionality for accessing WP:PB’s database
 
 # https://pypi.org/project/PyMySQL/#installation
 import pymysql.cursors
-import string, re
+from datetime import date
+import re
+import logging, logging.config
+logger = logging.getLogger('pb')
+
+def setup_logger():
+	logFormatter = logging.Formatter('%(asctime)s - [%(levelname)-5.5s] - %(message)s')	
+	consoleHandler = logging.StreamHandler()
+	consoleHandler.setFormatter(logFormatter)
+	consoleHandler.setLevel(logging.DEBUG)
+	logger.setLevel(logging.DEBUG)
+	for h in logging.getLogger().handlers:
+		logging.getLogger().removeHandler(h)
+	logging.getLogger().addHandler(consoleHandler)
+setup_logger()
 
 class WPPBException:
     """
@@ -471,11 +485,10 @@ class Database:
             row = curs.fetchone()
             return row
 
-    def get_months(self):
+    def _generate_months_for_stats(self):
         """
-        Returns numbers of months in each year and all months in iso format.
+            Returns number of months of each year and all months in iso format.
         """
-        from datetime import date
         months = {}
         years_months = []
         year = 2008
@@ -484,72 +497,107 @@ class Database:
             if not year in months:
                 months[year] = 0
             months[year] += 1
-            years_months.append(str(year)+'-'+str(month).zfill(2))
-            month = month%12+1
+            years_months.append(str(year) + '-' + str(month).zfill(2))
+            month = month % 12 + 1
             if month == 1:
                 year += 1
         return [months, years_months]
 
-    def get_confirmations_by_month(self):
+    def _get_stats_confirmations_by_month(self):
         """
         Returns the numbers of confirmations by month.
-        Confirmations of banned or hidden users are NOT count.
+        Confirmations of banned or hidden users are NOT counted.
         """
         with self.conn.cursor() as curs:
-            curs.execute('''
-            SELECT SUBSTRING(cf_timestamp, 1, 7), 0, COUNT(*)
-                FROM confirmation
-                LEFT JOIN user AS giving ON giving.user_id = cf_user_id
-                LEFT JOIN user AS taking ON taking.user_id = cf_confirmed_user_id
-                WHERE (cf_was_deleted = 0) AND
-                      (giving.user_is_hidden = 0) AND
-                      (taking.user_is_hidden = 0)
-                GROUP BY 1
-                ORDER BY 1
-            ;''')
+            curs.execute('SELECT `year_month`, `group`, `count` FROM `stats_confirmations_by_month` ORDER BY 1;')
             return curs.fetchall()
 
-    def get_users_by_month(self):
+    def _get_users_by_month(self):
         """
         Returns the numbers of new users by month.
-        Banned and hidden users are NOT count.
+        Banned and hidden users are NOT counted.
         """
         with self.conn.cursor() as curs:
             curs.execute('''
-            SELECT SUBSTRING(user_participates_since, 1, 7), user_verified_since IS NOT NULL, COUNT(*)
-                FROM user
+            SELECT SUBSTRING(`user_participates_since`, 1, 7), `user_verified_since` IS NOT NULL, COUNT(*)
+                FROM `user`
                 WHERE (user_is_hidden = 0) AND (user_was_banned = 0)
                 GROUP BY 1, 2
                 ORDER BY 1, 2
             ;''')
             return curs.fetchall()
 
-    def get_stats(self, year_months, result):
+    def _prepare_stats(self, year_months, data_rows):
         """
-        Calculates counts, sums and totals from a database result set
+            Calculates counts, sums and totals from a database result set. Example:
+            {   'months': {2016: 12, 2017: 12, ..., 2015: 12},
+                'year_months': ['2008-02', '2008-03', ... '2023-08'],
+                'users': {
+                    'counts': {'2019-09': {0: 8}, '2014-09': {0: 3, 1: 11}, '2014-08': {0: 7, 1: 21}, ... },
+                    'sums': {2016: [68, 111], 2017: [73, 84], ... },
+                    'totals': [727, 1851]
+                },
+                'confirmations': { 'counts': /like above/ 'totals': [87905, 0]}
+            }
         """
         counts = {}
         sums = {}
         totals = [0, 0]
         for year_month in year_months:
             counts[year_month] = {}
-        for (year_month, group, count) in result:
+        for year_month, group, count in data_rows:
             counts[year_month][group] = count
             year = int(year_month[:4])
-            if not year in sums:
+            if year not in sums:
                 sums[year] = [0, 0]
             sums[year][group] += count
             totals[group] += count
-        return (counts, sums, totals)
+        return counts, sums, totals
 
     def get_confirmations_per_day(self, confirmations):
         """
         Returns average number of confirmations per day.
         """
-        from datetime import date
         return round(float(confirmations)/(date.today()-date(2008, 2, 8)).days, 3)
 
-    def unpickle_stats(self):
-        import pickle
-        return pickle.load(open('/data/project/pb/stats.pickle', 'r'))
+    def fetch_stats(self):
+        """
+            Fetches the full data set needed for the statistics on the main page.
+        """
+        months, year_months = self._generate_months_for_stats()
+        counts_cf, sums_cf, totals_cf = self._prepare_stats(year_months, self._get_stats_confirmations_by_month())
+        counts_u, sums_u, totals_u = self._prepare_stats(year_months, self._get_users_by_month())
 
+        chart_data = { 'months': months, 'year_months': year_months,
+            'confirmations': { 'counts': counts_cf, 'sums': sums_cf, 'totals': totals_cf },
+            'users': { 'counts': counts_u, 'sums': sums_u, 'totals': totals_u }
+        }
+        return chart_data
+
+    def update_stats_confirmations_by_month(self):
+        """
+            Runs database queries that fill the table 'stats_confirmations_by_month' with pregenerated data.
+        """
+        try:
+            with self.conn.cursor() as curs:
+                curs.execute('TRUNCATE `stats_confirmations_by_month`;')
+                curs.execute('''
+                INSERT INTO `stats_confirmations_by_month` (`year_month`, `group`, `count`)
+                SELECT SUBSTRING(cf_timestamp, 1, 7), 0, COUNT(*)
+                FROM confirmation
+                JOIN user AS giving ON giving.user_id = cf_user_id
+                JOIN user AS taking ON taking.user_id = cf_confirmed_user_id
+                WHERE (cf_was_deleted = 0) AND
+                        (giving.user_is_hidden = 0) AND
+                        (taking.user_is_hidden = 0)
+                GROUP BY 1
+                ORDER BY 1;''')
+        except:
+            logger.error('Rolling back the queries!')
+            self.conn.rollback()
+            raise
+        else:
+            self.conn.commit()
+        finally:
+            curs.close()
+            self.conn.close()

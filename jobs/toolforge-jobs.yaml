@@ -1,13 +1,13 @@
 # https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework
 ---
-- name: pickle-stats
-  command: pyvenv/bin/python ~/pb/jobs/pickle_stats.py
+- name: update-stats
+  command: pyvenv/bin/python ~/pb/jobs/update_stats.py 
   image: python3.11
   no-filelog: false
-  schedule: "*/10 *   *   *   *"
+  schedule: "0    *   *   *   *"
   emails: onfailure
-  filelog-stdout: logs/pickle_stats.out
-  filelog-stderr: logs/pickle_stats.err
+  filelog-stdout: logs/update_stats.out
+  filelog-stderr: logs/update_stats.err
 
 - name: remove-old-logs
   command: sh ~/pb/jobs/remove-old-logs.sh
