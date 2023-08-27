@@ -29,3 +29,10 @@ CREATE TABLE `confirmation` (
   FOREIGN KEY (`cf_confirmed_user_id`) REFERENCES `user`(`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=UTF8 ;
 
+DROP TABLE IF EXISTS `stats_confirmations_by_month`;
+CREATE TABLE `stats_confirmations_by_month` (
+  `year_month` varchar(255) NOT NULL,
+  `group` int(2) NOT NULL,
+  `count` int(6) unsigned NOT NULL,
+  UNIQUE KEY `year_month` (`year_month`)
+) ENGINE=InnoDB;

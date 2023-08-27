@@ -31,11 +31,10 @@
         <li>{{link('recent_changes', '', 'Weitere neue Bestätigungen')}}</li>
     </ul>
 
-{%- set data = db.unpickle_stats() %}
+{%- set data = db.fetch_stats() %}
 {%- set months = data['months'] %}
 {%- set year_months = data['year_months'] %}
     <h2><span id="statistik">Statistik</span></h2>
-
 {%- set user_counts = data['users']['counts'] %}
 {%- set user_sums = data['users']['sums'] %}
 {%- set user_totals = data['users']['totals'] %}
@@ -68,13 +67,12 @@
                 <td rowspan="{{months[year1]}}" class="number user">{{user_sums[year1]|sum}}</td>
     {%- endif %}
                 <td class="bar user">
-                    <span class="count">{{user_counts[year_month][1]|default(0)+user_counts[year_month][0]|default(0)}}</span><!--
-    {%- for group in range(0, 2) %}
-        {%- set count = user_counts[year_month][group]|default(0) %}
-                    --><div class="bar_{{group}}" style="width:{{count*1.6}}px;" title="{{year_month}}: {{count}}"></div><!--
-                    --><span class="count_{{group}}">{{count}}</span><!--
+                    <span class="count">{{user_counts[year_month][1]|default(0)+user_counts[year_month][0]|default(0)}}</span>
+    {%- for group in range(0, 2) -%}
+        {%- set count = user_counts[year_month][group]|default(0) -%}
+                    <div class="bar_{{group}}" style="width:{{count*1.6}}px;" title="{{year_month}}: {{count}}"></div><span class="count_{{group}}">{{count}}</span>
     {%- endfor %}
-                --></td>
+                </td>
     {%- if new_year %}
                 <td rowspan="{{months[year1]}}" class="time">{{year1}}</td>
     {%- endif %}
@@ -90,10 +88,9 @@
 {%- endfor %}
         </tbody>
     </table>
+{%- endblock %}
 
-{% endblock %}
-
-{% block javascript %}
+{%- block javascript %}
 function show_confs(year_month, count) {
     $('table.conf_stats tr.group td.legend').html(year_month);
     $('table.conf_stats tr.columns td.legend').html(count ?
@@ -106,4 +103,4 @@ function show_users(year_month, count_0, count_1) {
         '<span class="verified_1"><span class="total">'+count_1+'</span> bestätigte &hellip;</span><br/>'+
         '<span class="total">'+(count_0+count_1)+'</span> Teilnehmer' : '');
 }
-{% endblock %}
+{%- endblock %}

@@ -1,17 +1,20 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+import logging
+logger = logging.getLogger('pb')
 
 def serve_page(page_name, arguments):
     # init Jinja2
-    from jinja2 import Environment, FileSystemLoader, TemplateNotFound
-    env = Environment(loader=FileSystemLoader(pb_db_config.base_path + 'templates',
-                                              encoding='utf-8'))
+    env = Environment(loader=FileSystemLoader(pb_db_config.base_path + 'templates', encoding='utf-8'))
     try:
         template = env.get_template(page_name)
-        print template.render(**arguments).encode('utf-8')
-    except TemplateNotFound, t:
+        print(template.render(**arguments).encode('utf-8'))
+    except Exception as e:
+        logger.error(e)
+        print("An exception occurred: ", e)
         template = env.get_template('error.html')
-        print template.render(**arguments).encode('utf-8')
+        print(template.render(**arguments).encode('utf-8'))
 
 def href(page, args):
     return pb_db_config.index_path % {'page': page, 'args': args}
