@@ -13,7 +13,7 @@ static_path = "/static/"
 # path to the local base directory
 base_path = os.path.expanduser("~tools.pb/pb/web/")
 # path to the logging directory
-log_path = os.path.expanduser("~tools.pb/log/pb")
+log_path = os.path.expanduser("~tools.pb/logs/pb")
 # path to the database conf file
 db_conf_file = os.path.expanduser("~/replica.pb-db.cnf")
 # database

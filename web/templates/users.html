@@ -50,11 +50,19 @@
       return (node.hasChildNodes() && node.firstChild.nodeType == 1 ?
         '_' + node.firstChild.innerHTML : '~');
     else
-      return '-'+node.innerHTML;
+      return node.innerHTML;
   }
 
   $(function() {
-    $('.tablesorter').tablesorter({textExtraction: textExtractor});
+    $('.tablesorter').tablesorter({
+      textExtraction: textExtractor,
+      sortInitialOrder: "desc",
+      headers: {
+        1: {
+          sortInitialOrder: "asc"
+        }
+      }
+    });
   });
 
 {%endblock %}
