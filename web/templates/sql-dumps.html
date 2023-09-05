@@ -1,0 +1,23 @@
+{%extends "base.html" %}
+
+{%block page_title %}SQL Dumps{%endblock %}
+{%block heading %}Die letzten Snapshots{%endblock %}
+
+{%block content %}
+  <table>
+    <thead>
+      <tr>
+        <th>Datei</th>
+        <th>Größe</th>
+      </tr>
+    </thead>
+    <tbody>
+  {%for file_name, file_size in files_list: %}
+      <tr>
+        <td><a href="{{ url_for('sql_dump_file', file_name=file_name) }}">{{file_name}}</a></td>
+        <td>{{ file_size }} Byte</td>
+      </tr>
+  {%endfor %}
+    </tbody>
+  </table>
+{%endblock %}

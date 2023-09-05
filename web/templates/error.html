@@ -1,7 +1,0 @@
-{%extends "base.html" %}
-
-{%block page_title %}Fehler{%endblock %}
-
-{%block heading %}Seite nicht gefunden{%endblock %}
-<!-- Escape the output here as otherwise this is a XSS gap: https://phabricator.wikimedia.org/T288461 -->
-{%block content %}<p>Die gesuchte Seite <tt>{{ p.value |tojson }}</tt> wurde nicht gefunden.</p>{%endblock %}

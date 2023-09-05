@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG_DIR="/data/project/pb/log/pb"
+LOG_DIR="/data/project/pb/logs"
 
-find -path "$LOG_DIR/*.txt" -mtime +1 -exec rm {} \;
+find -path "$LOG_DIR/*" -mtime +31 -exec rm {} \;
 

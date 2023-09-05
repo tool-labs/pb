@@ -7,31 +7,28 @@
 {% block content %}
     <p>Herzlich willkommen auf der Datenbankseite des <em>Persönliche-Bekanntschaften</em>-Projekts! Mehr Informationen zu dem Projekt findest du auf der <a href="https://de.wikipedia.org/wiki/WP:PB" class="ext">Wikipedia-Projektseite</a>.</p>
 
-{%- set confirmations = db.get_confirmation_count(False, False) %}
-{%- set avg_per_day = db.get_confirmations_per_day(confirmations) %}
     <h2><span id="aktuelle_zahlen">Aktuelle Zahlen</span></h2>
     <ul>
         <li>
-            Momentan nehmen {{format_number(db.get_user_count(False, False))}} Benutzer
+            Momentan nehmen {{user_count}} Benutzer
             am Projekt <em>Persönliche Bekanntschaften</em> teil.
         </li>
         <li>
-            Diese haben sich untereinander insgesamt {{format_number(confirmations)}} Mal bestätigt,
-            im Schnitt rund <abbr title="{{avg_per_day}}">{{avg_per_day|round|int}}</abbr> Mal täglich.
+            Diese haben sich untereinander insgesamt {{confirmation_count}} Mal bestätigt,
+            im Schnitt rund <abbr title="{{confirmations_per_day}}">{{confirmations_per_day|round|int}}</abbr> Mal täglich.
         </li>
     </ul>
 
-{%- set confs = db.get_latest_confirmations() %}
     <h2><span id="letzte_bestaetigungen">Letzte Bestätigungen</span></h2>
     <ul>
-{%- for conf in confs %}
+{%- for conf in latest_confirmations %}
     {%- set (has_confirmed_name, was_confirmed_name, cf_comment, cf_was_deleted, cf_timestamp) = conf %}
-        <li>{{format_date(cf_timestamp)}}, {{format_time(cf_timestamp)}}: {{link('user', 'name=' + has_confirmed_name, has_confirmed_name)}} → {{link('user', 'name=' + was_confirmed_name, was_confirmed_name)}} {% if cf_comment: %}({{comment_to_html(cf_comment)}}){% endif %}</li>
+        <li>{{ cf_timestamp | format_date }}, {{ cf_timestamp | format_time }}: <a href="{{ url_for('user', user_name=has_confirmed_name) }}">{{ has_confirmed_name }}</a> → <a href="{{ url_for('user', user_name=was_confirmed_name) }}">{{ was_confirmed_name }}</a> {% if cf_comment: %}({{ cf_comment | parse_comment }}){% endif %}</li>
 {%- endfor %}
-        <li>{{link('recent_changes', '', 'Weitere neue Bestätigungen')}}</li>
-    </ul>
+</ul>
 
-{%- set data = db.fetch_stats() %}
+<p><a href="{{ url_for('recent_confirmations') }}"><i class="glyphicon glyphicon-chevron-right"></i> Weitere neue Bestätigungen</a></p>
+
 {%- set months = data['months'] %}
 {%- set year_months = data['year_months'] %}
     <h2><span id="statistik">Statistik</span></h2>
@@ -62,7 +59,7 @@
     {%- set count = conf_counts[year_month][0]|default(0) %}
     {%- set year1 = year_month[:4]|int %}
     {%- set new_year = loop.first or year_month[5:]|int == 12 %}
-            <tr {{'class="new_year"' if new_year}}>
+            <tr {{ 'class=new_year' if new_year }}>
     {%- if new_year %}
                 <td rowspan="{{months[year1]}}" class="number user">{{user_sums[year1]|sum}}</td>
     {%- endif %}

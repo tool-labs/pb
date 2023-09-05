@@ -1,54 +1,49 @@
 {% extends "base.html" %}
 
-{% set user = None %}
-{% if 'id' in field: %}
-  {% set user = db.get_user_by_id(field['id'].value) %}
-{% elif 'name' in field: %}
-  {% set user = db.get_user_by_name(field['name'].value.decode('utf8')) %}
-{% endif %}
-
 {% block page_title %}
-  {% if user == None: %}Fehler{% else: %}Teilnehmerinformationen für {% if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{% endif%}
-{% endif %}{% endblock %}
+  Teilnehmerinformationen für {% if not user['hidden']: %}<a href="https://de.wikipedia.org/wiki/Benutzer:{{ user['name'] }}">{{ user['name'] }}</a> {% else: %} einen Ex-Teilnehmer{% endif %}
+{% endblock %}
 
 {% block heading %}
-  {% if user == None: %}Fehler{% else: %}Teilnehmerinformationen für {% if user[3] == 0: %}{{ user[0] }} {% else: %} einen Ex-Teilnehmer{% endif%}
-{% endif %}{% endblock %}
+  Teilnehmerinformationen für {% if not user['hidden']: %}{{ user['name'] }} {% else: %} einen Ex-Teilnehmer{% endif %}
+{% endblock %}
 
 {% block content %}
 {% if user == None: %}
   <p>Ein Fehler ist aufgetreten: Entweder hast du keinen Benutzer angegeben oder der angegebene Benutzer existiert nicht.</p>
 {% else: %}
   <div id="wp-box">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/12px-Wikipedia-logo-v2.svg.png" /> <a href="https://de.wikipedia.org/wiki/Benutzer:{{ user[0] }}">Benutzerseite</a>, <a href="https://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user[0] }}">Diskussionsseite</a>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/12px-Wikipedia-logo-v2.svg.png" />
+    <a href="https://de.wikipedia.org/wiki/Benutzer:{{ user['name'] }}">Benutzerseite</a>,
+    <a href="https://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user['name'] }}">Diskussionsseite</a>
   </div>
 
-  {% if user[2] != None: %}
-    <p><b>Kommentar:</b> {{ user[2] }}</p>
-    {% if user[4] == 1: %}<span class="warning">{{ user[0] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>{% endif%}
+  {% if user['comment'] != None: %}
+    <p><b>Kommentar:</b> {{ user['comment'] }}</p>
   {% endif %}
+  {% if user['was_banned'] == 1: %}
+    <span class="warning">{{ user['name'] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>
+  {% endif%}
 
   <table class="toc dates">
     <tr class="participates-since">
       <th>Teilnehmer seit</th>
-      <td>{{ format_date(user[5]) }}</td>
+      <td>{{ user['participates_since'] | format_date }}</td>
     </tr>
-    {% if user[6] != None: %}
+    {% if user['verified_since'] != None: %}
     <tr class="verified-since">
       <th>Bestätigt seit</th>
-      <td>{{ format_date(user[6]) }}</td>
+      <td>{{ user['verified_since'] | format_date }}</td>
     </tr>
     {% endif %}
 {#
-    {% set block = db.user_blocked(user[1]) %}
-    {% if block != None: %}
+    {% if user_blocked_in_dewikip != None: %}
     <tr class="block">
       <th>Gesperrt bis</th>
-      <td>{{ format_date(number_to_date(block[1])) if block[1] != 'infinity' else 'unbeschränkt' }}</td>
+      <td>{{ user_blocked_in_dewikip[:8] if user_blocked_in_dewikip != 'infinity' else 'unbeschränkt' }}</td>
     </tr>
     {% endif %}
 #}
-    {% set previous_user_name = db.get_mw_last_user_name_by_name(user[0]) %}
     {% if previous_user_name != None: %}
     <tr class="previous-name">
       <th>Früherer Benutzername</th>
@@ -60,11 +55,11 @@
   <table class="toc">
     <tr class="taken">
       <th>&darr; <a href="#taken" class="down">Erhaltene Bestätigungen</a></th>
-      <td>{{ db.get_cf_count_by_confirmed(user[1], False) }}</td>
+      <td>{{ confirmations_received | length }}</td>
     </tr>
     <tr class="given">
       <th>&darr; <a href="#given" class="down">Vergebene Bestätigungen</a></th>
-      <td>{{ db.get_cf_count_by_user(user[1], False) }}</td>
+      <td>{{ confirmations_given | length }}</td>
     </tr>
   </table>
 
@@ -89,25 +84,28 @@
       </tr>
     </thead>
     <tbody>
-    {% set confs = (db.get_confirmations_by_user(user[1], False) if case == 0 else db.get_confirmations_by_confirmed(user[1], False)) %}
+    {% set confs = (confirmations_given if case == 0 else confirmations_received) %}
     {% for conf in confs: %}
       {% set (cf_user_name, cf_user_id, cf_date, cf_comment, cf_was_deleted, cf_user_is_hidden, cf_reconfirmed) = conf %}
       <tr class="{% if not cf_reconfirmed: %}not-reconf{% endif %} {% if cf_was_deleted==1: %}cf_deleted{% endif%}">
         <td class="cf-detail">
-      {% if not cf_user_is_hidden: %}
-        {{ link('confirmation', 'user_one=' + str(user[1] if case == 0 else cf_user_id) + '&amp;user_two=' + str(cf_user_id if case == 0 else user[1]), '.') }}
-      {% endif%}
+        {% if not cf_user_is_hidden: %}
+          <a href="{{ url_for('confirmation_users', user_id_one=(user['id'] if case == 0 else cf_user_id), user_id_two=(cf_user_id if case == 0 else user['id']) ) }}">&check;</a>
+        {% endif %}
         </td>
-        <td class="cf-user">{{ link('user', 'id=' + str(cf_user_id), cf_user_name) if not cf_user_is_hidden else 'Ex-Teilnehmer' }}</td>
-        <td class="cf-date">{{ format_date(cf_date) }}</td>
-        <td class="cf-comment">{{ comment_to_html(cf_comment) }}</td>
+        {% if not cf_user_is_hidden %}
+          <td class="cf-user"><a href="{{ url_for('user', user_name=cf_user_name) }}">{{cf_user_name}}</a></td>
+        {% else %}
+          <td class="cf-user">Ex-Teilnehmer</td>
+        {% endif %}
+        <td class="cf-date">{{ cf_date | format_date }}</td>
+        <td class="cf-comment">{{ cf_comment | parse_comment }}</td>
         <td class="cf-reconf">{{ 'ja' if cf_reconfirmed else 'nein' }}</td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
   {% endfor %}
-
 {% endif %}
 {% endblock %}
 

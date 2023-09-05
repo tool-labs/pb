@@ -1,41 +1,28 @@
 {%extends "base.html" %}
 
-{%set user_one = None %}
-{%set user_two = None %}
-{%if 'user_one' in field: %}
-  {%set user_one = db.get_user_by_id(field['user_one'].value) %}
-{%endif %}
-{%if 'user_two' in field: %}
-  {%set user_two = db.get_user_by_id(field['user_two'].value) %}
-{%endif %}
-
 {%block page_title %}Bestätigungs-Details{%endblock %}
 
-{%block heading %}{%if user_one == None or user_two == None: %}Fehler{%else: %}Details für {{ link('user', 'id=' + str(user_one[1]), user_one[0]) }} und {{ link('user', 'id=' + str(user_two[1]), user_two[0]) }}{%endif %}{%endblock %}
+{%block heading %}{%if user_one == None or user_two == None: %}Fehler{%else: %}
+  Details für <a href="{{ url_for('user', user_name=user_one['user_name']) }}">{{user_one['user_name']}}</a>
+  und <a href="{{ url_for('user', user_name=user_two['user_name']) }}">{{user_two['user_name']}}</a>
+{%endif %}{%endblock %}
 
 {%block content %}
-{%if user_one == None or user_two == None: %}
+{% if user_one == None or user_two == None: %}
   <p>Ein Fehler ist aufgetreten: Entweder hast du nicht genug Informationen angegeben, oder mindestens einer der beiden angegebenen Benutzer existiert nicht.</p>
-{%else: %}
-  {%set cf_one_two = db.has_confirmed(user_one[1], user_two[1]) %}
-  {%if cf_one_two: %}
-    {%set cf_one = db.get_confirmation(user_one[1], user_two[1]) %}
-  {%endif %}
-  {%set cf_two_one = db.has_confirmed(user_two[1], user_one[1]) %}
-  {%if cf_one_two: %}
-    {%set cf_two = db.get_confirmation(user_two[1], user_one[1]) %}
+{% else: %}
+  {%if cf_one_two != None: %}
+    <p>{{ user_one['user_name'] }} hat {{ user_two['user_name'] }} am {{ cf_one_two['cf_timestamp'] | format_date }} um {{ cf_one_two['cf_timestamp'] | format_time }} Uhr bestätigt
+      {%if cf_one_two['cf_comment']: %}: {{ cf_one_two['cf_comment'] }}{%else %}.{%endif %}</p>
+  {%else %}
+    <p>{{ user_one['user_name'] }} hat {{ user_two['user_name'] }} noch nicht bestätigt.</p>
   {%endif %}
 
-  {%if cf_one_two: %}
-    <p>{{ user_one[0] }} hat {{ user_two[0] }} am {{ format_date(cf_one[0]) }} um {{ format_time(cf_one[0]) }} Uhr bestätigt{%if cf_one[1] != None and not empty(cf_one[1]): %}: {{ cf_one[1] }}{%else %}.{%endif %}</p>
+  {%if cf_two_one != None: %}
+  <p>{{ user_two['user_name'] }} hat {{ user_one['user_name'] }} am {{ cf_two_one['cf_timestamp'] | format_date }} um {{ cf_two_one['cf_timestamp'] | format_time }} Uhr bestätigt
+    {%if cf_two_one['cf_comment']: %}: {{ cf_two_one['cf_comment'] }}{%else %}.{%endif %}</p>
   {%else %}
-    <p>{{ user_one[0] }} hat {{ user_two[0] }} noch nicht bestätigt.</p>
-  {%endif %}
-
-  {%if cf_two_one: %}
-    <p>{{ user_two[0] }} hat {{ user_one[0] }} am {{ format_date(cf_two[0]) }} um {{ format_time(cf_two[0]) }} Uhr bestätigt{%if cf_two[1] != None and not empty(cf_two[1]): %}: {{ cf_two[1] }}{%else %}.{%endif %}</p>
-  {%else %}
-    <p>{{ user_two[0] }} hat {{ user_one[0] }} noch nicht bestätigt.</p>
+    <p>{{ user_two['user_name'] }} hat {{ user_one['user_name'] }} noch nicht bestätigt.</p>
   {%endif %}
 {%endif %}
 {%endblock %}

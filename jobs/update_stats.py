@@ -1,14 +1,12 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
-import os.path, sys
-sys.path.append('/data/project/pb/pb/web/dynamic/')
-import pb_db_config
-sys.path.append(os.path.abspath(pb_db_config.base_path + '../pyapi'))
-import wppb
+import sys
+sys.path.append('/data/project/pb/www/python/src')
+from api import Database
 import logging
 
 logger = logging.getLogger('pb')
-db = wppb.Database(database=pb_db_config.db_name)
+db = Database()
 
 def setup_logger():
 	logFormatter = logging.Formatter('%(asctime)s - [%(levelname)-5.5s] - %(message)s')	
