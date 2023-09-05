@@ -7,7 +7,9 @@ This class provides all necessary functionality for accessing WP:PB’s database
 # https://pypi.org/project/PyMySQL/#installation
 import pymysql.cursors
 from datetime import date
-import re
+import re, os.path
+import config
+import configparser
 import logging, logging.config
 logger = logging.getLogger('pb')
 
@@ -22,7 +24,7 @@ def setup_logger():
 	logging.getLogger().addHandler(consoleHandler)
 setup_logger()
 
-class WPPBException:
+class WPPBException(BaseException):
     """
     Exception thrown by WP:PB.
     """
@@ -44,34 +46,23 @@ class Database:
     This class provides access to the database.
     """
 
-    def __init__(self, user_name=None, password=None, host=None,
-		    database=None, wp_database='dewiki_p'):
-        """
-        Constructor.
-
-        *wp_database* may be `None`. Otherwise it should be the wiki’s database
-        name, e. g. 'dewiki_p'.
-        """
+    def __init__(self):
+        pb_database=config.db_name
+        wp_replica_db='dewiki_p'
         # try to read the replica.pb-db.cnf
-        import configparser
-        import os.path
-        import pb_db_config
-
-        p = pb_db_config.db_conf_file
+        p = config.db_conf_file
         if os.path.exists(p):
             parser = configparser.ConfigParser()
             parser.readfp(open(p))
             if parser.has_section('client'):
-                if parser.has_option('client', 'user') and user_name is None:
+                if parser.has_option('client', 'user'):
                     user_name = parser.get('client', 'user').strip('"\'')
-                if (parser.has_option('client', 'password')
-                    and password is None):
+                if parser.has_option('client', 'password'):
                     password = parser.get('client', 'password').strip('"\'')
-                if parser.has_option('client', 'host') and host is None:
-                    host = parser.get('client', 'host').strip('"\'')
+                if parser.has_option('client', 'host'):
+                    wp_host = parser.get('client', 'host').strip('"\'')
 
-
-        if user_name is None or password is None or host is None:
+        if user_name is None or password is None or wp_host is None:
             raise WPPBException('You did not specify enough information on' +
                                 ' the database connection. The ~/replica.pb-db.cnf ' +
                                 'file did not contain the required ' +
@@ -80,15 +71,15 @@ class Database:
         try:
             # Workaround for the outage of c2.labsdb:  the project database is
             # moved to tools-db.  ireas/2016-02-16
-            self.conn = pymysql.connections.Connection(host='tools-db', user=user_name, password=password, db=database,
+            self.conn = pymysql.connections.Connection(host='tools.db.svc.wikimedia.cloud', user=user_name, password=password, db=pb_database,
                            charset='utf8', use_unicode=True, defer_connect=True)
-            self.wp_conn = pymysql.connections.Connection(host=host, user=user_name, password=password, db=wp_database,
+            self.wp_conn = pymysql.connections.Connection(host=wp_host, user=user_name, password=password, db=wp_replica_db,
                            charset='utf8', use_unicode=True, defer_connect=True)
             self.conn.ping()  # reconnecting mysql, https://stackoverflow.com/a/61152360
             self.wp_conn.ping()  # reconnecting mysql
         except pymysql.DatabaseError as e:
-            raise WPPBException('You specified wrong database connection ' +
-                                'data. Error message: ' + unicode(e))
+            raise WPPBException('You specified a wrong database connection ' +
+                                'data. Error message: ' + str(e))
 
 
     def get_all_users(self, show_hidden_users=True, show_banned_users=False):
@@ -134,9 +125,14 @@ class Database:
             ;''', (id,))
             return curs.fetchone()
 
+    def get_user_dict_by_name(self, name):
+        user = self.get_user_by_name(name)
+        if user is None: return None
+        return {'name': user[0], 'id': user[1], 'comment': user[2], 'hidden': user[3], 'was_banned': user[4], 'participates_since': user[5], 'verified_since': user[6]}
+    
     def get_user_by_name(self, name):
         """
-        Returns the user *name*.
+        Returns the user by *name*.
         """
         with self.conn.cursor() as curs:
             curs.execute('''
@@ -175,6 +171,7 @@ class Database:
             ;''', (count_deleted_cf, count_hidden_users, count_hidden_users,))
             return curs.fetchone()[0]
 
+    # REMOVE?
     def get_cf_count_by_user(self, user_id, count_hidden_users=True):
         """
         Returns the count of confirmations by the user with the id *user_id*.
@@ -186,20 +183,6 @@ class Database:
                 LEFT JOIN `user` AS taking ON taking.user_id = cf_confirmed_user_id
                 WHERE (`cf_user_id` = %s) AND
                       (%s OR taking.`user_is_hidden` = 0)
-            ;''', (user_id, count_hidden_users))
-            return curs.fetchone()[0]
-
-    def get_cf_count_by_confirmed(self, user_id, count_hidden_users=True):
-        """
-        Returns the count of confirmations of *user_id*.
-        """
-        with self.conn.cursor() as curs:
-            curs.execute('''
-            SELECT COUNT(1)
-                FROM `confirmation`
-                LEFT JOIN `user` AS giving ON giving.user_id = cf_user_id
-                WHERE (`cf_confirmed_user_id` = %s) AND
-                      (%s OR giving.`user_is_hidden` = 0)
             ;''', (user_id, count_hidden_users))
             return curs.fetchone()[0]
 
@@ -260,79 +243,26 @@ class Database:
             ;''')
             return curs.fetchall()
 
-    def get_yesterdays_confirmations_sorted_by_confirmed(self, day=1, delta=1):
+    def get_latest_confirmations(self, page=1, count=50):
         """
-        Returns a list of all confirmations were made yesterday. This is
-        used by the bot for informing the user about the confirmations he got.
-        Banned and hidden users are NOT shown.
+            Returns a paginated list of all confirmations with `count` entries.
         """
         with self.conn.cursor() as curs:
             curs.execute('''
-               SELECT
-                  was_confirmed_t.`user_name` AS was_confirmed_name,
-                  has_confirmed_t.`user_name` AS has_confirmed_name,
-                  `cf_timestamp`
-               FROM `confirmation`
-               JOIN `user` AS was_confirmed_t
-                 ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
-               JOIN `user` AS has_confirmed_t
-                 ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
-               WHERE `cf_timestamp` > DATE_ADD(CURDATE(), INTERVAL - %s DAY) AND `cf_timestamp` < DATE_ADD(CURDATE(), INTERVAL -%s DAY) AND `cf_was_deleted`=0
-               ORDER BY was_confirmed_name
-               ;''', (day,day-delta))
-            return curs.fetchall()
-
-    def get_latest_confirmations(self, limit=8, days=30):
-        """
-        Returns a list of all confirmations were made in the last months.
-		Banned and hidden users are shown.
-        """
-        with self.conn.cursor() as curs:
-            curs.execute('''
-            SELECT
+                SELECT
                   has_confirmed_t.`user_name` AS has_confirmed_name,
                   was_confirmed_t.`user_name` AS was_confirmed_name,
                   `cf_comment`,`cf_was_deleted`,`cf_timestamp`
-               FROM `confirmation`
-               JOIN `user` AS was_confirmed_t
-                 ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
-               JOIN `user` AS has_confirmed_t
-                 ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
-               WHERE `cf_timestamp` > DATE_ADD(NOW(), INTERVAL - %s DAY)
-               ORDER BY `cf_timestamp` DESC LIMIT %s
-            ;''', (days,limit))
-            return curs.fetchall()
-
-
-    def get_user_list_with_confirmations(self):
-        """
-        Returns an overview over all users, i.e. user list + number of confirmations this user got.
-		Banned and hidden users are NOT shown, but we do not count the deleted confirmations here.
-        """
-        with self.conn.cursor() as curs:
-            curs.execute('''
-            SELECT `user_name`, COUNT(`cf_user_id`), `user_participates_since`
-                FROM `user`
-                LEFT JOIN `confirmation`
-                    ON `cf_was_deleted` = 0 AND `user_id` = `cf_confirmed_user_id`
-                WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0
-                GROUP BY `user_name`
-                ORDER BY `user_name` ASC
-            ;''')
-            return curs.fetchall()
-
-    def has_confirmed(self, user_id, confirmed_id):
-        """
-        Returns true if *user_id* confirmed *confirmed_id*.
-        """
-        with self.conn.cursor() as curs:
-            curs.execute('''
-            SELECT COUNT(1)
                 FROM `confirmation`
-                WHERE `cf_user_id` = %s
-                    AND `cf_confirmed_user_id` = %s
-            ;''', (user_id,confirmed_id))
-            return bool(curs.fetchone()[0])
+                JOIN `user` AS was_confirmed_t
+                 ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
+                JOIN `user` AS has_confirmed_t
+                 ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
+                WHERE cf_was_deleted = 0
+                ORDER BY cf_timestamp DESC
+                LIMIT %s OFFSET %s
+            ''', (count, (page - 1)*count))
+            return curs.fetchall()
 
     def get_confirmation(self, user_id, confirmed_id):
         """
@@ -346,65 +276,6 @@ class Database:
                     AND `cf_confirmed_user_id` = %s
             ;''', (user_id,confirmed_id))
             return curs.fetchone()
-
-    def add_user(self, user_name, part_tstamp, comment=None):
-        """
-        Adds a user to the database with given timestamp of participation. Returns the success as a boolean value.
-        comment is not used here, but is useful for admin comments like "X is a sock".
-        """
-        # check if the user exists (MW database)
-        user_id = self.get_mw_user_id(user_name)
-        import re
-        if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d", part_tstamp) == None:
-            return False
-        if len(user_name) == 0 or user_id == None:
-            # user does not exist
-            return False
-        else:
-            # user does exist
-            with self.conn.cursor() as curs:
-                curs.execute('''
-                INSERT INTO `user` (`user_id`, `user_name`, `user_participates_since`, `user_last_update`)
-                    VALUES (%s,%s,%s,%s)
-                ;''', (user_id,user_name,part_tstamp,part_tstamp))
-                self.conn.commit()
-                return True
-
-    def add_confirmation(self, user_id, confirmed_id, comment, timestamp):
-        """
-        Adds a new confirmation to the database: *user_id* confirmes
-        *confirmed_id* with the comment *comment* at *timestamp*.
-        If *confirmed_id* gets his third confirmation, he/she
-        is 'verified' and *user_verified_since* will be set to
-        *timestamp*.
-        Returns the success as a boolean value.
-
-        *timestamp* has to be provided as 'YYYY-MM-DD hh:mm:ss'.
-        """
-        if (self.get_user_by_id(user_id) == None or
-            self.get_user_by_id(confirmed_id) == None):
-            return False
-        if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d", timestamp) == None:
-            return False
-        with self.conn.cursor() as curs:
-            curs.execute('''
-            INSERT INTO `confirmation` (
-                `cf_user_id`,
-                `cf_confirmed_user_id`,
-                `cf_timestamp`,
-                `cf_comment`
-            )
-                VALUES (%s,%s,%s,%s)
-            ;''', (user_id,confirmed_id,timestamp,comment))
-            if (len(self.get_confirmations_by_confirmed(confirmed_id))>=3):
-                curs.execute('''
-                UPDATE `user` SET
-                     `user_verified_since` = %s
-                WHERE `user`.`user_id` = %s AND `user_verified_since` IS NULL LIMIT 1
-                ;''', (timestamp, confirmed_id,))
-                self.touch_user(confirmed_id, timestamp)
-            self.conn.commit()
-        return True
 
     def get_mw_user_id(self, user_name):
         """
@@ -477,10 +348,7 @@ class Database:
         """
         with self.wp_conn.cursor() as curs:
             curs.execute('''
-            SELECT `ipb_reason`, `ipb_expiry`
-                FROM `ipblocks`
-                WHERE `ipb_user` = %s
-                LIMIT 1
+                SELECT `ipb_expiry` FROM `ipblocks` WHERE `ipb_address` = %s LIMIT 1
             ;''', (user_id,))
             row = curs.fetchone()
             return row
@@ -601,3 +469,10 @@ class Database:
         finally:
             curs.close()
             self.conn.close()
+
+    def close_connections(self):
+        """
+            This method is used to explictly close a connection. Used by the bot!
+        """
+        self.conn.close()
+        self.wp_conn.close()

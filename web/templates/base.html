@@ -2,17 +2,19 @@
 <html>
     <head>
         <title>{% block title %}{% block page_title %}Startseite{% endblock %} | Wikipedia:Persönliche Bekanntschaften | Wikimedia Toolforge{% endblock %}</title>
-        <link rel="stylesheet" type="text/css" href="{{ config.static_path }}main.css" />
-        <script src="{{ config.static_path }}jquery-3.3.1.min.js" type="text/javascript"></script>
-        <script src="{{ config.static_path }}jquery.tablesorter.js" type="text/javascript"></script>
+        
+        <meta charset="utf-8" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}" />
+        <script src="{{ url_for('static', filename='jquery-3.3.1.min.js') }}" type="text/javascript"></script>
+        <script src="{{ url_for('static', filename='jquery.tablesorter.js') }}" type="text/javascript"></script>
         <script type="text/javascript">
 {% block javascript %}{% endblock %}
+{% block css %}{% endblock %}
         </script>
-        <meta charset="utf-8" />
         <meta name="robots" content="noindex,nofollow" />
     </head>
     <body>
-        <div id="navi">{% block navi %}<p>{{ link('index', '', 'Startseite') }} | {{ link('users', '', 'Alle Teilnehmer') }} | {{ link('about', '', 'Impressum') }}</p>{% endblock %}</div>
+        <div id="navi"><p><a href="{{ url_for('index') }}">Startseite</a> | <a href="{{ url_for('users') }}">Alle Teilnehmer</a> | <a href="{{ url_for('about') }}">Impressum</a></p></div>
         <h1>{% block heading %}Wikipedia:Persönliche Bekanntschaften{% endblock %}</h1>
 {%- block content %}{% endblock %}
         <div id="footer">

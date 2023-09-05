@@ -4,19 +4,45 @@
 {%block heading    %}Neueste Bestätigungen{%endblock %}
 
 {%block content %}
-{%set count = 50 %}
-{%if 'count' in field: %}
-    {%set given_count = int(field['count'].value) %}
-    {%if given_count > 0 and given_count < 1000: %}
-        {%set count = given_count %}
-    {%endif %}
-{%endif %}
-{%set confs = db.get_latest_confirmations(limit=count) %}
-    <p>Hier findest du die letzten {{ format_number(count) }} Bestätigungen der letzten 30 Tage.</p>
-    <ul>
-{%for conf in confs: %}
-    {%set (has_confirmed_name,was_confirmed_name,cf_comment,cf_was_deleted,cf_timestamp) = conf %}
-        <li>{{ format_date(cf_timestamp) }}, {{ format_time(cf_timestamp) }}: {{ link('user', 'name=' + has_confirmed_name, has_confirmed_name) }} → {{ link('user', 'name=' + was_confirmed_name, was_confirmed_name) }} {%if cf_comment:%}({{ comment_to_html(cf_comment) }}){%endif%}</li>
-{%endfor %}
-    </ul>
+{% macro print_pager() -%}
+  <div class="pager">
+    <span class="previous {{ 'hidden' if page == 1 }}"><a href="{{ url_for('recent_confirmations', page=page - 1) }}">← Neuer</a> |</span>
+    <span class="next"><a href="{{ url_for('recent_confirmations', page=page + 1) }}">Älter →</a></span>
+  </div>
+{%- endmacro %}
+
+{{ print_pager() }}
+
+  <table class="recent tablesorter">
+    <colgroup>
+      <col width="20%" />
+      <col width="20%" />
+      <col width="20%" />
+      <col width="40%" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Datum, Uhrzeit</th>
+        <th class="given">Bestätigender</th>
+        <th class="taken">Bestätigter</th>
+        <th>Kommentar</th>
+      </tr>
+    </thead>
+    {% for user_has_confirmed, user_was_confirmed, cf_comment, cf_was_deleted, cf_timestamp in confirmations: %}
+    <tr>
+      <td>{{ cf_timestamp | format_date }}, {{ cf_timestamp | format_time }}</td>
+      <td class="given"><a href="{{ url_for('user', user_name=user_has_confirmed) }}">{{ user_has_confirmed }}</a></td>
+      <td class="taken"><a href="{{ url_for('user', user_name=user_was_confirmed) }}">{{ user_was_confirmed }}</a></td>
+      <td>{{ cf_comment }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+{{ print_pager() }}
+{%endblock %}
+
+{%block javascript %}
+  $(function() {
+    $('.tablesorter').tablesorter();
+  });
 {%endblock %}

@@ -19,7 +19,7 @@
   filelog-stderr: logs/remove-old-logs.err
 - name: create-database-dump
   command: sh ~/pb/jobs/create-database-dump.sh
-  image: bullseye
+  image: mariadb
   no-filelog: false
   schedule: "0    0   *   *   *"
   emails: onfailure

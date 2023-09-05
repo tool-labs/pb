@@ -1,14 +1,10 @@
 {%extends "base.html" %}
 
 {%block page_title %}Alle Teilnehmer{%endblock %}
-
 {%block heading %}Alle Teilnehmer{%endblock %}
 
 {%block content %}
-
-{%set users = db.get_all_users(False) %}
   <p>Die folgenden {{users|length}} Benutzer nehmen zurzeit am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
-
   <table class="users tablesorter">
     <thead>
       <tr>
@@ -20,22 +16,15 @@
       </tr>
     </thead>
     <tbody>
-
-{%for ex in range(0, 2): %}
-  {%for u in users: %}
-    {%if u[3] == ex: %}
-
+  {%for user_name, user_id, comment, is_hidden, was_banned, participates_since, verified_since, given_cf, taken_cf in users: %}
       <tr>
-        <td class="cf-user">{{ link('user', 'id='+str(u[1]), u[0]) if ex == 0 else 'Ex-Teilnehmer' }}</td>
-        <td class="taken">{{ u[8] if u[8] != None else 0 }}</td>
-        <td class="given">{{ u[7] if u[7] != None else 0 }}</td>
-        <td class="cf-date">{{ format_date(u[5]) }}</td>
-        <td class="cf-date">{{ format_date(u[6]) if u[6] != None }}</td>
+        <td class="cf-user">{% if is_hidden == 0: %}<a href="{{ url_for('user', user_name=user_name) }}">{{user_name}}</a>{% else %}Ex-Teilnehmer{% endif %}</td>
+        <td class="taken">{{ taken_cf if taken_cf != None else 0 }}</td>
+        <td class="given">{{ given_cf if given_cf != None else 0 }}</td>
+        <td class="cf-date">{{ participates_since | format_date }}</td>
+        <td class="cf-date">{{ (verified_since | format_date) if verified_since != None }}</td>
       </tr>
-
-    {%endif %}
   {%endfor %}
-{%endfor %}
 
     </tbody>
   </table>
