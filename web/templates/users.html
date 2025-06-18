@@ -1,18 +1,18 @@
 {%extends "base.html" %}
 
 {%block page_title %}Alle Teilnehmer{%endblock %}
-{%block heading %}Alle Teilnehmer{%endblock %}
+{%block heading    %}Alle Teilnehmer{%endblock %}
 
 {%block content %}
   <p>Die folgenden {{users|length}} Benutzer nehmen zurzeit am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
   <table class="users tablesorter">
     <thead>
       <tr>
-        <th>Benutzer</th>
+        <th>Name</th>
         <th class="taken">Erhaltene<br/>Bestätigungen</th>
         <th class="given">Vergebene<br/>Bestätigungen</th>
-        <th>Teilnehmer seit</th>
-        <th>Bestätigt seit</th>
+        <th>Nimmt teil seit</th>
+        <th>Ist bestätigt seit</th>
       </tr>
     </thead>
     <tbody>
