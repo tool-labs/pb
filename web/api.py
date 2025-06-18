@@ -347,9 +347,8 @@ class Database:
         `None` as return value means that the user is not blocked.
         """
         with self.wp_conn.cursor() as curs:
-            curs.execute('''
-                SELECT `ipb_expiry` FROM `ipblocks` WHERE `ipb_address` = %s LIMIT 1
-            ;''', (user_id,))
+            curs.execute('''SELECT 1 FROM block_target JOIN user ON user_id = bt_user
+                WHERE user_name = %s LIMIT 1;''', (user_id,))
             row = curs.fetchone()
             return row
 
