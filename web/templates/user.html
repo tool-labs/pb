@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_title %}
-  Teilnehmerinformationen für {% if not user['hidden']: %}<a href="https://de.wikipedia.org/wiki/Benutzer:{{ user['name'] }}">{{ user['name'] }}</a> {% else: %} einen Ex-Teilnehmer{% endif %}
+  Teilnehmerinformationen für {% if not user['hidden']: %}{{ user['name'] }} {% else: %} einen Ex-Teilnehmer{% endif %}
 {% endblock %}
 
 {% block heading %}
@@ -27,12 +27,12 @@
 
   <table class="toc dates">
     <tr class="participates-since">
-      <th>Teilnehmer seit</th>
+      <th>Nimmt teil seit</th>
       <td>{{ user['participates_since'] | format_date }}</td>
     </tr>
     {% if user['verified_since'] != None: %}
     <tr class="verified-since">
-      <th>Bestätigt seit</th>
+      <th>Ist bestätigt seit</th>
       <td>{{ user['verified_since'] | format_date }}</td>
     </tr>
     {% endif %}
@@ -77,7 +77,7 @@
     <thead>
       <tr>
         <th></th>
-        <th>{{ 'An' if case == 0 else 'Von' }} Benutzer</th>
+        <th>{{ 'An' if case == 0 else 'Von' }}</th>
         <th>Datum</th>
         <th>Kommentar</th>
         <th>Rückbestätigt?</th>
@@ -93,11 +93,13 @@
           <a href="{{ url_for('confirmation_users', user_id_one=(user['id'] if case == 0 else cf_user_id), user_id_two=(cf_user_id if case == 0 else user['id']) ) }}">&check;</a>
         {% endif %}
         </td>
+        <td class="cf-user">
         {% if not cf_user_is_hidden %}
-          <td class="cf-user"><a href="{{ url_for('user', user_name=cf_user_name) }}">{{cf_user_name}}</a></td>
+          <a href="{{ url_for('user', user_name=cf_user_name) }}">{{cf_user_name}}</a>
         {% else %}
-          <td class="cf-user">Ex-Teilnehmer</td>
+          Ex-Teilnehmer
         {% endif %}
+        </td>
         <td class="cf-date">{{ cf_date | format_date }}</td>
         <td class="cf-comment">{{ cf_comment | parse_comment }}</td>
         <td class="cf-reconf">{{ 'ja' if cf_reconfirmed else 'nein' }}</td>

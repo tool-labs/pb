@@ -1,8 +1,8 @@
-body { background-color: white; color: black; margin: 20px auto; width: 800px; }
+body { background-color: white; color: black; margin: 20px auto; position: relative; width: 800px; }
 h1 { border-bottom: 1px solid black; text-align: center; margin-top: 0px; }
 h2 { border-bottom: 1px solid black; }
 h1 span.h1-prefix { color: grey; }
-div#navi { /* font-size: 0.8em; */ color: grey; }
+div#navi { /* font-size: 0.8em; */ color: grey; margin-bottom: 16px; }
 div#footer { border-top: 1px solid grey; font-size: 0.8em; color: grey; margin-top: 2em; }
 div#footer a { color: grey; text-decoration: underline; }
 
@@ -103,7 +103,7 @@ th.headerSortUp, th.headerSortDown { background-color: #aaa; }
 th.headerSortUp { background-image: url('sort_up.gif'); }
 th.headerSortDown { background-image: url('sort_down.gif'); }
 
-div#wp-box { float: right; height: 0; position: relative; text-align: right; top: -6em; width: 50%; }
+div#wp-box { position: absolute; right: 0; top: 0; }
 
 div.pager { margin: 1em 0; text-align: center; }
 table.recent tr:hover td { background-color: #ffd; }
