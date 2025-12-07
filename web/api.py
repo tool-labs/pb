@@ -69,10 +69,8 @@ class Database:
                                 'information.')
 
         try:
-            # Workaround for the outage of c2.labsdb:  the project database is
-            # moved to tools-db.  ireas/2016-02-16
             self.conn = pymysql.connections.Connection(host='tools.db.svc.wikimedia.cloud', user=user_name, password=password, db=pb_database,
-                           charset='utf8', use_unicode=True, defer_connect=True)
+                           charset='utf8mb4', use_unicode=True, defer_connect=True)
             self.wp_conn = pymysql.connections.Connection(host=wp_host, user=user_name, password=password, db=wp_replica_db,
                            charset='utf8', use_unicode=True, defer_connect=True)
             self.conn.ping()  # reconnecting mysql, https://stackoverflow.com/a/61152360
