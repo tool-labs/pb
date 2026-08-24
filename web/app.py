@@ -50,7 +50,8 @@ def format_boolean(boolean):
 
 @app.template_filter('parse_comment')
 def format_comment(comment):
-    p = re.compile('\[\[ ( [^}]* ) \]\]', re.VERBOSE)
+    comment = comment or ''
+    p = re.compile(r'\[\[ ( [^}]* ) \]\]', re.VERBOSE)
     r = r'<a href="https://de.wikipedia.org/wiki/\1">[[\1]]</a>'
     return p.sub(r, comment)
 
@@ -99,7 +100,7 @@ def confirmation_users(user_id_one, user_id_two):
     cf_one_two = {'cf_timestamp': cf12[0], 'cf_comment': cf12[1]} if cf12 is not None else None
     cf21 = flask.g.db.get_confirmation(user_id_two, user_id_one)
     cf_two_one = {'cf_timestamp': cf21[0], 'cf_comment': cf21[1]} if cf21 is not None else None
-    
+
     return render_template('confirmation.html', user_one=user_one, user_two=user_two,
                            cf_one_two=cf_one_two, cf_two_one=cf_two_one)
 
