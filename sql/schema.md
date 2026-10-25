@@ -47,6 +47,7 @@ There is no primary key, only the two unique keys (same as in production).
 
 Primary key `(cf_user_id, cf_confirmed_user_id)`: one confirmation per direction. A mutual
 acquaintance consists of two rows ("Rückbestätigung").
+Index `cf_timestamp` for the "latest confirmations" lists on the start page and `/recent`.
 
 ### `stats_confirmations_by_month`: cache for the main page
 
@@ -123,6 +124,7 @@ CREATE TABLE `confirmation` (
   PRIMARY KEY (`cf_user_id`,`cf_confirmed_user_id`),
   KEY `cf_confirmed_user_id` (`cf_confirmed_user_id`),
   KEY `cf_user_id` (`cf_user_id`),
+  KEY `cf_timestamp` (`cf_timestamp`),
   CONSTRAINT `confirmation_ibfk_1` FOREIGN KEY (`cf_user_id`) REFERENCES `user` (`user_id`),
   CONSTRAINT `confirmation_ibfk_2` FOREIGN KEY (`cf_confirmed_user_id`) REFERENCES `user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

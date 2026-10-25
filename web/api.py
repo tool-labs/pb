@@ -262,9 +262,10 @@ class Database:
                   was_confirmed_t.`user_name` AS was_confirmed_name,
                   `cf_comment`,`cf_was_deleted`,`cf_timestamp`
                 FROM `confirmation`
-                JOIN `user` AS was_confirmed_t
+                -- STRAIGHT_JOIN: otherwise MariaDB starts with `user` and sorts all confirmations (0.45 s instead of 0.05 s)
+                STRAIGHT_JOIN `user` AS was_confirmed_t
                  ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
-                JOIN `user` AS has_confirmed_t
+                STRAIGHT_JOIN `user` AS has_confirmed_t
                  ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
                 WHERE cf_was_deleted = 0
                 ORDER BY cf_timestamp DESC
