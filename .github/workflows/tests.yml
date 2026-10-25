@@ -1,0 +1,66 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Python ${{ matrix.python }}, ${{ matrix.dependencies }} dependencies
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11']   # Toolforge image python3.11
+        # production: the versions deployed on Toolforge (tests/constraints-production.txt)
+        # latest: what a fresh `pip install -r web/requirements.txt` gives today
+        dependencies: [production, latest]
+
+    services:
+      mariadb:
+        # same major version and defaults as ToolsDB
+        # (explicit_defaults_for_timestamp=OFF, STRICT_TRANS_TABLES)
+        image: mariadb:10.6
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            web/requirements.txt
+            tests/requirements.txt
+            tests/constraints-production.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ "${{ matrix.dependencies }}" = production ]; then
+            pip install -r web/requirements.txt -r tests/requirements.txt -c tests/constraints-production.txt
+          else
+            pip install -r web/requirements.txt -r tests/requirements.txt
+          fi
+          pip list
+
+      - name: Unit tests
+        run: python -m pytest tests/unit -v
+
+      - name: System tests (MariaDB + web app)
+        env:
+          PB_TEST_DB_HOST: 127.0.0.1
+          PB_TEST_DB_PORT: 3306
+          PB_TEST_DB_USER: root
+          PB_TEST_DB_PASSWORD: root
+        run: python -m pytest tests/system -v
