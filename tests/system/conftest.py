@@ -1,5 +1,5 @@
 """
-System tests: real MariaDB server, real schema (sql/scheme.sql), data written
+System tests: real MariaDB server, real schema (sql/schema.md), data written
 through the bot API (web/bot_api.py) and the web app running as its own
 HTTP server process.
 
@@ -23,7 +23,7 @@ from pathlib import Path
 import pymysql
 import pytest
 
-from tests.conftest import REPO_DIR, WEB_DIR
+from tests.conftest import WEB_DIR, schema_sql
 
 DB_HOST = os.environ.get('PB_TEST_DB_HOST')
 DB_PORT = int(os.environ.get('PB_TEST_DB_PORT', '3306'))
@@ -32,7 +32,6 @@ DB_PASSWORD = os.environ.get('PB_TEST_DB_PASSWORD', '')
 DB_NAME = os.environ.get('PB_TEST_DB_NAME', 'pb_systemtest')
 REPLICA_DB_NAME = os.environ.get('PB_TEST_REPLICA_DB_NAME', 'dewiki_systemtest')
 
-SCHEMA_FILE = REPO_DIR / 'sql' / 'scheme.sql'
 REPLICA_SCHEMA_FILE = Path(__file__).with_name('replica_schema.sql')
 
 # MediaWiki user ids of the test users (the pb database reuses them)
@@ -54,8 +53,8 @@ def connect(database=None):
                            database=database, charset='utf8mb4', autocommit=True)
 
 
-def run_sql_file(conn, path):
-    sql = '\n'.join(line for line in Path(path).read_text().splitlines()
+def run_sql(conn, sql):
+    sql = '\n'.join(line for line in sql.splitlines()
                     if not line.lstrip().startswith('--'))
     with conn.cursor() as curs:
         for statement in re.split(r';\s*(?:\n|$)', sql):
@@ -159,12 +158,12 @@ def replica_sql(seeded):
 
 def reset_databases():
     conn = connect(DB_NAME)
-    run_sql_file(conn, SCHEMA_FILE)
+    run_sql(conn, schema_sql())
     conn.close()
     conn = connect(REPLICA_DB_NAME)
     with conn.cursor() as curs:
         curs.execute('DROP TABLE IF EXISTS `user`, `block_target`')
-    run_sql_file(conn, REPLICA_SCHEMA_FILE)
+    run_sql(conn, REPLICA_SCHEMA_FILE.read_text())
     with conn.cursor() as curs:
         curs.executemany('INSERT INTO `user` (user_id, user_name) VALUES (%s, %s)',
                          [(uid, name.encode('utf-8')) for name, uid in MW_USERS.items()])
