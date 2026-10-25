@@ -6,7 +6,6 @@ from api import Database
 import logging
 
 logger = logging.getLogger('pb')
-db = Database()
 
 def setup_logger():
 	logFormatter = logging.Formatter('%(asctime)s - [%(levelname)-5.5s] - %(message)s')	
@@ -19,12 +18,12 @@ def setup_logger():
 	logging.getLogger().addHandler(consoleHandler)
 setup_logger()
 
-def _run_update():
+def _run_update(db):
     """
         Triggers database queries that fill the table 'stats_confirmations_by_month' with pregenerated data.
     """
     db.update_stats_confirmations_by_month()
 
 if __name__ == "__main__":
-    _run_update()
+    _run_update(Database(use_replica=False))
     logger.info('Run completed')

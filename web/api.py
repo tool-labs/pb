@@ -426,7 +426,8 @@ class Database:
         """
         try:
             with self.conn.cursor() as curs:
-                curs.execute('TRUNCATE `stats_confirmations_by_month`;')
+                # DELETE instead of TRUNCATE: TRUNCATE commits implicitly, so a failing INSERT would leave the table empty
+                curs.execute('DELETE FROM `stats_confirmations_by_month`;')
                 curs.execute('''
                 INSERT INTO `stats_confirmations_by_month` (`year_month`, `group`, `count`)
                 SELECT SUBSTRING(cf_timestamp, 1, 7), 0, COUNT(*)
@@ -445,7 +446,6 @@ class Database:
         else:
             self.conn.commit()
         finally:
-            curs.close()
             self.conn.close()
 
     def close_connections(self):

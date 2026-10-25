@@ -10,15 +10,15 @@
   filelog-stderr: logs/update_stats.err
 
 - name: remove-old-logs
-  command: sh ~/pb/jobs/remove-old-logs.sh
-  image: bullseye
+  command: bash ~/pb/jobs/remove-old-logs.sh
+  image: trixie
   no-filelog: false
   schedule: "0    0   *   *   *"
   emails: onfailure
   filelog-stdout: logs/remove-old-logs.out
   filelog-stderr: logs/remove-old-logs.err
 - name: create-database-dump
-  command: sh ~/pb/jobs/create-database-dump.sh
+  command: bash ~/pb/jobs/create-database-dump.sh
   image: mariadb
   no-filelog: false
   schedule: "0    0   *   *   *"
@@ -26,8 +26,8 @@
   filelog-stdout: logs/create-database-dump.out
   filelog-stderr: logs/create-database-dump.err
 - name: delete-old-database-dump
-  command: sh ~/pb/jobs/delete-old-database-dump.sh
-  image: bullseye
+  command: bash ~/pb/jobs/delete-old-database-dump.sh
+  image: trixie
   no-filelog: false
   schedule: "0    0   *   *   *"
   emails: onfailure
