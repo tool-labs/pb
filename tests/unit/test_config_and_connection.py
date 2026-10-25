@@ -48,10 +48,10 @@ def test_database_uses_credentials_from_cnf_file(recording_pymysql, cnf_file, mo
 
     pb, replica = recording_pymysql.created
     assert pb.kwargs['host'] == 'toolsdb.example'
-    assert pb.kwargs['db'] == 'pb_db'
+    assert pb.kwargs['database'] == 'pb_db'
     assert pb.kwargs['charset'] == 'utf8mb4'
     assert replica.kwargs['host'] == 'replica.example'
-    assert replica.kwargs['db'] == 'wiki_db'
+    assert replica.kwargs['database'] == 'wiki_db'
     for conn in (pb, replica):
         assert conn.kwargs['user'] == 'u1234'       # quotes are stripped
         assert conn.kwargs['password'] == 'secret'

@@ -75,11 +75,11 @@ class Database:
                                 'information.')
 
         try:
-            self.conn = pymysql.connections.Connection(host=config.db_host, port=config.db_port, user=user_name, password=password, db=pb_database,
+            self.conn = pymysql.connections.Connection(host=config.db_host, port=config.db_port, user=user_name, password=password, database=pb_database,
                            charset='utf8mb4', use_unicode=True, defer_connect=True)
             self.wp_conn = None
             if use_replica:
-                self.wp_conn = pymysql.connections.Connection(host=wp_host, port=config.db_port, user=user_name, password=password, db=wp_replica_db,
+                self.wp_conn = pymysql.connections.Connection(host=wp_host, port=config.db_port, user=user_name, password=password, database=wp_replica_db,
                                charset='utf8', use_unicode=True, defer_connect=True)
             # open the deferred connections; ping() no longer reconnects by default since PyMySQL 1.2
             self.conn.connect()
