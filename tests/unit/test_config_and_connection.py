@@ -71,8 +71,6 @@ def test_database_wraps_connection_errors(cnf_file, monkeypatch):
         api.Database()
 
 
-@pytest.mark.xfail(raises=UnboundLocalError,
-                   reason='known bug: a missing cnf file raises UnboundLocalError instead of WPPBException')
 def test_missing_cnf_file_raises_wppb_exception(recording_pymysql, tmp_path, monkeypatch):
     monkeypatch.setattr(config, 'db_conf_file', str(tmp_path / 'missing.cnf'))
     with pytest.raises(api.WPPBException):

@@ -71,16 +71,20 @@ def test_user_page_escapes_html_in_comments(client, monkeypatch):
     assert '&lt;script&gt;' in html
 
 
-@pytest.mark.xfail(reason='known bug: the output of parse_comment is not marked safe, so the link is shown as escaped text')
 def test_user_page_renders_wikilinks_in_comments(client):
     html = client.get('/user/name/Alice').get_data(as_text=True)
-    assert '<a href="https://de.wikipedia.org/wiki/Stammtisch Berlin">' in html
+    assert '<a href="https://de.wikipedia.org/wiki/Stammtisch_Berlin">Stammtisch Berlin</a>' in html
 
 
-@pytest.mark.xfail(reason='known privacy bug: pages of hidden users are still reachable by name')
+def test_recent_confirmations_render_wikilinks_in_comments(client):
+    html = client.get('/recent').get_data(as_text=True)
+    assert '<a href="https://de.wikipedia.org/wiki/Stammtisch_Berlin">Stammtisch Berlin</a>' in html
+
+
 def test_hidden_user_page_is_not_shown(client):
     response = client.get('/user/name/Eve')
-    assert response.status_code == 404 or 'Eve' not in response.get_data(as_text=True)
+    assert response.status_code == 404
+    assert 'Eve' not in response.get_data(as_text=True)
 
 
 def test_recent_confirmations(client, fake_db_class):
@@ -117,24 +121,35 @@ def test_confirmation_details_of_unknown_user(client):
     assert 'Ein Fehler ist aufgetreten' in html
 
 
-@pytest.mark.xfail(reason='known privacy bug: the confirmation page shows hidden users by id')
-def test_confirmation_details_hide_hidden_users(client):
-    assert 'Eve' not in client.get('/confirmation/3/1').get_data(as_text=True)
+@pytest.mark.parametrize('url', ['/confirmation/3/1', '/confirmation/1/3'])
+def test_confirmation_details_hide_hidden_users(client, url):
+    response = client.get(url)
+    assert response.status_code == 404
+    assert 'Eve' not in response.get_data(as_text=True)
 
 
-@pytest.mark.xfail(reason='known bug: /confirmations renders the missing template confirmations.html')
-def test_confirmations_route_does_not_fail(production_client):
-    assert production_client.get('/confirmations').status_code != 500
+def test_confirmations_route_is_gone(production_client):
+    assert production_client.get('/confirmations').status_code == 404
 
 
 def test_unknown_route_is_404(client):
     assert client.get('/does-not-exist').status_code == 404
 
 
-def test_database_connection_is_closed_after_request(client, fake_db_class):
-    client.get('/about')
+def test_static_pages_do_not_open_a_database_connection(client, fake_db_class):
+    assert client.get('/about').status_code == 200
+    assert fake_db_class.instances == []
+
+
+def test_database_connection_is_opened_once_and_closed_after_request(client, fake_db_class):
+    client.get('/')
     assert len(fake_db_class.instances) == 1
     assert fake_db_class.instances[0].closed
+
+
+def test_web_app_does_not_use_the_replica(client, fake_db_class):
+    client.get('/users')
+    assert fake_db_class.instances[0].use_replica is False
 
 
 def test_database_connection_is_closed_after_failing_request(production_client, fake_db_class, monkeypatch):
@@ -182,9 +197,18 @@ def test_sql_dump_download_rejects_other_files(client, dump_folder, file_name):
     assert client.get('/sql-dump-file/' + file_name).status_code in (400, 404)
 
 
-@pytest.mark.xfail(reason='known bug: a missing dump returns the exception text with HTTP 200')
 def test_sql_dump_download_of_missing_file_is_404(client, dump_folder):
-    assert client.get('/sql-dump-file/wppb-2020-01-01.sql.bz2').status_code == 404
+    response = client.get('/sql-dump-file/wppb-2020-01-01.sql.bz2')
+    assert response.status_code == 404
+    assert str(dump_folder) not in response.get_data(as_text=True)
+
+
+def test_sql_dump_download_of_encrypted_dump(client, dump_folder):
+    (dump_folder / 'wppb-2026-01-03.sql.bz2.enc').write_bytes(b'Salted__encrypted')
+    assert 'wppb-2026-01-03.sql.bz2.enc' in client.get('/sql-dumps').get_data(as_text=True)
+    response = client.get('/sql-dump-file/wppb-2026-01-03.sql.bz2.enc')
+    assert response.status_code == 200
+    assert response.data == b'Salted__encrypted'
 
 
 def test_static_files(client):

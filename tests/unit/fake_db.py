@@ -30,7 +30,8 @@ class FakeDatabase(api.Database):
 
     instances = []
 
-    def __init__(self):
+    def __init__(self, use_replica=True):
+        self.use_replica = use_replica
         self.closed = False
         self.calls = []
         FakeDatabase.instances.append(self)
@@ -90,12 +91,6 @@ class FakeDatabase(api.Database):
             return []
         return [('Bob', 'Alice', None, 0, ts(2008, 2, 20, 10, 5)),
                 ('Alice', 'Bob', 'Met at the [[Stammtisch Berlin]]', 0, ts(2008, 2, 20, 10, 0))]
-
-    def get_mw_last_user_name_by_name(self, user_name):
-        return None
-
-    def user_blocked(self, user_id):
-        return None
 
     def _get_stats_confirmations_by_month(self):
         return [('2008-02', 0, 2)]

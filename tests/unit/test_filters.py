@@ -34,14 +34,35 @@ def test_parse_comment_keeps_plain_text():
 
 def test_parse_comment_links_a_single_wikilink():
     assert (webapp.format_comment('Met at [[WikiCon]]')
-            == 'Met at <a href="https://de.wikipedia.org/wiki/WikiCon">[[WikiCon]]</a>')
+            == 'Met at <a href="https://de.wikipedia.org/wiki/WikiCon">WikiCon</a>')
 
 
-@pytest.mark.xfail(reason='known bug: the regex [^}]* is greedy and swallows everything between the first [[ and the last ]]')
 def test_parse_comment_links_multiple_wikilinks():
     html = webapp.format_comment('[[Berlin]] and [[Hamburg]]')
     assert html.count('<a ') == 2
     assert 'wiki/Berlin"' in html and 'wiki/Hamburg"' in html
+
+
+def test_parse_comment_links_piped_wikilinks():
+    assert (webapp.format_comment('[[Wikipedia:Stammtisch Berlin|Stammtisch]]')
+            == '<a href="https://de.wikipedia.org/wiki/Wikipedia%3AStammtisch_Berlin">Stammtisch</a>')
+
+
+def test_parse_comment_url_encodes_the_target():
+    html = webapp.format_comment('[[A&B "x" ü]]')
+    assert 'href="https://de.wikipedia.org/wiki/A%26B_%22x%22_%C3%BC"' in html
+    assert '>A&amp;B &#34;x&#34; ü</a>' in html
+
+
+def test_parse_comment_keeps_section_links():
+    assert 'href="https://de.wikipedia.org/wiki/Foo/Bar#Abschnitt"' in webapp.format_comment('[[Foo/Bar#Abschnitt]]')
+
+
+def test_parse_comment_escapes_html():
+    html = webapp.format_comment('<script>alert(1)</script> [[<b>X</b>]]')
+    assert '<script>' not in html and '<b>' not in html
+    assert '&lt;script&gt;' in html
+    assert isinstance(html, webapp.Markup)
 
 
 def test_prettify_html_removes_blank_lines():
