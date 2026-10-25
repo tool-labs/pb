@@ -128,7 +128,7 @@ def test_unknown_user(http):
 def test_confirmation_page(http):
     html = http('/confirmation/101/102').text
     assert 'Alice hat Bob am 2008-02-20 um 10:00 Uhr bestätigt' in html
-    assert 'Stammtisch [[Berlin]]' in html
+    assert 'Stammtisch <a href="https://de.wikipedia.org/wiki/Berlin">Berlin</a>' in html
     assert 'Bob hat Alice am 2008-02-20 um 10:05 Uhr bestätigt' in html
 
 
@@ -149,7 +149,7 @@ def test_recent_confirmations(http):
     assert rows[0] == ['Datum, Uhrzeit', 'Von', 'An', 'Kommentar']
     assert len(rows) == 1 + 12
     assert rows[1] == ['2024-05-02, 20:00', 'Alice', 'Zoë Ünicode', 'Sommerfest 🎉']
-    assert rows[-1] == ['2008-02-20, 10:00', 'Alice', 'Bob', 'Stammtisch [[Berlin]]']
+    assert rows[-1] == ['2008-02-20, 10:00', 'Alice', 'Bob', 'Stammtisch Berlin']
     stamps = [r[0] for r in rows[1:]]
     assert stamps == sorted(stamps, reverse=True)
 
