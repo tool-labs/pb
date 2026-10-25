@@ -1,0 +1,6 @@
+# Versions installed in the Toolforge webservice venv (www/python/venv) as of 2026-10.
+# Used by the CI job "production" so that the tests also cover what is actually deployed.
+Flask==2.3.3
+Werkzeug==2.3.7
+Jinja2==3.1.2
+PyMySQL==1.1.0
