@@ -9,7 +9,7 @@ in real life. A participant with three confirmations is *verified* and may then 
 others. The tool runs on [Wikimedia Toolforge](https://wikitech.wikimedia.org/wiki/Help:Toolforge)
 at **<https://pb.toolforge.org/>**.
 
-Similar projects in other languages:
+Same projects in other languages:
 [Czech](https://cs.wikipedia.org/wiki/Wikipedie:Osobn%C3%AD_zn%C3%A1mosti),
 [Dutch](https://nl.wikipedia.org/wiki/Wikipedia:Ontmoete_Wikimedianen),
 [French](https://fr.wikipedia.org/wiki/Wikip%C3%A9dia:Connaissances_personnelles).
@@ -49,7 +49,7 @@ Similar projects in other languages:
 | `web/templates/`, `web/static/` | HTML templates (German UI), CSS, jQuery + tablesorter |
 | `web/sql-dumps/` | Daily database dumps offered for download (not in git) |
 | `jobs/` | Toolforge jobs: `toolforge-jobs.yaml`, statistics update, dump creation and cleanup |
-| `sql/scheme.sql` | Database schema (matches production) |
+| `sql/schema.md` | Database schema: tables, meaning of the columns, DDL (matches production) |
 | `tests/` | Unit and system tests, see below |
 | `bot/README.txt` | Notes about the bot |
 
@@ -108,7 +108,7 @@ python -m pytest tests/unit          # no database needed
 * **Unit tests** (`tests/unit/`) test the filters, statistics helpers, configuration and all
   routes with an in-memory fake database (`tests/unit/fake_db.py`).
 * **System tests** (`tests/system/`) need a MariaDB server. They create two scratch databases
-  (`pb_systemtest`, `dewiki_systemtest`), load `sql/scheme.sql` and a minimal replica schema,
+  (`pb_systemtest`, `dewiki_systemtest`), load the DDL from `sql/schema.md` and a minimal replica schema,
   write test data through `BotDatabase` the same way SpBot does, start the web app as a
   separate HTTP server process and test it via HTTP. They also run `jobs/update_stats.py`.
   Without `PB_TEST_DB_HOST` they are skipped.
