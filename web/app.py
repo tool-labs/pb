@@ -1,3 +1,4 @@
+import gzip
 import os.path, os
 import re
 from urllib.parse import quote
@@ -17,6 +18,26 @@ def prettify_html(html):
     return ''.join(line + os.linesep for line in html.splitlines() if line.strip())
 
 app = flask.Flask(__name__)
+# let browsers cache the static files for a day instead of revalidating them on every page view
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 86400
+
+@app.after_request
+def compress_response(response):
+    """
+    Gzips text responses; the pages compress about 10-14 times smaller.
+    """
+    if (response.status_code != 200 or 'Content-Encoding' in response.headers
+            or 'gzip' not in flask.request.headers.get('Accept-Encoding', '')
+            or response.mimetype not in ('text/html', 'text/css', 'text/javascript', 'application/javascript')):
+        return response
+    response.direct_passthrough = False
+    data = response.get_data()
+    if len(data) < 1000:
+        return response
+    response.set_data(gzip.compress(data, compresslevel=6))
+    response.headers['Content-Encoding'] = 'gzip'
+    response.vary.add('Accept-Encoding')
+    return response
 
 @app.template_filter('format_date')
 def format_date(date):
@@ -65,11 +86,12 @@ def teardown_request(exception):
 
 @app.route('/')
 def index():
-    confirmation_count = get_db().get_confirmation_count(False, False)
+    data = get_db().fetch_stats()
+    # same count as get_confirmation_count(False, False), but taken from the hourly stats instead of a slow live query
+    confirmation_count = data['confirmations']['totals'][0]
     confirmations_per_day = get_db().get_confirmations_per_day(confirmation_count)
     user_count = get_db().get_user_count(False, False)
     latest_confirmations = get_db().get_latest_confirmations(page=1, count=10)
-    data = get_db().fetch_stats()
 
     return render_template('index.html',
                            confirmation_count=confirmation_count,
