@@ -48,7 +48,7 @@ class Database:
 
     def __init__(self):
         pb_database=config.db_name
-        wp_replica_db='dewiki_p'
+        wp_replica_db=config.replica_db_name
         # try to read the replica.pb-db.cnf
         p = config.db_conf_file
         if os.path.exists(p):
@@ -69,12 +69,13 @@ class Database:
                                 'information.')
 
         try:
-            self.conn = pymysql.connections.Connection(host='tools.db.svc.wikimedia.cloud', user=user_name, password=password, db=pb_database,
+            self.conn = pymysql.connections.Connection(host=config.db_host, port=config.db_port, user=user_name, password=password, db=pb_database,
                            charset='utf8mb4', use_unicode=True, defer_connect=True)
-            self.wp_conn = pymysql.connections.Connection(host=wp_host, user=user_name, password=password, db=wp_replica_db,
+            self.wp_conn = pymysql.connections.Connection(host=wp_host, port=config.db_port, user=user_name, password=password, db=wp_replica_db,
                            charset='utf8', use_unicode=True, defer_connect=True)
-            self.conn.ping()  # reconnecting mysql, https://stackoverflow.com/a/61152360
-            self.wp_conn.ping()  # reconnecting mysql
+            # open the deferred connections; ping() no longer reconnects by default since PyMySQL 1.2
+            self.conn.connect()
+            self.wp_conn.connect()
         except pymysql.DatabaseError as e:
             raise WPPBException('You specified a wrong database connection ' +
                                 'data. Error message: ' + str(e))
