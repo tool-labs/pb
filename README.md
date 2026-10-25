@@ -89,13 +89,20 @@ they can be overridden by environment variables:
 ssh login.toolforge.org
 become pb
 cd ~/pb && git pull                      # ~/www/python/src is a symlink to ~/pb/web
-toolforge webservice python3.11 restart  # uwsgi, log: ~/uwsgi.log
+toolforge webservice python3.13 restart  # uwsgi, log: ~/uwsgi.log
 toolforge jobs load ~/toolforge-jobs.yaml  # symlink to ~/pb/jobs/toolforge-jobs.yaml
 ```
 
-* The webservice uses the venv `~/www/python/venv`, the jobs use `~/pyvenv`. `web/requirements.txt` is not pinned on
-  purpose (the CI tests the latest versions); the versions in production are in `tests/constraints-production.txt`.
-  When a venv is rebuilt, install with `-c tests/constraints-production.txt`.
+* The webservice and the job `update-stats` share the venv `~/www/python/venv` (Python 3.13, image `python3.13`).
+  `web/requirements.txt` is not pinned on purpose (the CI tests the latest versions); the versions in production
+  are in `tests/constraints-production.txt`. To rebuild the venv, stop the webservice, move the old venv aside and
+  build the new one in the matching container:
+
+  ```bash
+  toolforge jobs run build-venv --image python3.13 --wait 600 \
+    --filelog-stdout logs/build-venv.out --filelog-stderr logs/build-venv.err \
+    --command "python3 -m venv www/python/venv && www/python/venv/bin/pip install -U pip wheel && www/python/venv/bin/pip install -r pb/web/requirements.txt -c pb/tests/constraints-production.txt"
+  ```
 * Jobs (`jobs/toolforge-jobs.yaml`): `update-stats` (hourly), `create-database-dump`,
   `delete-old-database-dump` and `remove-old-logs` (daily). File logs go to `~/logs/`.
 * Before `toolforge jobs load`, compare with `toolforge jobs dump`: `load` replaces all jobs of the tool.
@@ -127,7 +134,7 @@ python -m pytest tests/unit          # no database needed
 * Known bugs are marked with `@pytest.mark.xfail(strict=True)` and a reason. Once a bug is
   fixed, the test passes, pytest reports it as `XPASS` and fails, and the marker has to be removed.
 * GitHub Actions (`.github/workflows/tests.yml`) runs all tests on every push and pull request
-  against MariaDB 10.6 with Python 3.11, once with the versions deployed on Toolforge
+  against MariaDB 10.6 with Python 3.13, once with the versions deployed on Toolforge
   (`tests/constraints-production.txt`) and once with the latest releases.
 
 ## History

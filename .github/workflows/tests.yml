@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.11']   # Toolforge image python3.11
+        python: ['3.13']   # Toolforge image python3.13
         # production: the versions deployed on Toolforge (tests/constraints-production.txt)
         # latest: what a fresh `pip install -r web/requirements.txt` gives today
         dependencies: [production, latest]
