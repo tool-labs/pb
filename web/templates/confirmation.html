@@ -13,14 +13,14 @@
 {% else: %}
   {%if cf_one_two != None: %}
     <p>{{ user_one['user_name'] }} hat {{ user_two['user_name'] }} am {{ cf_one_two['cf_timestamp'] | format_date }} um {{ cf_one_two['cf_timestamp'] | format_time }} Uhr bestätigt
-      {%if cf_one_two['cf_comment']: %}: {{ cf_one_two['cf_comment'] }}{%else %}.{%endif %}</p>
+      {%if cf_one_two['cf_comment']: %}: {{ cf_one_two['cf_comment'] | parse_comment }}{%else %}.{%endif %}</p>
   {%else %}
     <p>{{ user_one['user_name'] }} hat {{ user_two['user_name'] }} noch nicht bestätigt.</p>
   {%endif %}
 
   {%if cf_two_one != None: %}
   <p>{{ user_two['user_name'] }} hat {{ user_one['user_name'] }} am {{ cf_two_one['cf_timestamp'] | format_date }} um {{ cf_two_one['cf_timestamp'] | format_time }} Uhr bestätigt
-    {%if cf_two_one['cf_comment']: %}: {{ cf_two_one['cf_comment'] }}{%else %}.{%endif %}</p>
+    {%if cf_two_one['cf_comment']: %}: {{ cf_two_one['cf_comment'] | parse_comment }}{%else %}.{%endif %}</p>
   {%else %}
     <p>{{ user_two['user_name'] }} hat {{ user_one['user_name'] }} noch nicht bestätigt.</p>
   {%endif %}

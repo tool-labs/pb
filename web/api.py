@@ -24,7 +24,7 @@ def setup_logger():
 	logging.getLogger().addHandler(consoleHandler)
 setup_logger()
 
-class WPPBException(BaseException):
+class WPPBException(Exception):
     """
     Exception thrown by WP:PB.
     """
@@ -46,14 +46,18 @@ class Database:
     This class provides access to the database.
     """
 
-    def __init__(self):
+    def __init__(self, use_replica=True):
+        """
+        *use_replica*: also connect to the dewiki replica (only needed by the bots)
+        """
         pb_database=config.db_name
         wp_replica_db=config.replica_db_name
+        user_name = password = wp_host = None
         # try to read the replica.pb-db.cnf
         p = config.db_conf_file
         if os.path.exists(p):
             parser = configparser.ConfigParser()
-            parser.readfp(open(p))
+            parser.read(p)
             if parser.has_section('client'):
                 if parser.has_option('client', 'user'):
                     user_name = parser.get('client', 'user').strip('"\'')
@@ -71,11 +75,14 @@ class Database:
         try:
             self.conn = pymysql.connections.Connection(host=config.db_host, port=config.db_port, user=user_name, password=password, db=pb_database,
                            charset='utf8mb4', use_unicode=True, defer_connect=True)
-            self.wp_conn = pymysql.connections.Connection(host=wp_host, port=config.db_port, user=user_name, password=password, db=wp_replica_db,
-                           charset='utf8', use_unicode=True, defer_connect=True)
+            self.wp_conn = None
+            if use_replica:
+                self.wp_conn = pymysql.connections.Connection(host=wp_host, port=config.db_port, user=user_name, password=password, db=wp_replica_db,
+                               charset='utf8', use_unicode=True, defer_connect=True)
             # open the deferred connections; ping() no longer reconnects by default since PyMySQL 1.2
             self.conn.connect()
-            self.wp_conn.connect()
+            if self.wp_conn is not None:
+                self.wp_conn.connect()
         except pymysql.DatabaseError as e:
             raise WPPBException('You specified a wrong database connection ' +
                                 'data. Error message: ' + str(e))
@@ -298,33 +305,6 @@ class Database:
             else:
                 return None
 
-    def get_mw_last_user_name_by_name(self, user_name):
-        """
-        Returs the old MediaWiki user name (after renaming) for the current *user_name*.
-        The name is shown only if he/she was renamed after the first participation in PB.
-        This should avoid revealing possible old real names.
-        """
-        # FIXME(incident-c2)
-        # euku[2017-09-09]: too slow => disabled
-        return None
-
-        user_participates_since = self.get_user_by_name(user_name)[5]
-        user_participates_since = user_participates_since.strftime("%Y%m%d%H%M%S")
-        if self.wp_conn == None:
-            return False
-        with self.wp_conn.cursor() as curs:
-            curs.execute('''
-            SELECT `log_title` FROM `dewiki_p`.`logging`
-            WHERE `log_namespace`=2 AND `log_timestamp` >= %s
-            AND `log_type` = 'renameuser' AND `log_action` = 'renameuser'
-            AND `log_params` LIKE '%::newuser";s:3:"''' + user_name + '''";%'
-            ;''', (user_participates_since,))
-            row = curs.fetchone()
-            if row != None:
-                return str(row[0])
-            else:
-                return None
-
     def touch_user(self, user_id, timestamp):
         """
         Updates `user`.`user_last_update` for *user_id*. This is used
@@ -473,4 +453,5 @@ class Database:
             This method is used to explictly close a connection. Used by the bot!
         """
         self.conn.close()
-        self.wp_conn.close()
+        if self.wp_conn is not None:
+            self.wp_conn.close()

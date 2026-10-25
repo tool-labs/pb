@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
 {% block page_title %}
-  Teilnehmerinformationen für {% if not user['hidden']: %}{{ user['name'] }} {% else: %} einen Ex-Teilnehmer{% endif %}
+  Teilnehmerinformationen für {% if user and user['hidden']: %}einen Ex-Teilnehmer{% elif user: %}{{ user['name'] }}{% endif %}
 {% endblock %}
 
 {% block heading %}
-  Teilnehmerinformationen für {% if not user['hidden']: %}{{ user['name'] }} {% else: %} einen Ex-Teilnehmer{% endif %}
+  Teilnehmerinformationen für {% if user and user['hidden']: %}einen Ex-Teilnehmer{% elif user: %}{{ user['name'] }}{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -14,15 +14,15 @@
 {% else: %}
   <div id="wp-box">
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/20px-Wikipedia-logo-v2.svg.png" width="12" />
-    <a href="https://de.wikipedia.org/wiki/Benutzer:{{ user['name'] }}">Benutzerseite</a>,
-    <a href="https://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user['name'] }}">Diskussionsseite</a>
+    <a href="https://de.wikipedia.org/wiki/Benutzer:{{ user['name'] | replace(' ', '_') | urlencode }}">Benutzerseite</a>,
+    <a href="https://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user['name'] | replace(' ', '_') | urlencode }}">Diskussionsseite</a>
   </div>
 
   {% if user['comment'] != None: %}
     <p><b>Kommentar:</b> {{ user['comment'] }}</p>
   {% endif %}
   {% if user['was_banned'] == 1: %}
-    <span class="warning">{{ user['name'] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>
+    <p><span class="warning">{{ user['name'] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>
   {% endif%}
 
   <table class="toc dates">
@@ -34,20 +34,6 @@
     <tr class="verified-since">
       <th>Ist bestätigt seit</th>
       <td>{{ user['verified_since'] | format_date }}</td>
-    </tr>
-    {% endif %}
-{#
-    {% if user_blocked_in_dewikip != None: %}
-    <tr class="block">
-      <th>Gesperrt bis</th>
-      <td>{{ user_blocked_in_dewikip[:8] if user_blocked_in_dewikip != 'infinity' else 'unbeschränkt' }}</td>
-    </tr>
-    {% endif %}
-#}
-    {% if previous_user_name != None: %}
-    <tr class="previous-name">
-      <th>Früherer Benutzername</th>
-      <td>{{ previous_user_name.decode('utf-8') }}</td>
     </tr>
     {% endif %}
   </table>

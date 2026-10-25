@@ -33,7 +33,7 @@
       <td>{{ cf_timestamp | format_date }}, {{ cf_timestamp | format_time }}</td>
       <td class="given"><a href="{{ url_for('user', user_name=user_has_confirmed) }}">{{ user_has_confirmed }}</a></td>
       <td class="taken"><a href="{{ url_for('user', user_name=user_was_confirmed) }}">{{ user_was_confirmed }}</a></td>
-      <td>{{ cf_comment }}</td>
+      <td>{{ cf_comment | parse_comment }}</td>
     </tr>
     {% endfor %}
   </table>
