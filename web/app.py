@@ -41,10 +41,12 @@ def format_comment(comment):
     """
     Turns [[target]] and [[target|label]] into links to de.wikipedia.org.
     The comment is escaped first, so the result is safe to mark as HTML.
+    The link target is unescaped again before it is URL-encoded.
     """
     def repl(m):
         target, label = m.group(1), m.group(2) or m.group(1)
-        return '<a href="https://de.wikipedia.org/wiki/%s">%s</a>' % (quote(target.strip().replace(' ', '_')), label)
+        target = Markup(target).unescape().strip().replace(' ', '_')
+        return '<a href="https://de.wikipedia.org/wiki/%s">%s</a>' % (quote(target, safe='/#'), label)
     return Markup(LINK_RE.sub(repl, str(escape(comment or ''))))
 
 def get_db():

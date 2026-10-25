@@ -78,18 +78,17 @@ def test_user_page(http):
         ['Carol', '2008-02-21', 'WikiCon', 'ja'],
         ['Bob', '2008-02-20', '', 'ja'],
     ]
-    # the comment cell holds the text the browser shows, i.e. the escaped link markup (see xfail below)
+    # the comment cell holds the text the browser shows
     assert [r[1:] for r in given[1:]] == [
         ['Zoë Ünicode', '2024-05-02', 'Sommerfest 🎉', 'nein'],
         ['Dave', '2015-06-02', '', 'ja'],
         ['Carol', '2008-02-21', '', 'ja'],
-        ['Bob', '2008-02-20', 'Stammtisch <a href="https://de.wikipedia.org/wiki/Berlin">[[Berlin]]</a>', 'ja'],
+        ['Bob', '2008-02-20', 'Stammtisch Berlin', 'ja'],
     ]
 
 
-@pytest.mark.xfail(reason='known bug: parse_comment output is escaped, the link markup is shown as text')
 def test_user_page_links_wikilinks_in_comments(http):
-    assert 'Stammtisch <a href="https://de.wikipedia.org/wiki/Berlin">' in http('/user/name/Alice').text
+    assert 'Stammtisch <a href="https://de.wikipedia.org/wiki/Berlin">Berlin</a>' in http('/user/name/Alice').text
 
 
 def test_user_page_with_unicode_name(http):
