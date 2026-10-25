@@ -2,21 +2,10 @@
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append('/data/project/pb/www/python/src')
-from api import Database
+from api import Database, setup_logger
 import logging
 
 logger = logging.getLogger('pb')
-
-def setup_logger():
-	logFormatter = logging.Formatter('%(asctime)s - [%(levelname)-5.5s] - %(message)s')	
-	consoleHandler = logging.StreamHandler()
-	consoleHandler.setFormatter(logFormatter)
-	consoleHandler.setLevel(logging.DEBUG)
-	logger.setLevel(logging.DEBUG)
-	for h in logging.getLogger().handlers:
-		logging.getLogger().removeHandler(h)
-	logging.getLogger().addHandler(consoleHandler)
-setup_logger()
 
 def _run_update(db):
     """
@@ -25,5 +14,6 @@ def _run_update(db):
     db.update_stats_confirmations_by_month()
 
 if __name__ == "__main__":
+    setup_logger()
     _run_update(Database(use_replica=False))
     logger.info('Run completed')

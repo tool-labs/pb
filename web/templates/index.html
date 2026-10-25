@@ -86,18 +86,3 @@
         </tbody>
     </table>
 {%- endblock %}
-
-{%- block javascript %}
-function show_confs(year_month, count) {
-    $('table.conf_stats tr.group td.legend').html(year_month);
-    $('table.conf_stats tr.columns td.legend').html(count ?
-        '<span class="total">'+count+'</span> Bestätigungen' : '');
-}
-function show_users(year_month, count_0, count_1) {
-    $('table.user_stats tr.group td.legend').html(year_month);
-    $('table.user_stats tr.columns td.legend').html(count_0+count_1 ?
-        '<span class="verified_0"><span class="total">'+count_0+'</span> unbestätigte &hellip;</span><br/>'+
-        '<span class="verified_1"><span class="total">'+count_1+'</span> bestätigte &hellip;</span><br/>'+
-        '<span class="total">'+(count_0+count_1)+'</span> Teilnehmer' : '');
-}
-{%- endblock %}

@@ -18,7 +18,7 @@
     <tbody>
   {%for user_name, user_id, comment, is_hidden, was_banned, participates_since, verified_since, given_cf, taken_cf in users: %}
       <tr>
-        <td class="cf-user">{% if is_hidden == 0: %}<a href="{{ url_for('user', user_name=user_name) }}">{{user_name}}</a>{% else %}Ex-Teilnehmer{% endif %}</td>
+        <td class="cf-user"><a href="{{ url_for('user', user_name=user_name) }}">{{user_name}}</a></td>
         <td class="taken">{{ taken_cf if taken_cf != None else 0 }}</td>
         <td class="given">{{ given_cf if given_cf != None else 0 }}</td>
         <td class="cf-date">{{ participates_since | format_date }}</td>
@@ -32,19 +32,8 @@
 {%endblock %}
 
 {%block javascript %}
-  var textExtractor = function(node) {
-    if (node.className == 'cf-date')
-      return node.innerHTML.replace(/^(\d+)\.(\d+)\.(\d+)$/, '$3-$2-$1');
-    else if (node.className == 'cf-user')
-      return (node.hasChildNodes() && node.firstChild.nodeType == 1 ?
-        '_' + node.firstChild.innerHTML : '~');
-    else
-      return node.innerHTML;
-  }
-
   $(function() {
     $('.tablesorter').tablesorter({
-      textExtraction: textExtractor,
       sortInitialOrder: "desc",
       headers: {
         1: {
