@@ -1,8 +1,8 @@
 # https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework
 ---
 - name: update-stats
-  command: pyvenv/bin/python ~/pb/jobs/update_stats.py 
-  image: python3.11
+  command: www/python/venv/bin/python ~/pb/jobs/update_stats.py
+  image: python3.13
   schedule: "0    *   *   *   *"
   emails: onfailure
   filelog-stdout: logs/update_stats.out
