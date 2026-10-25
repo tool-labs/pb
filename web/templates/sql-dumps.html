@@ -4,6 +4,9 @@
 {%block heading %}Die letzten Snapshots{%endblock %}
 
 {%block content %}
+  <p>Dateien mit der Endung <code>.enc</code> sind verschlüsselt. Den Schlüssel kennen die Maintainer.
+  Entschlüsseln mit<br>
+  <code>openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:SCHLÜSSELDATEI -in wppb-….sql.bz2.enc | bunzip2 &gt; wppb.sql</code></p>
   <table>
     <thead>
       <tr>

@@ -142,7 +142,7 @@ def sql_dumps():
 
 @app.route('/sql-dump-file/<file_name>')
 def sql_dump_file(file_name):
-    if not re.fullmatch(re.compile(r"wppb\-20\d\d-\d\d-\d\d\.sql\.bz2"), file_name):
+    if not re.fullmatch(re.compile(r"wppb\-20\d\d-\d\d-\d\d\.sql\.bz2(\.enc)?"), file_name):
         return flask.abort(400)
     try:
         return send_file(f'{config.sql_dump_folder}/{file_name}', download_name=file_name, as_attachment=True)
@@ -157,7 +157,7 @@ def _scan_dir(root_dir: str):
     for root, dirs, files in walk_result:
         sorted_files = sorted(files)
         for file in sorted_files:
-            if file.endswith('.sql.bz2') or file.endswith('.sql'):
+            if file.endswith(('.sql.bz2', '.sql.bz2.enc', '.sql')):
                 file_path = os.path.join(root, file)
                 file_size = os.path.getsize(file_path)
                 result.append([file, file_size])
