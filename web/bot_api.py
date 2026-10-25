@@ -153,7 +153,7 @@ class BotDatabase(Database):
                  ON `cf_confirmed_user_id` = was_confirmed_t.`user_id` AND was_confirmed_t.`user_is_hidden`=0
                JOIN `user` AS has_confirmed_t
                  ON `cf_user_id` = has_confirmed_t.`user_id` AND has_confirmed_t.`user_is_hidden`=0
-               WHERE `cf_timestamp` > DATE_ADD(CURDATE(), INTERVAL - %s DAY) AND `cf_timestamp` < DATE_ADD(CURDATE(), INTERVAL -%s DAY) AND `cf_was_deleted`=0
+               WHERE `cf_timestamp` >= DATE_ADD(CURDATE(), INTERVAL - %s DAY) AND `cf_timestamp` < DATE_ADD(CURDATE(), INTERVAL -%s DAY) AND `cf_was_deleted`=0
                ORDER BY was_confirmed_name
                ;''', (day,day-delta))
             return curs.fetchall()
