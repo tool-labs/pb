@@ -3,7 +3,6 @@
 - name: update-stats
   command: pyvenv/bin/python ~/pb/jobs/update_stats.py 
   image: python3.11
-  no-filelog: false
   schedule: "0    *   *   *   *"
   emails: onfailure
   filelog-stdout: logs/update_stats.out
@@ -12,7 +11,6 @@
 - name: remove-old-logs
   command: bash ~/pb/jobs/remove-old-logs.sh
   image: trixie
-  no-filelog: false
   schedule: "0    0   *   *   *"
   emails: onfailure
   filelog-stdout: logs/remove-old-logs.out
@@ -20,7 +18,6 @@
 - name: create-database-dump
   command: bash ~/pb/jobs/create-database-dump.sh
   image: mariadb
-  no-filelog: false
   schedule: "0    0   *   *   *"
   emails: onfailure
   filelog-stdout: logs/create-database-dump.out
@@ -28,7 +25,6 @@
 - name: delete-old-database-dump
   command: bash ~/pb/jobs/delete-old-database-dump.sh
   image: trixie
-  no-filelog: false
   schedule: "0    0   *   *   *"
   emails: onfailure
   filelog-stdout: logs/delete-old-database-dump.out

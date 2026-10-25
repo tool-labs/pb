@@ -142,5 +142,6 @@ CREATE TABLE `stats_confirmations_by_month` (
 * `user` still uses `utf8mb3`, while the connection and the other tables use `utf8mb4`. User names
   with 4-byte characters (e.g. emoji) cannot be stored.
 * `timestamp` columns end in January 2038. `datetime` would avoid that.
-* Hidden users, banned users and admin comments are part of the public daily dumps
-  (`jobs/create-database-dump.sh` dumps the whole database).
+* The daily dumps contain the whole database, including hidden users, banned users and admin comments.
+  They are encrypted (`openssl enc -aes-256-cbc -pbkdf2 -iter 200000`); the key is known to the
+  maintainers and stored in `~/.sql-dump-key` on Toolforge.

@@ -4,26 +4,12 @@
 This class provides all necessary functionality for accessing WP:PB’s database.
 """
 
-# https://pypi.org/project/PyMySQL/#installation
-import pymysql.cursors
-from datetime import date
-import re, os.path
-import config
-import configparser
-import logging, logging.config
+import re
+import logging
 from api import WPPBException, Database
 logger = logging.getLogger('pb')
 
-def setup_logger():
-	logFormatter = logging.Formatter('%(asctime)s - [%(levelname)-5.5s] - %(message)s')	
-	consoleHandler = logging.StreamHandler()
-	consoleHandler.setFormatter(logFormatter)
-	consoleHandler.setLevel(logging.DEBUG)
-	logger.setLevel(logging.DEBUG)
-	for h in logging.getLogger().handlers:
-		logging.getLogger().removeHandler(h)
-	logging.getLogger().addHandler(consoleHandler)
-setup_logger()
+TIMESTAMP_RE = re.compile(r'\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d')
 
 class BotDatabase(Database):
     """
@@ -64,7 +50,7 @@ class BotDatabase(Database):
         if (self.get_user_by_id(user_id) == None or
             self.get_user_by_id(confirmed_id) == None):
             return False
-        if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d", timestamp) == None:
+        if TIMESTAMP_RE.match(timestamp) is None:
             return False
         with self.conn.cursor() as curs:
             curs.execute('''
@@ -91,11 +77,10 @@ class BotDatabase(Database):
         Adds a user to the database with given timestamp of participation. Returns the success as a boolean value.
         comment is not used here, but is useful for admin comments like "X is a sock".
         """
+        if TIMESTAMP_RE.match(part_tstamp) is None:
+            return False
         # check if the user exists (MW database)
         user_id = self.get_mw_user_id(user_name)
-        import re
-        if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d", part_tstamp) == None:
-            return False
         if len(user_name) == 0 or user_id == None:
             # user does not exist
             return False
@@ -156,21 +141,4 @@ class BotDatabase(Database):
                WHERE `cf_timestamp` >= DATE_ADD(CURDATE(), INTERVAL - %s DAY) AND `cf_timestamp` < DATE_ADD(CURDATE(), INTERVAL -%s DAY) AND `cf_was_deleted`=0
                ORDER BY was_confirmed_name
                ;''', (day,day-delta))
-            return curs.fetchall()
-
-    def get_user_list_with_confirmations(self):
-        """
-        Returns an overview over all users, i.e. user list + number of confirmations this user got.
-		Banned and hidden users are NOT shown, but we do not count the deleted confirmations here.
-        """
-        with self.conn.cursor() as curs:
-            curs.execute('''
-            SELECT `user_name`, COUNT(`cf_user_id`), `user_participates_since`
-                FROM `user`
-                LEFT JOIN `confirmation`
-                    ON `cf_was_deleted` = 0 AND `user_id` = `cf_confirmed_user_id`
-                WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0
-                GROUP BY `user_name`
-                ORDER BY `user_name` ASC
-            ;''')
             return curs.fetchall()

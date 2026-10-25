@@ -43,11 +43,11 @@ Same projects in other languages:
 | Path | Content |
 |------|---------|
 | `web/app.py` | Flask app: routes and Jinja filters |
-| `web/api.py` | `Database`: read access to ToolsDB and the dewiki replica, statistics |
+| `web/api.py` | `Database`: read access to ToolsDB (and the dewiki replica for the bot), statistics |
 | `web/bot_api.py` | `BotDatabase`: write access, used by SpBot |
 | `web/config.py` | Configuration (Toolforge defaults, overridable by environment variables) |
 | `web/templates/`, `web/static/` | HTML templates (German UI), CSS, jQuery + tablesorter |
-| `web/sql-dumps/` | Daily database dumps offered for download (not in git) |
+| `web/sql-dumps/` | Daily encrypted database dumps offered for download as an external backup (not in git) |
 | `jobs/` | Toolforge jobs: `toolforge-jobs.yaml`, statistics update, dump creation and cleanup |
 | `sql/schema.md` | Database schema: tables, meaning of the columns, DDL (matches production) |
 | `tests/` | Unit and system tests, see below |
@@ -66,7 +66,7 @@ ToolsDB database `s51344__pb` (MariaDB 10.6):
 * `stats_confirmations_by_month`: precomputed statistics for the main page, refreshed hourly
   by `jobs/update_stats.py`.
 
-The web app also reads `user` and `block_target` from the dewiki replica (`dewiki_p`).
+`BotDatabase` (SpBot) also reads `user` and `block_target` from the dewiki replica (`dewiki_p`); the web app does not use the replica.
 Credentials come from `~/replica.pb-db.cnf` (a symlink to Toolforge's `replica.my.cnf`).
 
 ## Configuration
@@ -93,7 +93,9 @@ toolforge webservice python3.11 restart  # uwsgi, log: ~/uwsgi.log
 toolforge jobs load ~/toolforge-jobs.yaml  # symlink to ~/pb/jobs/toolforge-jobs.yaml
 ```
 
-* The webservice uses the venv `~/www/python/venv`, the jobs use `~/pyvenv`.
+* The webservice uses the venv `~/www/python/venv`, the jobs use `~/pyvenv`. `web/requirements.txt` is not pinned on
+  purpose (the CI tests the latest versions); the versions in production are in `tests/constraints-production.txt`.
+  When a venv is rebuilt, install with `-c tests/constraints-production.txt`.
 * Jobs (`jobs/toolforge-jobs.yaml`): `update-stats` (hourly), `create-database-dump`,
   `delete-old-database-dump` and `remove-old-logs` (daily). File logs go to `~/logs/`.
 * Before `toolforge jobs load`, compare with `toolforge jobs dump`: `load` replaces all jobs of the tool.

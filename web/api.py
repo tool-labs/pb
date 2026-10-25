@@ -10,19 +10,21 @@ from datetime import date
 import re, os.path
 import config
 import configparser
-import logging, logging.config
+import logging
 logger = logging.getLogger('pb')
 
 def setup_logger():
-	logFormatter = logging.Formatter('%(asctime)s - [%(levelname)-5.5s] - %(message)s')	
-	consoleHandler = logging.StreamHandler()
-	consoleHandler.setFormatter(logFormatter)
-	consoleHandler.setLevel(logging.DEBUG)
-	logger.setLevel(logging.DEBUG)
-	for h in logging.getLogger().handlers:
-		logging.getLogger().removeHandler(h)
-	logging.getLogger().addHandler(consoleHandler)
-setup_logger()
+    """
+    Sends the messages of the 'pb' logger to stderr. Called by scripts like
+    jobs/update_stats.py, not on import, so the web app and pywikibot keep their logging.
+    """
+    if logger.handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s - [%(levelname)-5.5s] - %(message)s'))
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
 
 class WPPBException(Exception):
     """
