@@ -289,10 +289,10 @@ class Database:
     def get_mw_user_id(self, user_name):
         """
         Returns the MediaWiki user id for the user *user_name* or `None` if
-        the user does not exist.
+        the user does not exist. Needs the replica connection.
         """
-        if self.wp_conn == None:
-            return False
+        if self.wp_conn is None:
+            raise WPPBException('get_mw_user_id needs the replica connection (use_replica=True)')
         # due to some trubble with UTF-8, just commented out
         #raw_user_name = user_name.encode('utf-8')
         #latin_user_name = raw_user_name.decode('latin-1')

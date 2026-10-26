@@ -71,6 +71,13 @@ def test_database_wraps_connection_errors(cnf_file, monkeypatch):
         api.Database()
 
 
+def test_get_mw_user_id_without_replica_raises(recording_pymysql, cnf_file):
+    db = api.Database(use_replica=False)
+    assert len(recording_pymysql.created) == 1
+    with pytest.raises(api.WPPBException, match='replica'):
+        db.get_mw_user_id('Alice')
+
+
 def test_missing_cnf_file_raises_wppb_exception(recording_pymysql, tmp_path, monkeypatch):
     monkeypatch.setattr(config, 'db_conf_file', str(tmp_path / 'missing.cnf'))
     with pytest.raises(api.WPPBException):

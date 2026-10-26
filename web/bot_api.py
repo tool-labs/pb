@@ -81,7 +81,7 @@ class BotDatabase(Database):
             return False
         # check if the user exists (MW database)
         user_id = self.get_mw_user_id(user_name)
-        if len(user_name) == 0 or user_id == None:
+        if len(user_name) == 0 or user_id is None:
             # user does not exist
             return False
         else:
