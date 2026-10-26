@@ -20,7 +20,7 @@ def test_index(http):
     assert response.status == 200
     html = response.text
     assert 'Momentan nehmen 5 Benutzer' in html
-    assert 'insgesamt 12 Mal bestätigt' in html
+    # the confirmation count comes from the hourly stats table, see test_jobs.py
 
 
 def test_index_lists_the_latest_visible_confirmations(http):
