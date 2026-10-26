@@ -103,7 +103,7 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
   `user_id` int(11) unsigned NOT NULL,
   `user_name` varchar(255) NOT NULL,
-  `user_comment` text DEFAULT NULL,
+  `user_comment` mediumtext DEFAULT NULL,
   `user_participates_since` timestamp NULL DEFAULT NULL,
   `user_verified_since` timestamp NULL DEFAULT NULL,
   `user_last_update` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -111,7 +111,7 @@ CREATE TABLE `user` (
   `user_was_banned` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'This filed toggles if the participant was ''deleted''/banned from PB or not. It is the right place for uncovered sockpuppets, but not for users were banned on WP.',
   UNIQUE KEY `user_name` (`user_name`),
   UNIQUE KEY `user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ```
 
 ```sql
@@ -141,9 +141,18 @@ CREATE TABLE `stats_confirmations_by_month` (
 
 ## Known issues
 
-* `user` still uses `utf8mb3`, while the connection and the other tables use `utf8mb4`. User names
-  with 4-byte characters (e.g. emoji) cannot be stored.
-* `timestamp` columns end in January 2038. `datetime` would avoid that.
+* `user` uses `utf8mb4_general_ci` (converted from `utf8mb3_general_ci` on 2026-10-26), the other tables
+  `utf8mb4_unicode_ci`. `general_ci` keeps the sort order of the participant list the bot writes;
+  `unicode_ci` would reorder it.
+* `timestamp` columns end in January 2038 on MariaDB 10.6 (ToolsDB). MariaDB 11.5 and later extend
+  `timestamp` to 2106, so this is left to the ToolsDB upgrade.
+* `cf_timestamp` and the other timestamps hold the wiki's local time (CET/CEST) as written in the
+  signatures, not UTC.
+* Deleted confirmations (`cf_was_deleted = 1`) are counted inconsistently: the participant list on the
+  wiki, the start page and the statistics leave them out, while the verification (`add_confirmation`),
+  the minimum of 3 confirmations for a confirmer (`get_cf_count_by_confirmed`) and `/users` count them.
+  This is known and accepted: there are only 10 deleted confirmations (the latest from 2012), and counting
+  them or not changes no user's verification status.
 * The daily dumps contain the whole database, including hidden users, banned users and admin comments.
   They are encrypted (`openssl enc -aes-256-cbc -pbkdf2 -iter 200000`); the key is known to the
   maintainers and stored in `~/.sql-dump-key` on Toolforge.
