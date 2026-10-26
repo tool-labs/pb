@@ -22,6 +22,7 @@ def test_main_page_without_stats(http, pb_sql):
     assert stats_rows(pb_sql) == []
     html = http('/').text
     assert 'insgesamt <span class="total">0 Bestätigungen</span>' in html
+    assert 'insgesamt 0 Mal bestätigt' in html
 
 
 def test_update_stats_job(app_env, pb_sql):
@@ -40,6 +41,7 @@ def test_update_stats_job_is_repeatable(app_env, pb_sql):
 def test_main_page_shows_stats(http):
     html = http('/').text
     assert 'insgesamt <span class="total">12 Bestätigungen</span>' in html
+    assert 'insgesamt 12 Mal bestätigt' in html
     assert 'insgesamt <span class="total">5 Teilnehmer</span>' in html
     assert '<span class="total_0">2 unbestätigte</span>' in html
     assert '<span class="total_1">3 bestätigte</span>' in html
