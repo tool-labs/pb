@@ -57,7 +57,8 @@ Same projects in other languages:
 
 ToolsDB database `s51344__pb` (MariaDB 10.6):
 
-* `user`: participants. `user_id` is the MediaWiki user id. `user_participates_since`,
+* `user`: participants. `user_id` is the MediaWiki user id; renames on dewiki are taken over
+  hourly by `jobs/update_user_names.py`. `user_participates_since`,
   `user_verified_since` (set by the bot with the third confirmation), `user_is_hidden`
   (participant left the project, the name is no longer shown), `user_was_banned`
   (excluded, e.g. sockpuppets), `user_comment` (admin note).
@@ -105,7 +106,7 @@ toolforge jobs load ~/toolforge-jobs.yaml  # symlink to ~/pb/jobs/toolforge-jobs
     --filelog-stdout logs/build-venv.out --filelog-stderr logs/build-venv.err \
     --command "python3 -m venv www/python/venv && www/python/venv/bin/pip install -U pip wheel && www/python/venv/bin/pip install -r pb/web/requirements.txt -c pb/tests/constraints-production.txt"
   ```
-* Jobs (`jobs/toolforge-jobs.yaml`): `update-stats` and `update-home-wikis` (hourly), `create-database-dump`,
+* Jobs (`jobs/toolforge-jobs.yaml`): `update-stats`, `update-home-wikis` and `update-user-names` (hourly), `create-database-dump`,
   `delete-old-database-dump` and `remove-old-logs` (daily). File logs go to `~/logs/`.
 * Before `toolforge jobs load`, compare with `toolforge jobs dump`: `load` replaces all jobs of the tool.
 
@@ -121,7 +122,7 @@ python -m pytest tests/unit          # no database needed
 * **System tests** (`tests/system/`) need a MariaDB server. They create three scratch databases
   (`pb_systemtest`, `dewiki_systemtest`, `centralauth_systemtest`), load the DDL from `sql/schema.md` and minimal replica schemas,
   write test data through `BotDatabase` the same way SpBot does, start the web app as a
-  separate HTTP server process and test it via HTTP. They also run `jobs/update_stats.py` and `jobs/update_home_wikis.py`.
+  separate HTTP server process and test it via HTTP. They also run the jobs in `jobs/`.
   Without `PB_TEST_DB_HOST` they are skipped.
 
   ```bash

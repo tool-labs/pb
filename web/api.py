@@ -228,6 +228,45 @@ class Database:
             self.conn.commit()
         return len(user_ids)
 
+    def update_user_names(self, dry_run=False, batch_size=500):
+        """
+        Takes over renames on dewiki: sets `user_name` to the current name of `user_id` on the
+        dewiki replica. Users missing on the replica are left alone. Needs the replica connection.
+        Returns `(user_id, old_name, new_name, done)` for every renamed user; *done* is `False`
+        with *dry_run* and if the new name is taken by another participant (unique key). Names
+        that are passed on between participants (A -> B, B -> C) are set in the right order.
+        """
+        if self.wp_conn is None:
+            raise WPPBException('update_user_names needs the replica connection (use_replica=True)')
+        with self.conn.cursor() as curs:
+            curs.execute('SELECT `user_id`, `user_name` FROM `user` ORDER BY `user_id`;')
+            pb_names = {row[0]: row[1] for row in curs.fetchall()}
+        user_ids = list(pb_names)
+        mw_names = {}
+        for start in range(0, len(user_ids), batch_size):
+            mw_names.update(self._get_mw_user_names(user_ids[start:start + batch_size]))
+        pending = [(user_id, pb_names[user_id], mw_names[user_id])
+                   for user_id in user_ids if user_id in mw_names and mw_names[user_id] != pb_names[user_id]]
+        if dry_run:
+            return [rename + (False,) for rename in pending]
+        results = []
+        while pending:
+            failed = []
+            for user_id, old_name, new_name in pending:
+                try:
+                    with self.conn.cursor() as curs:
+                        curs.execute('UPDATE `user` SET `user_name` = %s WHERE `user_id` = %s;', (new_name, user_id))
+                    self.conn.commit()
+                    results.append((user_id, old_name, new_name, True))
+                except pymysql.IntegrityError:
+                    # the name is still used by another participant who may be renamed later in this run
+                    self.conn.rollback()
+                    failed.append((user_id, old_name, new_name))
+            if len(failed) == len(pending):
+                break
+            pending = failed
+        return results + [rename + (False,) for rename in pending]
+
     def _get_mw_user_names(self, user_ids):
         """Returns `{user_id: user_name}` from the dewiki replica."""
         with self.wp_conn.cursor() as curs:

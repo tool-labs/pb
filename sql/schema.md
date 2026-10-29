@@ -26,7 +26,7 @@ user_home_wiki                 (cache of the CentralAuth replica, 1 row per user
 | Column | Type | Meaning |
 |--------|------|---------|
 | `user_id` | `int unsigned`, unique | MediaWiki user id on dewiki. The bot looks it up in the replica when it adds the user, so only existing accounts can join. |
-| `user_name` | `varchar(255)`, unique | User name as written in the request. Renames on the wiki are not followed automatically. |
+| `user_name` | `varchar(255)`, unique | User name as written in the request. Renames on the wiki are taken over hourly by `jobs/update_user_names.py` (by `user_id`). |
 | `user_comment` | `text`, nullable | Admin note (e.g. "sockpuppet of …"). **Shown on the public user page.** |
 | `user_participates_since` | `timestamp`, nullable | Time of the `{{…/neuer Benutzer}}` request. |
 | `user_verified_since` | `timestamp`, nullable | Set once, by `BotDatabase.add_confirmation`, to the time of the confirmation that brought the user to 3 confirmations. `NULL` = not verified. Never cleared automatically. |
@@ -93,7 +93,8 @@ without home wiki. The web app only reads this table, it has no replica connecti
 
 * `user` (`user_id`, `user_name`): `Database.get_mw_user_id`, used by the bot before adding a user.
 * `block_target` (`bt_user`): `Database.user_blocked`. The result is currently not displayed.
-* `user` (`user_id`, `user_name`): also `Database.update_home_wikis`, to get the current names.
+* `user` (`user_id`, `user_name`): also `Database.update_home_wikis` and `Database.update_user_names`
+  (job `update-user-names`), to get the current names.
 
 ## CentralAuth replica tables used (`centralauth_p`, `meta_p`)
 

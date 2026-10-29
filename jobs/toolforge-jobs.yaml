@@ -16,6 +16,14 @@
   filelog-stdout: logs/update_home_wikis.out
   filelog-stderr: logs/update_home_wikis.err
 
+- name: update-user-names
+  command: www/python/venv/bin/python ~/pb/jobs/update_user_names.py
+  image: python3.13
+  schedule: "45   *   *   *   *"
+  emails: onfailure
+  filelog-stdout: logs/update_user_names.out
+  filelog-stderr: logs/update_user_names.err
+
 - name: remove-old-logs
   command: bash ~/pb/jobs/remove-old-logs.sh
   image: trixie
