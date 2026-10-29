@@ -21,6 +21,10 @@ tr.cf_deleted { text-decoration: line-through; }
 td.cf-date { text-align: center; }
 td.cf-comment { font-style: italic; word-wrap: anywhere; }
 td.cf-reconf { text-align: center; }
+td.home-wiki { text-align: center; }
+.no-sul { color: #936; }
+form.filters { margin: 1em 0; }
+form.filters label { display: inline-block; margin: 0 1em 0.5ex 0; }
 
 #stats_switch { float: right; font-size: smaller; height: 0; position: relative; top: -1em; }
 table.stats.stats_ { background-color: #fff; border-bottom: 1px solid #999; border-left: none; width: 100%; }

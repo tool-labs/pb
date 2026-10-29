@@ -18,6 +18,7 @@ user 1 ──< confirmation >── 1 user
            (cf_user_id = who confirmed, cf_confirmed_user_id = who was confirmed)
 
 stats_confirmations_by_month   (derived from confirmation + user, no foreign keys)
+user_home_wiki                 (cache of the CentralAuth replica, 1 row per user, no foreign key)
 ```
 
 ### `user`: participants
@@ -60,6 +61,20 @@ Index `cf_timestamp` for the "latest confirmations" lists on the start page and 
 Rebuilt every hour by `jobs/update_stats.py` (`TRUNCATE` + `INSERT … SELECT`). The user statistics
 on the main page are computed live from `user`.
 
+### `user_home_wiki`: cached home wikis
+
+| Column | Type | Meaning |
+|--------|------|---------|
+| `hw_user_id` | `int unsigned`, primary key | `user.user_id` (no foreign key, like the stats table). |
+| `hw_has_sul` | `0`/`1` | The dewiki account is attached to a global (SUL) account. `0` also if the dewiki account no longer exists. |
+| `hw_home_db` | `varchar(255)`, nullable | Home wiki of the global account (`gu_home_db`, e.g. `dewiki`). `NULL` without SUL account. |
+| `hw_home_url` | `varchar(255)`, nullable | URL of the home wiki from `meta_p.wiki` (e.g. `https://de.wikipedia.org`). `NULL` for closed wikis that are not listed there. |
+| `hw_checked` | `timestamp`, nullable | Time of the lookup (`NOW()` on ToolsDB, i.e. UTC, unlike the other timestamps). |
+
+Filled by `jobs/update_home_wikis.py` (hourly): users without a row or with a row older than
+`home_wiki_max_age_days` (`web/config.py`, 7 days) are looked up again. Users without a row are shown
+without home wiki. The web app only reads this table, it has no replica connection.
+
 ## What is counted where
 
 | Place | Hidden users | Banned users | Deleted confirmations |
@@ -72,11 +87,24 @@ on the main page are computed live from `user`.
 | Wiki participant list (bot) | excluded | excluded | excluded, but confirmations *by* hidden users count |
 | Verification (3 confirmations, bot) | included | included | included |
 | Statistics table | excluded | included | excluded |
+| `/users`: filter "confirmation in the last 6 months" | excluded | included | excluded |
 
 ## Replica tables used (`dewiki_p`)
 
 * `user` (`user_id`, `user_name`): `Database.get_mw_user_id`, used by the bot before adding a user.
 * `block_target` (`bt_user`): `Database.user_blocked`. The result is currently not displayed.
+* `user` (`user_id`, `user_name`): also `Database.update_home_wikis`, to get the current names.
+
+## CentralAuth replica tables used (`centralauth_p`, `meta_p`)
+
+On `centralauth.analytics.db.svc.wikimedia.cloud`, read by `Database.update_home_wikis` only:
+
+* `localuser` (`lu_wiki = 'dewiki'`, `lu_name`): the dewiki account is attached to a global account.
+  Looked up by name, because `lu_local_id` has no index on the replica.
+* `globaluser` (`gu_name`, `gu_home_db`): the home wiki.
+* `meta_p.wiki` (`dbname`, `url`): the URL of the home wiki.
+
+The system tests use a minimal stand-in, `tests/system/centralauth_schema.sql`.
 
 The system tests use a minimal stand-in, `tests/system/replica_schema.sql`.
 
@@ -94,6 +122,7 @@ sed -n '/^```sql$/,/^```$/{/^```/d;p}' sql/schema.md | mariadb <database>
 `NOT NULL … ON UPDATE CURRENT_TIMESTAMP` columns.
 
 ```sql
+DROP TABLE IF EXISTS `user_home_wiki`;
 DROP TABLE IF EXISTS `confirmation`;
 DROP TABLE IF EXISTS `stats_confirmations_by_month`;
 DROP TABLE IF EXISTS `user`;
@@ -136,6 +165,17 @@ CREATE TABLE `stats_confirmations_by_month` (
   `group` int(2) NOT NULL,
   `count` int(6) unsigned NOT NULL,
   UNIQUE KEY `year_month` (`year_month`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```sql
+CREATE TABLE `user_home_wiki` (
+  `hw_user_id` int(11) unsigned NOT NULL,
+  `hw_has_sul` int(1) unsigned NOT NULL DEFAULT 0,
+  `hw_home_db` varchar(255) DEFAULT NULL,
+  `hw_home_url` varchar(255) DEFAULT NULL,
+  `hw_checked` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`hw_user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 

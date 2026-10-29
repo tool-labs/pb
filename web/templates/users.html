@@ -4,7 +4,41 @@
 {%block heading    %}Alle Teilnehmer{%endblock %}
 
 {%block content %}
+  <form class="filters" method="get" action="{{ url_for('users') }}">
+    <label>Homewiki:
+      <select name="homewiki">
+        <option value="">alle</option>
+      {%for value, label, count in home_wikis: %}
+        <option value="{{ value }}"{% if filters.homewiki == value %} selected{% endif %}>{{ label }} ({{ count }})</option>
+      {%endfor %}
+      </select>
+    </label>
+    <label>Bestätigt:
+      <select name="verified">
+        <option value="">egal</option>
+        <option value="yes"{% if filters.verified == 'yes' %} selected{% endif %}>ja</option>
+        <option value="no"{% if filters.verified == 'no' %} selected{% endif %}>nein</option>
+      </select>
+    </label>
+    <label title="seit {{ since | format_date }}, ohne gelöschte Bestätigungen">Bestätigung in den letzten {{ recent_months }} Monaten:
+      <select name="recent">
+        <option value="">egal</option>
+        <option value="received"{% if filters.recent == 'received' %} selected{% endif %}>erhalten</option>
+        <option value="given"{% if filters.recent == 'given' %} selected{% endif %}>vergeben</option>
+        <option value="any"{% if filters.recent == 'any' %} selected{% endif %}>erhalten oder vergeben</option>
+      </select>
+    </label>
+    <button type="submit">Filtern</button>
+  {%if filtered: %}
+    <a href="{{ url_for('users') }}">Filter zurücksetzen</a>
+  {%endif %}
+  </form>
+
+  {%if filtered: %}
+  <p>{{users|length}} von {{total}} Teilnehmern entsprechen den Filtern:</p>
+  {%else %}
   <p>Die folgenden {{users|length}} Benutzer nehmen zurzeit am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
+  {%endif %}
   <table class="users tablesorter">
     <thead>
       <tr>
@@ -13,16 +47,26 @@
         <th class="given">Vergebene<br/>Bestätigungen</th>
         <th>Nimmt teil seit</th>
         <th>Ist bestätigt seit</th>
+        <th>Homewiki</th>
       </tr>
     </thead>
     <tbody>
-  {%for user_name, user_id, comment, is_hidden, was_banned, participates_since, verified_since, given_cf, taken_cf in users: %}
+  {%for user in users: %}
       <tr>
-        <td class="cf-user"><a href="{{ url_for('user', user_name=user_name) }}">{{user_name}}</a></td>
-        <td class="taken">{{ taken_cf if taken_cf != None else 0 }}</td>
-        <td class="given">{{ given_cf if given_cf != None else 0 }}</td>
-        <td class="cf-date">{{ participates_since | format_date }}</td>
-        <td class="cf-date">{{ (verified_since | format_date) if verified_since != None }}</td>
+        <td class="cf-user"><a href="{{ url_for('user', user_name=user.name) }}">{{user.name}}</a></td>
+        <td class="taken">{{ user.taken }}</td>
+        <td class="given">{{ user.given }}</td>
+        <td class="cf-date">{{ user.participates_since | format_date }}</td>
+        <td class="cf-date">{{ (user.verified_since | format_date) if user.verified_since != None }}</td>
+        <td class="home-wiki">
+        {%if user.home_wiki and not user.home_wiki.sul: %}
+          <span class="no-sul" title="Das dewiki-Konto ist mit keinem globalen Benutzerkonto (SUL) verbunden.">kein SUL-Konto</span>
+        {%elif user.home_wiki and user.home_wiki.url: %}
+          <a href="{{ user.home_wiki.url }}">{{ user.home_wiki.db }}</a>
+        {%elif user.home_wiki: %}
+          {{ user.home_wiki.db or '' }}
+        {%endif %}
+        </td>
       </tr>
   {%endfor %}
 
@@ -41,6 +85,11 @@
         }
       }
     });
+    // apply a filter right away; leave the unused filters out of the URL
+    $('form.filters').on('submit', function() {
+      $(this).find('select').filter(function() { return !this.value; }).prop('disabled', true);
+    });
+    $('form.filters select').on('change', function() { $(this.form).submit(); });
   });
 
 {%endblock %}

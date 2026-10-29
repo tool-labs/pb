@@ -41,13 +41,14 @@ def test_users_page(http):
     assert 'Die folgenden 5 Benutzer' in response.text
     rows = table_rows(response.text, 'users')
     assert rows[0][0] == 'Name'
-    #          name, taken, given, participates since, verified since
+    #          name, taken, given, participates since, verified since, home wiki
+    # (no home wikis yet: jobs/update_home_wikis.py has not run, see test_jobs.py)
     assert rows[1:] == [
-        ['Alice', '3', '4', '2008-02-10', '2015-06-02'],
-        ['Bob', '3', '3', '2008-02-11', '2017-01-02'],
-        ['Carol', '2', '4', '2008-02-12', ''],
-        ['Dave', '3', '1', '2015-06-01', '2015-06-04'],
-        ['Zoë Ünicode', '2', '0', '2024-05-01', ''],
+        ['Alice', '3', '4', '2008-02-10', '2015-06-02', ''],
+        ['Bob', '3', '3', '2008-02-11', '2017-01-02', ''],
+        ['Carol', '2', '4', '2008-02-12', '', ''],
+        ['Dave', '3', '1', '2015-06-01', '2015-06-04', ''],
+        ['Zoë Ünicode', '2', '0', '2024-05-01', '', ''],
     ]
 
 

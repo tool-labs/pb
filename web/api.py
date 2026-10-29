@@ -43,14 +43,25 @@ class WPPBException(Exception):
         """
         return repr(self.msg)
 
+def _text(value):
+    """The replicas return names as bytes (varbinary)."""
+    return value.decode('utf-8') if isinstance(value, (bytes, bytearray)) else value
+
+def _home_wiki(checked, has_sul, home_db, home_url):
+    """A row of `user_home_wiki` as dict, `None` if the user was not looked up yet."""
+    if checked is None:
+        return None
+    return {'sul': bool(has_sul), 'db': home_db, 'url': home_url}
+
 class Database:
     """
     This class provides access to the database.
     """
 
-    def __init__(self, use_replica=True):
+    def __init__(self, use_replica=True, use_centralauth=False):
         """
         *use_replica*: also connect to the dewiki replica (only needed by the bots)
+        *use_centralauth*: also connect to the CentralAuth replica (only needed by `update_home_wikis`)
         """
         pb_database=config.db_name
         wp_replica_db=config.replica_db_name
@@ -81,10 +92,16 @@ class Database:
             if use_replica:
                 self.wp_conn = pymysql.connections.Connection(host=wp_host, port=config.db_port, user=user_name, password=password, database=wp_replica_db,
                                charset='utf8', use_unicode=True, defer_connect=True)
+            self.ca_conn = None
+            if use_centralauth:
+                self.ca_conn = pymysql.connections.Connection(host=config.centralauth_host, port=config.db_port, user=user_name, password=password, database=config.centralauth_db_name,
+                               charset='utf8', use_unicode=True, defer_connect=True)
             # open the deferred connections; ping() no longer reconnects by default since PyMySQL 1.2
             self.conn.connect()
             if self.wp_conn is not None:
                 self.wp_conn.connect()
+            if self.ca_conn is not None:
+                self.ca_conn.connect()
         except pymysql.DatabaseError as e:
             raise WPPBException('You specified a wrong database connection ' +
                                 'data. Error message: ' + str(e))
@@ -120,6 +137,120 @@ class Database:
                 ORDER BY `user_name`
             ;''', (show_hidden_users, show_hidden_users, show_hidden_users, show_banned_users,))
             return curs.fetchall()
+
+    def get_user_list(self):
+        """
+        Returns the visible participants (neither hidden nor banned) for `/users` as dicts:
+        the counts of given/received confirmations (like `get_all_users`), the time of the
+        latest given/received confirmation (without deleted ones) and the cached home wiki
+        (`home_wiki`, see `get_home_wiki`).
+        """
+        with self.conn.cursor() as curs:
+            curs.execute('''
+            SELECT `user_name`, `user_id`, `user_participates_since`, `user_verified_since`,
+                    given.count, taken.count, given.last, taken.last,
+                    `hw_checked`, `hw_has_sul`, `hw_home_db`, `hw_home_url`
+                FROM `user`
+                LEFT JOIN (
+                    SELECT cf_user_id, COUNT(1) as `count`,
+                            MAX(IF(`cf_was_deleted` = 0, `cf_timestamp`, NULL)) as `last`
+                        FROM confirmation
+                        JOIN `user` AS taking ON taking.user_id = cf_confirmed_user_id
+                        WHERE taking.`user_is_hidden` = 0
+                        GROUP BY cf_user_id) as given
+                    ON given.cf_user_id = user_id
+                LEFT JOIN (
+                    SELECT cf_confirmed_user_id, COUNT(1) as `count`,
+                            MAX(IF(`cf_was_deleted` = 0, `cf_timestamp`, NULL)) as `last`
+                        FROM confirmation
+                        JOIN `user` AS giving ON giving.user_id = cf_user_id
+                        WHERE giving.`user_is_hidden` = 0
+                        GROUP BY cf_confirmed_user_id) as taken
+                    ON taken.cf_confirmed_user_id = user_id
+                LEFT JOIN `user_home_wiki` ON `hw_user_id` = `user_id`
+                WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0
+                ORDER BY `user_name`
+            ;''')
+            return [{'name': row[0], 'id': row[1], 'participates_since': row[2], 'verified_since': row[3],
+                     'given': row[4] or 0, 'taken': row[5] or 0, 'last_given': row[6], 'last_taken': row[7],
+                     'home_wiki': _home_wiki(*row[8:])}
+                    for row in curs.fetchall()]
+
+    def get_home_wiki(self, user_id):
+        """
+        Returns the cached home wiki of *user_id* as dict: `sul` (the dewiki account is
+        attached to a global account), `db` (e.g. `dewiki`, `None` without SUL account)
+        and `url` (e.g. `https://de.wikipedia.org`, `None` for closed wikis).
+        `None` if it was not looked up yet.
+        """
+        with self.conn.cursor() as curs:
+            curs.execute('''
+            SELECT `hw_checked`, `hw_has_sul`, `hw_home_db`, `hw_home_url`
+                FROM `user_home_wiki`
+                WHERE `hw_user_id` = %s
+            ;''', (user_id,))
+            row = curs.fetchone()
+            return _home_wiki(*row) if row else None
+
+    def update_home_wikis(self, max_age_days, batch_size=500):
+        """
+        Looks up the home wikis of all users that have no entry in `user_home_wiki` or one
+        older than *max_age_days* days and stores them there. The current user names come
+        from the dewiki replica (by `user_id`, so renames are followed), the home wikis from
+        the CentralAuth replica. Needs both connections. Returns the number of users checked.
+        """
+        if self.wp_conn is None or self.ca_conn is None:
+            raise WPPBException('update_home_wikis needs the replica and the CentralAuth connection')
+        with self.conn.cursor() as curs:
+            curs.execute('''
+            SELECT `user_id` FROM `user`
+                LEFT JOIN `user_home_wiki` ON `hw_user_id` = `user_id`
+                WHERE `hw_checked` IS NULL OR `hw_checked` < NOW() - INTERVAL %s DAY
+                ORDER BY `user_id`
+            ;''', (max_age_days,))
+            user_ids = [row[0] for row in curs.fetchall()]
+        for start in range(0, len(user_ids), batch_size):
+            batch = user_ids[start:start + batch_size]
+            names = self._get_mw_user_names(batch)
+            homes = self._get_global_home_wikis(list(names.values()))
+            rows = []
+            for user_id in batch:
+                home = homes.get(names.get(user_id))
+                # no SUL account: not attached on dewiki (or the dewiki account is gone)
+                rows.append((user_id, 1, home[0], home[1]) if home else (user_id, 0, None, None))
+            with self.conn.cursor() as curs:
+                curs.executemany('''
+                INSERT INTO `user_home_wiki` (`hw_user_id`, `hw_has_sul`, `hw_home_db`, `hw_home_url`, `hw_checked`)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    ON DUPLICATE KEY UPDATE `hw_has_sul` = VALUES(`hw_has_sul`), `hw_home_db` = VALUES(`hw_home_db`),
+                        `hw_home_url` = VALUES(`hw_home_url`), `hw_checked` = VALUES(`hw_checked`)
+                ;''', rows)
+            self.conn.commit()
+        return len(user_ids)
+
+    def _get_mw_user_names(self, user_ids):
+        """Returns `{user_id: user_name}` from the dewiki replica."""
+        with self.wp_conn.cursor() as curs:
+            curs.execute('SELECT `user_id`, `user_name` FROM `user` WHERE `user_id` IN (%s);'
+                         % ', '.join(['%s'] * len(user_ids)), user_ids)
+            return {row[0]: _text(row[1]) for row in curs.fetchall()}
+
+    def _get_global_home_wikis(self, user_names):
+        """
+        Returns `{user_name: (home_db, home_url)}` for the dewiki accounts in *user_names*
+        that are attached to a global (SUL) account.
+        """
+        if not user_names:
+            return {}
+        with self.ca_conn.cursor() as curs:
+            curs.execute('''
+            SELECT `lu_name`, `gu_home_db`, `url`
+                FROM `localuser`
+                JOIN `globaluser` ON `gu_name` = `lu_name`
+                LEFT JOIN `%s`.`wiki` ON `dbname` = `gu_home_db`
+                WHERE `lu_wiki` = 'dewiki' AND `lu_name` IN (%s)
+            ;''' % (config.meta_db_name, ', '.join(['%s'] * len(user_names))), user_names)
+            return {_text(row[0]): (_text(row[1]), _text(row[2])) for row in curs.fetchall()}
 
     def get_user_by_id(self, id):
         """
@@ -458,3 +589,5 @@ class Database:
         self.conn.close()
         if self.wp_conn is not None:
             self.wp_conn.close()
+        if getattr(self, 'ca_conn', None) is not None:
+            self.ca_conn.close()

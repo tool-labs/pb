@@ -6,8 +6,9 @@ from tests.conftest import schema_sql
 
 def test_schema_doc_contains_the_ddl_of_all_tables():
     sql = schema_sql()
-    assert re.findall(r'CREATE TABLE `(\w+)`', sql) == ['user', 'confirmation', 'stats_confirmations_by_month']
+    assert re.findall(r'CREATE TABLE `(\w+)`', sql) == ['user', 'confirmation', 'stats_confirmations_by_month', 'user_home_wiki']
     assert sql.index('DROP TABLE IF EXISTS `confirmation`') < sql.index('DROP TABLE IF EXISTS `user`')
+    assert 'DROP TABLE IF EXISTS `user_home_wiki`' in sql
 
 
 def test_schema_doc_spells_out_null_for_timestamps():
@@ -15,3 +16,4 @@ def test_schema_doc_spells_out_null_for_timestamps():
     sql = schema_sql()
     assert '`user_participates_since` timestamp NULL DEFAULT NULL' in sql
     assert '`user_verified_since` timestamp NULL DEFAULT NULL' in sql
+    assert '`hw_checked` timestamp NULL DEFAULT NULL' in sql

@@ -5,7 +5,8 @@ HTTP server process.
 
 Configuration (all tests in this directory are skipped unless PB_TEST_DB_HOST is set):
     PB_TEST_DB_HOST, PB_TEST_DB_PORT (3306), PB_TEST_DB_USER (root), PB_TEST_DB_PASSWORD ('')
-    PB_TEST_DB_NAME (pb_systemtest), PB_TEST_REPLICA_DB_NAME (dewiki_systemtest)
+    PB_TEST_DB_NAME (pb_systemtest), PB_TEST_REPLICA_DB_NAME (dewiki_systemtest),
+    PB_TEST_CENTRALAUTH_DB_NAME (centralauth_systemtest, also stands in for meta_p)
 
 The test databases are dropped and recreated, so never point this at ToolsDB.
 """
@@ -31,14 +32,24 @@ DB_USER = os.environ.get('PB_TEST_DB_USER', 'root')
 DB_PASSWORD = os.environ.get('PB_TEST_DB_PASSWORD', '')
 DB_NAME = os.environ.get('PB_TEST_DB_NAME', 'pb_systemtest')
 REPLICA_DB_NAME = os.environ.get('PB_TEST_REPLICA_DB_NAME', 'dewiki_systemtest')
+CENTRALAUTH_DB_NAME = os.environ.get('PB_TEST_CENTRALAUTH_DB_NAME', 'centralauth_systemtest')
 
 REPLICA_SCHEMA_FILE = Path(__file__).with_name('replica_schema.sql')
+CENTRALAUTH_SCHEMA_FILE = Path(__file__).with_name('centralauth_schema.sql')
 
 # MediaWiki user ids of the test users (the pb database reuses them)
 MW_USERS = {
     'Alice': 101, 'Bob': 102, 'Carol': 103, 'Dave': 104,
     'Eve': 105, 'Mallory': 106, 'Zoë Ünicode': 107,
 }
+
+# global accounts: name -> home wiki; Dave has no SUL account
+GLOBAL_USERS = {
+    'Alice': 'dewiki', 'Bob': 'enwiki', 'Carol': 'closedwiki',
+    'Eve': 'dewiki', 'Mallory': 'dewiki', 'Zoë Ünicode': 'dewiki',
+}
+# meta_p.wiki; closedwiki is not listed
+WIKIS = [('dewiki', 'https://de.wikipedia.org'), ('enwiki', 'https://en.wikipedia.org')]
 
 
 def pytest_collection_modifyitems(config, items):
@@ -70,14 +81,14 @@ def databases():
         pytest.exit('refusing to drop databases on a Wikimedia server: ' + DB_HOST, returncode=2)
     conn = connect()
     with conn.cursor() as curs:
-        for name in (DB_NAME, REPLICA_DB_NAME):
+        for name in (DB_NAME, REPLICA_DB_NAME, CENTRALAUTH_DB_NAME):
             curs.execute(f'DROP DATABASE IF EXISTS `{name}`')
             curs.execute(f'CREATE DATABASE `{name}` CHARACTER SET utf8mb4')
     conn.close()
     yield
     conn = connect()
     with conn.cursor() as curs:
-        for name in (DB_NAME, REPLICA_DB_NAME):
+        for name in (DB_NAME, REPLICA_DB_NAME, CENTRALAUTH_DB_NAME):
             curs.execute(f'DROP DATABASE IF EXISTS `{name}`')
     conn.close()
 
@@ -109,6 +120,9 @@ def app_env(databases, cnf_file, dump_folder):
         'PB_DB_PORT': str(DB_PORT),
         'PB_DB_NAME': DB_NAME,
         'PB_REPLICA_DB_NAME': REPLICA_DB_NAME,
+        'PB_CENTRALAUTH_HOST': DB_HOST,
+        'PB_CENTRALAUTH_DB_NAME': CENTRALAUTH_DB_NAME,
+        'PB_META_DB_NAME': CENTRALAUTH_DB_NAME,
         'PB_SQL_DUMP_FOLDER': str(dump_folder),
         'PYTHONPATH': str(WEB_DIR),
     })
@@ -129,6 +143,9 @@ def in_process_config(request):
         mp.setattr(config, 'db_port', DB_PORT)
         mp.setattr(config, 'db_name', DB_NAME)
         mp.setattr(config, 'replica_db_name', REPLICA_DB_NAME)
+        mp.setattr(config, 'centralauth_host', DB_HOST)
+        mp.setattr(config, 'centralauth_db_name', CENTRALAUTH_DB_NAME)
+        mp.setattr(config, 'meta_db_name', CENTRALAUTH_DB_NAME)
         mp.setattr(config, 'sql_dump_folder', app_env['PB_SQL_DUMP_FOLDER'])
         yield
 
@@ -167,6 +184,19 @@ def reset_databases():
     with conn.cursor() as curs:
         curs.executemany('INSERT INTO `user` (user_id, user_name) VALUES (%s, %s)',
                          [(uid, name.encode('utf-8')) for name, uid in MW_USERS.items()])
+    conn.close()
+    conn = connect(CENTRALAUTH_DB_NAME)
+    with conn.cursor() as curs:
+        curs.execute('DROP TABLE IF EXISTS `localuser`, `globaluser`, `wiki`')
+    run_sql(conn, CENTRALAUTH_SCHEMA_FILE.read_text())
+    with conn.cursor() as curs:
+        curs.executemany('INSERT INTO `globaluser` (gu_name, gu_home_db) VALUES (%s, %s)',
+                         [(name.encode('utf-8'), home.encode('utf-8')) for name, home in GLOBAL_USERS.items()])
+        curs.executemany("INSERT INTO `localuser` (lu_wiki, lu_name, lu_local_id) VALUES ('dewiki', %s, %s)",
+                         [(name.encode('utf-8'), MW_USERS[name]) for name in GLOBAL_USERS])
+        # Dave only has an account on another wiki, not attached on dewiki
+        curs.execute("INSERT INTO `localuser` (lu_wiki, lu_name, lu_local_id) VALUES ('enwiki', 'Dave', 1)")
+        curs.executemany('INSERT INTO `wiki` (dbname, url) VALUES (%s, %s)', WIKIS)
     conn.close()
 
 

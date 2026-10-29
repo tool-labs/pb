@@ -65,6 +65,8 @@ ToolsDB database `s51344__pb` (MariaDB 10.6):
   `cf_was_deleted` marks revoked confirmations.
 * `stats_confirmations_by_month`: precomputed statistics for the main page, refreshed hourly
   by `jobs/update_stats.py`.
+* `user_home_wiki`: home wiki of the global (SUL) account of each participant, looked up in the
+  CentralAuth replica by `jobs/update_home_wikis.py` (hourly, each user again after 7 days).
 
 `BotDatabase` (SpBot) also reads `user` and `block_target` from the dewiki replica (`dewiki_p`); the web app does not use the replica.
 Credentials come from `~/replica.pb-db.cnf` (a symlink to Toolforge's `replica.my.cnf`).
@@ -103,7 +105,7 @@ toolforge jobs load ~/toolforge-jobs.yaml  # symlink to ~/pb/jobs/toolforge-jobs
     --filelog-stdout logs/build-venv.out --filelog-stderr logs/build-venv.err \
     --command "python3 -m venv www/python/venv && www/python/venv/bin/pip install -U pip wheel && www/python/venv/bin/pip install -r pb/web/requirements.txt -c pb/tests/constraints-production.txt"
   ```
-* Jobs (`jobs/toolforge-jobs.yaml`): `update-stats` (hourly), `create-database-dump`,
+* Jobs (`jobs/toolforge-jobs.yaml`): `update-stats` and `update-home-wikis` (hourly), `create-database-dump`,
   `delete-old-database-dump` and `remove-old-logs` (daily). File logs go to `~/logs/`.
 * Before `toolforge jobs load`, compare with `toolforge jobs dump`: `load` replaces all jobs of the tool.
 
@@ -116,10 +118,10 @@ python -m pytest tests/unit          # no database needed
 
 * **Unit tests** (`tests/unit/`) test the filters, statistics helpers, configuration and all
   routes with an in-memory fake database (`tests/unit/fake_db.py`).
-* **System tests** (`tests/system/`) need a MariaDB server. They create two scratch databases
-  (`pb_systemtest`, `dewiki_systemtest`), load the DDL from `sql/schema.md` and a minimal replica schema,
+* **System tests** (`tests/system/`) need a MariaDB server. They create three scratch databases
+  (`pb_systemtest`, `dewiki_systemtest`, `centralauth_systemtest`), load the DDL from `sql/schema.md` and minimal replica schemas,
   write test data through `BotDatabase` the same way SpBot does, start the web app as a
-  separate HTTP server process and test it via HTTP. They also run `jobs/update_stats.py`.
+  separate HTTP server process and test it via HTTP. They also run `jobs/update_stats.py` and `jobs/update_home_wikis.py`.
   Without `PB_TEST_DB_HOST` they are skipped.
 
   ```bash

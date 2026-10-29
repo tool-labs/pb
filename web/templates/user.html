@@ -18,6 +18,17 @@
     <a href="https://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user['name'] | replace(' ', '_') | urlencode }}">Diskussionsseite</a>
   </div>
 
+  {% if home_wiki: %}
+    <p class="home-wiki"><b>Homewiki:</b>
+    {% if not home_wiki['sul'] %}
+      <span class="no-sul">kein SUL-Konto auf dewiki</span>
+    {% elif home_wiki['url'] %}
+      <a href="{{ home_wiki['url'] }}">{{ home_wiki['url'] | replace('https://', '') }}</a> ({{ home_wiki['db'] }})
+    {% else %}
+      {{ home_wiki['db'] }}
+    {% endif %}
+    </p>
+  {% endif %}
   {% if user['comment'] != None: %}
     <p><b>Kommentar:</b> {{ user['comment'] }}</p>
   {% endif %}

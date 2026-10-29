@@ -1,3 +1,5 @@
+import calendar
+import datetime
 import gzip
 import os.path, os
 import re
@@ -146,13 +148,76 @@ def user(user_name=None):
 
     return render_template('user.html',
                            user=user,
+                           home_wiki=get_db().get_home_wiki(user['id']),
                            confirmations_given=confirmations_given,
                            confirmations_received=confirmations_received)
 
+RECENT_MONTHS = 6
+# allowed values of the filters on /users ('' = all)
+USER_FILTERS = {'verified': ('yes', 'no'), 'recent': ('received', 'given', 'any')}
+NO_SUL = 'none'
+
+def today():
+    return datetime.date.today()
+
+def months_before(day, months):
+    """*day* minus *months* calendar months, as datetime at midnight (Aug 31 - 6 = Feb 28)."""
+    month = day.month - months
+    year = day.year + (month - 1) // 12
+    month = (month - 1) % 12 + 1
+    return datetime.datetime(year, month, min(day.day, calendar.monthrange(year, month)[1]))
+
+def _user_filters(args):
+    """The filters of /users from the query string; unknown values are ignored."""
+    filters = {'homewiki': args.get('homewiki', '').strip()}
+    for name, values in USER_FILTERS.items():
+        value = args.get(name, '')
+        filters[name] = value if value in values else ''
+    return filters
+
+def _user_matches(user, filters, since):
+    home_wiki = user['home_wiki']
+    if filters['homewiki'] == NO_SUL:
+        if home_wiki is None or home_wiki['sul']:
+            return False
+    elif filters['homewiki'] and (home_wiki is None or home_wiki['db'] != filters['homewiki']):
+        return False
+    if filters['verified'] and (user['verified_since'] is not None) != (filters['verified'] == 'yes'):
+        return False
+    received = user['last_taken'] is not None and user['last_taken'] >= since
+    given = user['last_given'] is not None and user['last_given'] >= since
+    if filters['recent'] == 'received' and not received:
+        return False
+    if filters['recent'] == 'given' and not given:
+        return False
+    if filters['recent'] == 'any' and not (received or given):
+        return False
+    return True
+
+def _home_wiki_options(users, selected):
+    """`(value, label, count)` for the home wiki filter, the most frequent first."""
+    counts = {}
+    for user in users:
+        home_wiki = user['home_wiki']
+        if home_wiki is not None:
+            key = home_wiki['db'] if home_wiki['sul'] else NO_SUL
+            if key:
+                counts[key] = counts.get(key, 0) + 1
+    if selected and selected not in counts:
+        counts[selected] = 0
+    labels = {NO_SUL: 'kein SUL-Konto auf dewiki'}
+    return [(key, labels.get(key, key), count)
+            for key, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+
 @app.route('/users')
 def users():
-    users = get_db().get_all_users(show_hidden_users=False)
-    return render_template('users.html', users=users)
+    all_users = get_db().get_user_list()
+    filters = _user_filters(flask.request.args)
+    since = months_before(today(), RECENT_MONTHS)
+    users = [user for user in all_users if _user_matches(user, filters, since)]
+    return render_template('users.html', users=users, total=len(all_users), filters=filters,
+                           filtered=any(filters.values()), since=since, recent_months=RECENT_MONTHS,
+                           home_wikis=_home_wiki_options(all_users, filters['homewiki']))
 
 @app.route('/sql-dumps')
 def sql_dumps():

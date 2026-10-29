@@ -22,6 +22,13 @@ CONFIRMATIONS = {
     (1, 2): (ts(2008, 2, 20, 10, 0), 'Met at the [[Stammtisch Berlin]]'),
     (2, 1): (ts(2008, 2, 20, 10, 5), None),
     (3, 1): (ts(2016, 1, 2, 18, 0), 'Hidden user comment'),
+    (4, 1): (ts(2017, 1, 2, 9, 0), None),
+}
+
+# user_id -> (hw_has_sul, hw_home_db, hw_home_url); missing = not looked up yet
+HOME_WIKIS = {
+    1: (1, 'dewiki', 'https://de.wikipedia.org'),
+    2: (0, None, None),
 }
 
 
@@ -78,6 +85,26 @@ class FakeDatabase(api.Database):
             taken = len(self.get_confirmations_by_confirmed(u[1], show_hidden_users)) or None
             rows.append(u + (given, taken))
         return rows
+
+    def get_user_list(self):
+        rows = []
+        for u in USERS:
+            if u[3] or u[4]:
+                continue
+            given = self.get_confirmations_by_user(u[1], show_hidden_users=False)
+            taken = self.get_confirmations_by_confirmed(u[1], show_hidden_users=False)
+            rows.append({'name': u[0], 'id': u[1], 'participates_since': u[5], 'verified_since': u[6],
+                         'given': len(given), 'taken': len(taken),
+                         'last_given': max((c[2] for c in given), default=None),
+                         'last_taken': max((c[2] for c in taken), default=None),
+                         'home_wiki': self.get_home_wiki(u[1])})
+        return rows
+
+    def get_home_wiki(self, user_id):
+        if user_id not in HOME_WIKIS:
+            return None
+        has_sul, db, url = HOME_WIKIS[user_id]
+        return {'sul': bool(has_sul), 'db': db, 'url': url}
 
     def get_user_count(self, count_banned_users=False, count_hidden_users=True):
         return len([u for u in USERS if (count_hidden_users or not u[3]) and (count_banned_users or not u[4])])

@@ -1,4 +1,6 @@
 """Tests for the Flask routes in app.py, using the fake database from conftest.py."""
+import datetime as dt
+
 import pytest
 
 import app as webapp
@@ -47,6 +49,89 @@ def test_user_page(client):
     assert '2008-03-01' in html       # verified since
     assert '<a href="/user/name/Bob">Bob</a>' in html
     assert 'Ex-Teilnehmer' in html or 'Eve' not in html
+
+
+def test_user_page_shows_home_wiki(client):
+    html = client.get('/user/name/Alice').get_data(as_text=True)
+    assert '<a href="https://de.wikipedia.org">de.wikipedia.org</a> (dewiki)' in html
+
+
+def test_user_page_without_sul_account(client):
+    assert 'kein SUL-Konto auf dewiki' in client.get('/user/name/Bob').get_data(as_text=True)
+
+
+def test_user_page_without_home_wiki_lookup(client):
+    assert 'Homewiki' not in client.get('/user/name/Mallory').get_data(as_text=True)
+
+
+def test_users_page_shows_home_wikis(client):
+    html = client.get('/users').get_data(as_text=True)
+    assert '<th>Homewiki</th>' in html
+    assert '<a href="https://de.wikipedia.org">dewiki</a>' in html
+    assert '>kein SUL-Konto</span>' in html
+    assert '<option value="dewiki">dewiki (1)</option>' in html
+    assert '<option value="none">kein SUL-Konto auf dewiki (1)</option>' in html
+    assert 'Filter zurücksetzen' not in html
+
+
+def users_shown(client, query):
+    html = client.get('/users' + query).get_data(as_text=True)
+    return [name for name in ('Alice', 'Bob') if '/user/name/' + name in html]
+
+
+@pytest.mark.parametrize('query, expected', [
+    ('', ['Alice', 'Bob']),
+    ('?homewiki=dewiki', ['Alice']),
+    ('?homewiki=none', ['Bob']),
+    ('?homewiki=enwiki', []),
+    ('?verified=yes', ['Alice']),
+    ('?verified=no', ['Bob']),
+    ('?verified=maybe', ['Alice', 'Bob']),   # unknown values are ignored
+    ('?homewiki=dewiki&verified=no', []),
+])
+def test_users_page_filters(client, query, expected):
+    assert users_shown(client, query) == expected
+
+
+@pytest.mark.parametrize('today, recent, expected', [
+    # Alice and Bob confirmed each other in Feb 2008 (and Mallory confirmed Alice later)
+    (dt.date(2008, 8, 15), 'given', ['Alice', 'Bob']),
+    (dt.date(2008, 8, 15), 'received', ['Alice', 'Bob']),
+    # the latest: Mallory (banned, not listed, but counted) confirmed Alice in Jan 2017
+    (dt.date(2017, 3, 1), 'received', ['Alice']),
+    (dt.date(2017, 3, 1), 'given', []),
+    (dt.date(2017, 3, 1), 'any', ['Alice']),
+    (dt.date(2017, 8, 1), 'any', []),
+])
+def test_users_page_filters_recent_confirmations(client, monkeypatch, today, recent, expected):
+    monkeypatch.setattr(webapp, 'today', lambda: today)
+    assert users_shown(client, '?recent=' + recent) == expected
+
+
+def test_users_page_keeps_the_filters(client, monkeypatch):
+    monkeypatch.setattr(webapp, 'today', lambda: dt.date(2017, 3, 1))
+    html = client.get('/users?homewiki=dewiki&verified=yes&recent=any').get_data(as_text=True)
+    assert '<option value="dewiki" selected>dewiki (1)</option>' in html
+    assert '<option value="yes" selected>ja</option>' in html
+    assert '<option value="any" selected>erhalten oder vergeben</option>' in html
+    assert '1 von 2 Teilnehmern entsprechen den Filtern' in html
+    assert '<a href="/users">Filter zurücksetzen</a>' in html
+
+
+def test_users_page_keeps_an_unknown_home_wiki_filter(client):
+    html = client.get('/users?homewiki=enwiki').get_data(as_text=True)
+    assert '<option value="enwiki" selected>enwiki (0)</option>' in html
+    assert '0 von 2 Teilnehmern' in html
+
+
+@pytest.mark.parametrize('day, expected', [
+    (dt.date(2026, 10, 29), dt.datetime(2026, 4, 29)),
+    (dt.date(2026, 3, 15), dt.datetime(2025, 9, 15)),
+    (dt.date(2026, 8, 31), dt.datetime(2026, 2, 28)),
+    (dt.date(2026, 6, 30), dt.datetime(2025, 12, 30)),
+])
+def test_months_before(day, expected):
+    assert webapp.months_before(day, 6) == expected
 
 
 def test_user_page_shows_comment(client):
@@ -155,7 +240,7 @@ def test_web_app_does_not_use_the_replica(client, fake_db_class):
 def test_database_connection_is_closed_after_failing_request(production_client, fake_db_class, monkeypatch):
     def broken(*args, **kwargs):
         raise RuntimeError('database went away')
-    monkeypatch.setattr(fake_db_class, 'get_all_users', broken)
+    monkeypatch.setattr(fake_db_class, 'get_user_list', broken)
     assert production_client.get('/users').status_code == 500
     assert fake_db_class.instances[0].closed
 
