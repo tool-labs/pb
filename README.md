@@ -66,6 +66,8 @@ ToolsDB database `s51344__pb` (MariaDB 10.6):
   `cf_was_deleted` marks revoked confirmations.
 * `stats_confirmations_by_month`: precomputed statistics for the main page, refreshed hourly
   by `jobs/update_stats.py`.
+* `audit_trail`: admin actions (renames, hiding/banning, comments, deleted confirmations …)
+  with reason and performer; renames are recorded by `jobs/update_user_names.py`.
 * `user_home_wiki`: home wiki of the global (SUL) account of each participant, looked up in the
   CentralAuth replica by `jobs/update_home_wikis.py` (hourly, each user again after 7 days).
 

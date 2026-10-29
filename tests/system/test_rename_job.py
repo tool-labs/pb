@@ -47,6 +47,24 @@ def test_renames_are_taken_over(app_env, pb_sql, http):
     assert http('/user/name/Roberta').status == 200
 
 
+def test_renames_are_recorded_in_the_audit_trail(pb_sql):
+    with pb_sql.cursor() as curs:
+        curs.execute('SELECT at_action, at_user_id, at_field, at_old_value, at_new_value, at_performer,'
+                     ' at_timestamp IS NOT NULL FROM audit_trail ORDER BY at_id')
+        assert list(curs.fetchall()) == [
+            ('rename', 102, 'user_name', 'Bob', 'Roberta', 'update-user-names (Job)', 1),
+            ('rename', 107, 'user_name', 'Zoë Ünicode', 'Zoe', 'update-user-names (Job)', 1),
+        ]
+
+
+def test_admin_change_with_audit_entry(bot_db, pb_sql):
+    bot_db.add_audit_entry('user_change', 'Admin', user_id=104, field='user_comment',
+                           old_value=None, new_value='note', reason='Test [[link]]')
+    with pb_sql.cursor() as curs:
+        curs.execute("SELECT at_reason, at_performer FROM audit_trail WHERE at_action = 'user_change'")
+        assert curs.fetchall() == (('Test [[link]]', 'Admin'),)
+
+
 def test_name_used_by_another_participant_fails_the_job(app_env, pb_sql, replica_sql):
     # Alice is renamed to Carol, but the pb entry of Carol (gone on dewiki) still has that name
     with replica_sql.cursor() as curs:

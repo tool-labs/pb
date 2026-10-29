@@ -19,6 +19,7 @@ user 1 ──< confirmation >── 1 user
 
 stats_confirmations_by_month   (derived from confirmation + user, no foreign keys)
 user_home_wiki                 (cache of the CentralAuth replica, 1 row per user, no foreign key)
+audit_trail                    (log of admin actions, no foreign keys: entries outlive deleted rows)
 ```
 
 ### `user`: participants
@@ -75,6 +76,44 @@ Filled by `jobs/update_home_wikis.py` (hourly): users without a row or with a ro
 `home_wiki_max_age_days` (`web/config.py`, 7 days) are looked up again. Users without a row are shown
 without home wiki. The web app only reads this table, it has no replica connection.
 
+### `audit_trail`: admin actions
+
+| Column | Type | Meaning |
+|--------|------|---------|
+| `at_id` | `int unsigned`, auto increment | |
+| `at_timestamp` | `timestamp` | When the action was done, **UTC** (unlike the wiki times in the other tables). |
+| `at_action` | `varchar(32)` | See below. |
+| `at_user_id` | `int unsigned`, nullable | The affected user; for confirmations `cf_user_id` (who confirmed). |
+| `at_confirmed_user_id` | `int unsigned`, nullable | For confirmations: `cf_confirmed_user_id`. |
+| `at_field` | `varchar(64)`, nullable | The changed column, `NULL` for deletions. |
+| `at_old_value`, `at_new_value` | `mediumtext`, nullable | Values before/after (`0`/`1` for the flags). For deletions `at_old_value` is the deleted row as JSON. |
+| `at_reason` | `text`, nullable | Reason entered by the admin (may contain wikitext links). |
+| `at_performer` | `varchar(255)` | Wiki user name of the admin, or the job (`update-user-names (Job)`). |
+
+`at_action` and the allowed `at_field` (checked by `Database.add_audit_entry`):
+
+| `at_action` | `at_field` | Written by |
+|-------------|------------|------------|
+| `rename` | `user_name` | `jobs/update_user_names.py`, automatically with every rename |
+| `user_change` | `user_was_banned`, `user_is_hidden`, `user_comment` | admins (manually in SQL until the web UI exists) |
+| `confirmation_change` | `cf_comment`, `cf_was_deleted` | admins |
+| `user_delete` | `NULL` | admins |
+| `confirmation_delete` | `NULL` | admins |
+
+Privacy: the table is **not public**. It contains old names, also of accounts that vanished on
+request (`Vanished user …`, `Renamed user …`), and admin notes. The job log, which everyone on
+Toolforge can read, gets only user ids and new names.
+
+Until the web UI exists, a manual change is recorded in the same transaction, e.g.:
+
+```
+START TRANSACTION;
+UPDATE user SET user_is_hidden = 1 WHERE user_id = 123;
+INSERT INTO audit_trail (at_timestamp, at_action, at_user_id, at_field, at_old_value, at_new_value, at_reason, at_performer)
+  VALUES (UTC_TIMESTAMP(), 'user_change', 123, 'user_is_hidden', '0', '1', 'left the project, see [[Diskussion:…]]', 'AdminName');
+COMMIT;
+```
+
 ## What is counted where
 
 | Place | Hidden users | Banned users | Deleted confirmations |
@@ -123,6 +162,7 @@ sed -n '/^```sql$/,/^```$/{/^```/d;p}' sql/schema.md | mariadb <database>
 `NOT NULL … ON UPDATE CURRENT_TIMESTAMP` columns.
 
 ```sql
+DROP TABLE IF EXISTS `audit_trail`;
 DROP TABLE IF EXISTS `user_home_wiki`;
 DROP TABLE IF EXISTS `confirmation`;
 DROP TABLE IF EXISTS `stats_confirmations_by_month`;
@@ -177,6 +217,24 @@ CREATE TABLE `user_home_wiki` (
   `hw_home_url` varchar(255) DEFAULT NULL,
   `hw_checked` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`hw_user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```sql
+CREATE TABLE `audit_trail` (
+  `at_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `at_timestamp` timestamp NULL DEFAULT NULL,
+  `at_action` varchar(32) NOT NULL,
+  `at_user_id` int(11) unsigned DEFAULT NULL,
+  `at_confirmed_user_id` int(11) unsigned DEFAULT NULL,
+  `at_field` varchar(64) DEFAULT NULL,
+  `at_old_value` mediumtext DEFAULT NULL,
+  `at_new_value` mediumtext DEFAULT NULL,
+  `at_reason` text DEFAULT NULL,
+  `at_performer` varchar(255) NOT NULL,
+  PRIMARY KEY (`at_id`),
+  KEY `at_user_id` (`at_user_id`),
+  KEY `at_timestamp` (`at_timestamp`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 

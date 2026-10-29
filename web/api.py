@@ -43,6 +43,17 @@ class WPPBException(Exception):
         """
         return repr(self.msg)
 
+# at_action values of audit_trail, see sql/schema.md
+AUDIT_ACTIONS = ('rename', 'user_change', 'confirmation_change', 'user_delete', 'confirmation_delete')
+AUDIT_FIELDS = {
+    'rename': ('user_name',),
+    'user_change': ('user_was_banned', 'user_is_hidden', 'user_comment'),
+    'confirmation_change': ('cf_comment', 'cf_was_deleted'),
+    'user_delete': (None,),
+    'confirmation_delete': (None,),
+}
+UPDATE_USER_NAMES_PERFORMER = 'update-user-names (Job)'
+
 def _text(value):
     """The replicas return names as bytes (varbinary)."""
     return value.decode('utf-8') if isinstance(value, (bytes, bytearray)) else value
@@ -256,6 +267,9 @@ class Database:
                 try:
                     with self.conn.cursor() as curs:
                         curs.execute('UPDATE `user` SET `user_name` = %s WHERE `user_id` = %s;', (new_name, user_id))
+                    self.add_audit_entry('rename', UPDATE_USER_NAMES_PERFORMER, user_id=user_id, field='user_name',
+                                         old_value=old_name,
+                                         new_value=new_name, commit=False)
                     self.conn.commit()
                     results.append((user_id, old_name, new_name, True))
                 except pymysql.IntegrityError:
@@ -266,6 +280,33 @@ class Database:
                 break
             pending = failed
         return results + [rename + (False,) for rename in pending]
+
+    def add_audit_entry(self, action, performer, user_id=None, confirmed_user_id=None, field=None,
+                        old_value=None, new_value=None, reason=None, timestamp=None, commit=True):
+        """
+        Records an admin action in `audit_trail` (see sql/schema.md for the meaning of the
+        columns). *performer* is the wiki user name of the admin or the name of the job.
+        *timestamp* defaults to now (UTC). With *commit*=False the caller commits, so the entry is
+        stored together with the change it describes. Returns the new `at_id`.
+        """
+        if action not in AUDIT_ACTIONS:
+            raise WPPBException('unknown audit action: %r' % (action,))
+        if field not in AUDIT_FIELDS[action]:
+            raise WPPBException('field %r does not fit audit action %r' % (field, action))
+        if not performer:
+            raise WPPBException('an audit entry needs a performer')
+        with self.conn.cursor() as curs:
+            curs.execute('''
+            INSERT INTO `audit_trail` (`at_timestamp`, `at_action`, `at_user_id`, `at_confirmed_user_id`,
+                    `at_field`, `at_old_value`, `at_new_value`, `at_reason`, `at_performer`)
+                VALUES (COALESCE(%s, UTC_TIMESTAMP()), %s, %s, %s, %s, %s, %s, %s, %s)
+            ;''', (timestamp, action, user_id, confirmed_user_id, field,
+                  None if old_value is None else str(old_value), None if new_value is None else str(new_value),
+                  reason, performer))
+            entry_id = curs.lastrowid
+        if commit:
+            self.conn.commit()
+        return entry_id
 
     def _get_mw_user_names(self, user_ids):
         """Returns `{user_id: user_name}` from the dewiki replica."""
