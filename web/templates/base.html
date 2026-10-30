@@ -13,6 +13,7 @@
     <meta name="robots" content="noindex,nofollow" />
   </head>
   <body>
+    <div id="navi">
     <details id="lang-switch" title="{{ _('nav.language') }}">
 {%- for code, flag, name, url in languages if code == lang %}
       <summary><span class="flag">{{ flag }}</span> {{ name }}</summary>
@@ -23,7 +24,7 @@
 {%- endfor %}
       </ul>
     </details>
-    <div id="navi"><a href="{{ url_for('index') }}">{{ _('nav.home') }}</a> | <a href="{{ url_for('users') }}">{{ _('nav.users') }}</a> | <a href="{{ url_for('about') }}">{{ _('nav.about') }}</a></div>
+    <a href="{{ url_for('index') }}">{{ _('nav.home') }}</a> | <a href="{{ url_for('users') }}">{{ _('nav.users') }}</a> | <a href="{{ url_for('about') }}">{{ _('nav.about') }}</a></div>
     <h1>{% block heading %}{{ _('site.namespace') }}:{{ _('site.name') }}{% endblock %}</h1>
 {%- block content %}{% endblock %}
     <div id="footer">
