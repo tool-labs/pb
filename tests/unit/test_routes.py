@@ -88,6 +88,12 @@ def users_shown(client, query):
     ('?verified=no', ['Bob']),
     ('?verified=maybe', ['Alice', 'Bob']),   # unknown values are ignored
     ('?homewiki=dewiki&verified=no', []),
+    ('?name=li', ['Alice']),
+    ('?name=ALI', ['Alice']),           # case is ignored
+    ('?name=+b+', ['Bob']),             # surrounding spaces are ignored
+    ('?name=ce', ['Alice']),
+    ('?name=ab', []),                   # the characters must appear in this order, contiguous
+    ('?name=o&verified=yes', []),
 ])
 def test_users_page_filters(client, query, expected):
     assert users_shown(client, query) == expected
@@ -110,7 +116,8 @@ def test_users_page_filters_recent_confirmations(client, monkeypatch, today, rec
 
 def test_users_page_keeps_the_filters(client, monkeypatch):
     monkeypatch.setattr(webapp, 'today', lambda: dt.date(2017, 3, 1))
-    html = client.get('/users?homewiki=dewiki&verified=yes&recent=any').get_data(as_text=True)
+    html = client.get('/users?name=al&homewiki=dewiki&verified=yes&recent=any').get_data(as_text=True)
+    assert '<input type="search" name="name" value="al"/>' in html
     assert '<option value="dewiki" selected>dewiki (1)</option>' in html
     assert '<option value="yes" selected>ja</option>' in html
     assert '<option value="any" selected>erhalten oder vergeben</option>' in html

@@ -5,6 +5,9 @@
 
 {%block content %}
   <form class="filters" method="get" action="{{ url_for('users') }}">
+    <label title="Groß-/Kleinschreibung wird ignoriert">Name enthält:
+      <input type="search" name="name" value="{{ filters.name }}"/>
+    </label>
     <label>Homewiki:
       <select name="homewiki">
         <option value="">alle</option>
@@ -87,7 +90,7 @@
     });
     // apply a filter right away; leave the unused filters out of the URL
     $('form.filters').on('submit', function() {
-      $(this).find('select').filter(function() { return !this.value; }).prop('disabled', true);
+      $(this).find('select, input').filter(function() { return !this.value; }).prop('disabled', true);
     });
     $('form.filters select').on('change', function() { $(this.form).submit(); });
   });

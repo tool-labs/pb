@@ -169,13 +169,15 @@ def months_before(day, months):
 
 def _user_filters(args):
     """The filters of /users from the query string; unknown values are ignored."""
-    filters = {'homewiki': args.get('homewiki', '').strip()}
+    filters = {'name': args.get('name', '').strip(), 'homewiki': args.get('homewiki', '').strip()}
     for name, values in USER_FILTERS.items():
         value = args.get(name, '')
         filters[name] = value if value in values else ''
     return filters
 
 def _user_matches(user, filters, since):
+    if filters['name'] and filters['name'].casefold() not in user['name'].casefold():
+        return False
     home_wiki = user['home_wiki']
     if filters['homewiki'] == NO_SUL:
         if home_wiki is None or home_wiki['sul']:
