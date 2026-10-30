@@ -1,24 +1,23 @@
 {%extends "base.html" %}
 
-{%block page_title %}SQL Dumps{%endblock %}
-{%block heading %}Die letzten Snapshots{%endblock %}
+{%block page_title %}{{ _('dumps.title') }}{%endblock %}
+{%block heading %}{{ _('dumps.heading') }}{%endblock %}
 
 {%block content %}
-  <p>Dateien mit der Endung <code>.enc</code> sind verschlüsselt. Den Schlüssel kennen die Maintainer.
-  Entschlüsseln mit<br>
-  <code>openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:SCHLÜSSELDATEI -in wppb-….sql.bz2.enc | bunzip2 &gt; wppb.sql</code></p>
+  <p>{{ _('dumps.encrypted') }}<br>
+  <code>openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:{{ _('dumps.key_file') }} -in wppb-….sql.bz2.enc | bunzip2 &gt; wppb.sql</code></p>
   <table>
     <thead>
       <tr>
-        <th>Datei</th>
-        <th>Größe</th>
+        <th>{{ _('dumps.file') }}</th>
+        <th>{{ _('dumps.size') }}</th>
       </tr>
     </thead>
     <tbody>
   {%for file_name, file_size in files_list: %}
       <tr>
         <td><a href="{{ url_for('sql_dump_file', file_name=file_name) }}">{{file_name}}</a></td>
-        <td>{{ file_size }} Byte</td>
+        <td>{{ _('dumps.bytes', size=file_size) }}</td>
       </tr>
   {%endfor %}
     </tbody>

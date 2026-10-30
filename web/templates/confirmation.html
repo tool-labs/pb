@@ -1,28 +1,28 @@
 {%extends "base.html" %}
 
-{%block page_title %}Bestätigungs-Details{%endblock %}
+{%block page_title %}{{ _('confirmation.title') }}{%endblock %}
 
-{%block heading %}{%if user_one == None or user_two == None: %}Fehler{%else: %}
-  Details für <a href="{{ url_for('user', user_name=user_one['user_name']) }}">{{user_one['user_name']}}</a>
-  und <a href="{{ url_for('user', user_name=user_two['user_name']) }}">{{user_two['user_name']}}</a>
+{%- macro user_link(user) %}<a href="{{ url_for('user', user_name=user['user_name']) }}">{{ user['user_name'] }}</a>{% endmacro %}
+
+{%block heading %}{%if user_one == None or user_two == None: %}{{ _('error') }}{%else: %}
+  {{ _('confirmation.heading', user_one=user_link(user_one), user_two=user_link(user_two)) }}
 {%endif %}{%endblock %}
+
+{%- macro confirmation(user, other, cf) %}
+  {%- if cf != None and cf['cf_comment']: %}
+    <p>{{ _('confirmation.confirmed_comment', user=user['user_name'], other=other['user_name'], date=cf['cf_timestamp'] | format_date, time=cf['cf_timestamp'] | format_time, comment=cf['cf_comment'] | parse_comment) }}</p>
+  {%- elif cf != None: %}
+    <p>{{ _('confirmation.confirmed', user=user['user_name'], other=other['user_name'], date=cf['cf_timestamp'] | format_date, time=cf['cf_timestamp'] | format_time) }}</p>
+  {%- else %}
+    <p>{{ _('confirmation.not_confirmed', user=user['user_name'], other=other['user_name']) }}</p>
+  {%- endif %}
+{%- endmacro %}
 
 {%block content %}
 {% if user_one == None or user_two == None: %}
-  <p>Ein Fehler ist aufgetreten: Entweder hast du nicht genug Informationen angegeben, oder mindestens einer der beiden angegebenen Benutzer existiert nicht.</p>
+  <p>{{ _('confirmation.error') }}</p>
 {% else: %}
-  {%if cf_one_two != None: %}
-    <p>{{ user_one['user_name'] }} hat {{ user_two['user_name'] }} am {{ cf_one_two['cf_timestamp'] | format_date }} um {{ cf_one_two['cf_timestamp'] | format_time }} Uhr bestätigt
-      {%if cf_one_two['cf_comment']: %}: {{ cf_one_two['cf_comment'] | parse_comment }}{%else %}.{%endif %}</p>
-  {%else %}
-    <p>{{ user_one['user_name'] }} hat {{ user_two['user_name'] }} noch nicht bestätigt.</p>
-  {%endif %}
-
-  {%if cf_two_one != None: %}
-  <p>{{ user_two['user_name'] }} hat {{ user_one['user_name'] }} am {{ cf_two_one['cf_timestamp'] | format_date }} um {{ cf_two_one['cf_timestamp'] | format_time }} Uhr bestätigt
-    {%if cf_two_one['cf_comment']: %}: {{ cf_two_one['cf_comment'] | parse_comment }}{%else %}.{%endif %}</p>
-  {%else %}
-    <p>{{ user_two['user_name'] }} hat {{ user_one['user_name'] }} noch nicht bestätigt.</p>
-  {%endif %}
+{{ confirmation(user_one, user_two, cf_one_two) }}
+{{ confirmation(user_two, user_one, cf_two_one) }}
 {%endif %}
 {%endblock %}

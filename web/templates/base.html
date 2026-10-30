@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ lang }}" dir="{{ lang_dir }}">
   <head>
-    <title>{% block title %}{% block page_title %}Startseite{% endblock %} | Wikipedia:Persönliche Bekanntschaften | Wikimedia Toolforge{% endblock %}</title>
+    <title>{% block title %}{% block page_title %}{{ _('nav.home') }}{% endblock %} | {{ _('site.namespace') }}:{{ _('site.name') }} | Wikimedia Toolforge{% endblock %}</title>
 
     <meta charset="utf-8" />
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}" />
@@ -13,14 +13,24 @@
     <meta name="robots" content="noindex,nofollow" />
   </head>
   <body>
-    <div id="navi"><a href="{{ url_for('index') }}">Startseite</a> | <a href="{{ url_for('users') }}">Alle Teilnehmer</a> | <a href="{{ url_for('about') }}">Impressum</a></div>
-    <h1>{% block heading %}Wikipedia:Persönliche Bekanntschaften{% endblock %}</h1>
+    <details id="lang-switch" title="{{ _('nav.language') }}">
+{%- for code, flag, name, url in languages if code == lang %}
+      <summary><span class="flag">{{ flag }}</span> {{ name }}</summary>
+{%- endfor %}
+      <ul>
+{%- for code, flag, name, url in languages %}
+        <li><a href="{{ url }}" lang="{{ code }}" hreflang="{{ code }}" rel="nofollow"{% if code == lang %} class="selected"{% endif %}><span class="flag">{{ flag }}</span> {{ name }}</a></li>
+{%- endfor %}
+      </ul>
+    </details>
+    <div id="navi"><a href="{{ url_for('index') }}">{{ _('nav.home') }}</a> | <a href="{{ url_for('users') }}">{{ _('nav.users') }}</a> | <a href="{{ url_for('about') }}">{{ _('nav.about') }}</a></div>
+    <h1>{% block heading %}{{ _('site.namespace') }}:{{ _('site.name') }}{% endblock %}</h1>
 {%- block content %}{% endblock %}
     <div id="footer">
 {%- block footer %}
       <p>
-        <a href="https://de.wikipedia.org/wiki/WP:PB" class="ext">WP:PB in der Wikipedia</a> |
-        Powered by <a href="https://toolforge.org" class="ext">Wikimedia Toolforge</a>.
+        {{ _('footer.wppb') }} |
+        {{ _('footer.powered') }}
       </p>
 {%- endblock %}
     </div>

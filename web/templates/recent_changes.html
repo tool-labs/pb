@@ -1,13 +1,13 @@
 {%extends "base.html" %}
 
-{%block page_title %}Neueste Bestätigungen{%endblock %}
-{%block heading    %}Neueste Bestätigungen{%endblock %}
+{%block page_title %}{{ _('recent.title') }}{%endblock %}
+{%block heading    %}{{ _('recent.title') }}{%endblock %}
 
 {%block content %}
 {% macro print_pager() -%}
   <div class="pager">
-    <span class="previous {{ 'hidden' if page == 1 }}"><a href="{{ url_for('recent_confirmations', page=page - 1) }}">← Neuer</a> |</span>
-    <span class="next"><a href="{{ url_for('recent_confirmations', page=page + 1) }}">Älter →</a></span>
+    <span class="previous {{ 'hidden' if page == 1 }}"><a href="{{ url_for('recent_confirmations', page=page - 1) }}">{{ _('pager.newer') }}</a> |</span>
+    <span class="next"><a href="{{ url_for('recent_confirmations', page=page + 1) }}">{{ _('pager.older') }}</a></span>
   </div>
 {%- endmacro %}
 
@@ -22,10 +22,10 @@
     </colgroup>
     <thead>
       <tr>
-        <th>Datum, Uhrzeit</th>
-        <th class="given">Von</th>
-        <th class="taken">An</th>
-        <th>Kommentar</th>
+        <th>{{ _('col.date_time') }}</th>
+        <th class="given">{{ _('col.from') }}</th>
+        <th class="taken">{{ _('col.to') }}</th>
+        <th>{{ _('col.comment') }}</th>
       </tr>
     </thead>
     {% for user_has_confirmed, user_was_confirmed, cf_comment, cf_was_deleted, cf_timestamp in confirmations: %}

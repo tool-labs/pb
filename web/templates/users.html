@@ -1,56 +1,56 @@
 {%extends "base.html" %}
 
-{%block page_title %}Alle Teilnehmer{%endblock %}
-{%block heading    %}Alle Teilnehmer{%endblock %}
+{%block page_title %}{{ _('nav.users') }}{%endblock %}
+{%block heading    %}{{ _('nav.users') }}{%endblock %}
 
 {%block content %}
   <form class="filters" method="get" action="{{ url_for('users') }}">
-    <label title="Groß-/Kleinschreibung wird ignoriert">Name enthält:
+    <label title="{{ _('users.case_ignored') }}">{{ _('users.name_contains') }}
       <input type="search" name="name" value="{{ filters.name }}"/>
     </label>
-    <label>Homewiki:
+    <label>{{ _('home_wiki_label') }}
       <select name="homewiki">
-        <option value="">alle</option>
+        <option value="">{{ _('filter.all') }}</option>
       {%for value, label, count in home_wikis: %}
         <option value="{{ value }}"{% if filters.homewiki == value %} selected{% endif %}>{{ label }} ({{ count }})</option>
       {%endfor %}
       </select>
     </label>
-    <label>Bestätigt:
+    <label>{{ _('users.verified_label') }}
       <select name="verified">
-        <option value="">egal</option>
-        <option value="yes"{% if filters.verified == 'yes' %} selected{% endif %}>ja</option>
-        <option value="no"{% if filters.verified == 'no' %} selected{% endif %}>nein</option>
+        <option value="">{{ _('filter.any') }}</option>
+        <option value="yes"{% if filters.verified == 'yes' %} selected{% endif %}>{{ _('yes') }}</option>
+        <option value="no"{% if filters.verified == 'no' %} selected{% endif %}>{{ _('no') }}</option>
       </select>
     </label>
-    <label title="seit {{ since | format_date }}, ohne gelöschte Bestätigungen">Bestätigung in den letzten {{ recent_months }} Monaten:
+    <label title="{{ _('users.recent_title', date=since | format_date) }}">{{ _('users.recent_label', months=recent_months) }}
       <select name="recent">
-        <option value="">egal</option>
-        <option value="received"{% if filters.recent == 'received' %} selected{% endif %}>erhalten</option>
-        <option value="given"{% if filters.recent == 'given' %} selected{% endif %}>vergeben</option>
-        <option value="any"{% if filters.recent == 'any' %} selected{% endif %}>erhalten oder vergeben</option>
+        <option value="">{{ _('filter.any') }}</option>
+        <option value="received"{% if filters.recent == 'received' %} selected{% endif %}>{{ _('users.recent_received') }}</option>
+        <option value="given"{% if filters.recent == 'given' %} selected{% endif %}>{{ _('users.recent_given') }}</option>
+        <option value="any"{% if filters.recent == 'any' %} selected{% endif %}>{{ _('users.recent_any') }}</option>
       </select>
     </label>
-    <button type="submit">Filtern</button>
+    <button type="submit">{{ _('users.filter') }}</button>
   {%if filtered: %}
-    <a href="{{ url_for('users') }}">Filter zurücksetzen</a>
+    <a href="{{ url_for('users') }}">{{ _('users.reset') }}</a>
   {%endif %}
   </form>
 
   {%if filtered: %}
-  <p>{{users|length}} von {{total}} Teilnehmern entsprechen den Filtern:</p>
+  <p>{{ _('users.filtered_count', count=users|length, total=total) }}</p>
   {%else %}
-  <p>Die folgenden {{users|length}} Benutzer nehmen zurzeit am Projekt <em>Persönliche Bekanntschaften</em> teil:</p>
+  <p>{{ _('users.all_count', count=users|length) }}</p>
   {%endif %}
   <table class="users tablesorter">
     <thead>
       <tr>
-        <th>Name</th>
-        <th class="taken">Erhaltene<br/>Bestätigungen</th>
-        <th class="given">Vergebene<br/>Bestätigungen</th>
-        <th>Nimmt teil seit</th>
-        <th>Ist bestätigt seit</th>
-        <th>Homewiki</th>
+        <th>{{ _('col.name') }}</th>
+        <th class="taken">{{ _('col.received') }}</th>
+        <th class="given">{{ _('col.given') }}</th>
+        <th>{{ _('col.participates_since') }}</th>
+        <th>{{ _('col.verified_since') }}</th>
+        <th>{{ _('col.home_wiki') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -63,7 +63,7 @@
         <td class="cf-date">{{ (user.verified_since | format_date) if user.verified_since != None }}</td>
         <td class="home-wiki">
         {%if user.home_wiki and not user.home_wiki.sul: %}
-          <span class="no-sul" title="Das dewiki-Konto ist mit keinem globalen Benutzerkonto (SUL) verbunden.">kein SUL-Konto</span>
+          <span class="no-sul" title="{{ _('no_sul_title') }}">{{ _('no_sul_short') }}</span>
         {%elif user.home_wiki and user.home_wiki.url: %}
           <a href="{{ user.home_wiki.url }}">{{ user.home_wiki.db }}</a>
         {%elif user.home_wiki: %}

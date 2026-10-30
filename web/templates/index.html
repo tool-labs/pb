@@ -1,25 +1,20 @@
 {% extends "base.html" %}
 
-{% block page_title %}Startseite{% endblock %}
+{% block page_title %}{{ _('nav.home') }}{% endblock %}
 
-{% block heading %}<span class="h1-prefix">Wikipedia:</span>Persönliche Bekanntschaften{% endblock %}
+{% block heading %}<span class="h1-prefix">{{ _('site.namespace') }}:</span>{{ _('site.name') }}{% endblock %}
 
 {% block content %}
-    <p>Herzlich willkommen auf der Datenbankseite des <em>Persönliche-Bekanntschaften</em>-Projekts! Mehr Informationen zu dem Projekt findest du auf der <a href="https://de.wikipedia.org/wiki/WP:PB" class="ext">Wikipedia-Projektseite</a>.</p>
+    <p>{{ _('index.welcome') }}</p>
 
-    <h2><span id="aktuelle_zahlen">Aktuelle Zahlen</span></h2>
+    <h2><span id="aktuelle_zahlen">{{ _('index.current_numbers') }}</span></h2>
     <ul>
-        <li>
-            Momentan nehmen {{user_count}} Benutzer
-            am Projekt <em>Persönliche Bekanntschaften</em> teil.
-        </li>
-        <li>
-            Diese haben sich untereinander insgesamt {{confirmation_count}} Mal bestätigt,
-            im Schnitt rund <abbr title="{{confirmations_per_day}}">{{confirmations_per_day|round|int}}</abbr> Mal täglich.
-        </li>
+{%- set per_day %}<abbr title="{{confirmations_per_day}}">{{confirmations_per_day|round|int}}</abbr>{% endset %}
+        <li>{{ _('index.user_count', count=user_count) }}</li>
+        <li>{{ _('index.confirmation_count', count=confirmation_count, per_day=per_day) }}</li>
     </ul>
 
-    <h2><span id="letzte_bestaetigungen">Letzte Bestätigungen</span></h2>
+    <h2><span id="letzte_bestaetigungen">{{ _('index.latest') }}</span></h2>
     <ul>
 {%- for conf in latest_confirmations %}
     {%- set (has_confirmed_name, was_confirmed_name, cf_comment, cf_was_deleted, cf_timestamp) = conf %}
@@ -27,11 +22,11 @@
 {%- endfor %}
     </ul>
 
-    <p><a href="{{ url_for('recent_confirmations') }}"><i class="glyphicon glyphicon-chevron-right"></i> Weitere neue Bestätigungen</a></p>
+    <p><a href="{{ url_for('recent_confirmations') }}"><i class="glyphicon glyphicon-chevron-right"></i> {{ _('index.more_recent') }}</a></p>
 
 {%- set months = data['months'] %}
 {%- set year_months = data['year_months'] %}
-    <h2><span id="statistik">Statistik</span></h2>
+    <h2><span id="statistik">{{ _('index.statistics') }}</span></h2>
 {%- set user_counts = data['users']['counts'] %}
 {%- set user_sums = data['users']['sums'] %}
 {%- set user_totals = data['users']['totals'] %}
@@ -42,17 +37,13 @@
         <tbody>
             <tr>
                 <th colspan="2" class="user">
-                    Anzahlen neuer Teilnehmer nach Einstiegsmonat
-                    <div>
-                        insgesamt <span class="total">{{user_totals|sum}} Teilnehmer</span>,
-                        davon <span class="total_0">{{user_totals[0]}} unbestätigte</span>
-                        und <span class="total_1">{{user_totals[1]}} bestätigte</span>
-                    </div>
+                    {{ _('stats.users_heading') }}
+                    <div>{{ _('stats.users_total', total=user_totals|sum, unconfirmed=user_totals[0], confirmed=user_totals[1]) }}</div>
                 </th>
                 <th></th>
                 <th colspan="2" class="conf">
-                    Anzahlen von Bestätigungen nach Monat
-                    <div>insgesamt <span class="total">{{conf_totals[0]}} Bestätigungen</span></div>
+                    {{ _('stats.conf_heading') }}
+                    <div>{{ _('stats.conf_total', total=conf_totals[0]) }}</div>
                 </th>
             </tr>
 {%- for year_month in year_months|reverse %}

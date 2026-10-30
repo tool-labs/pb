@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 
-{% block page_title %}
-  Teilnehmerinformationen für {% if user and user['hidden']: %}einen Ex-Teilnehmer{% elif user: %}{{ user['name'] }}{% endif %}
-{% endblock %}
+{% macro user_title() -%}
+  {% if user and user['hidden']: %}{{ _('user.title_hidden') }}{% elif user: %}{{ _('user.title', name=user['name']) }}{% else %}{{ _('user.title_none') }}{% endif %}
+{%- endmacro %}
 
-{% block heading %}
-  Teilnehmerinformationen für {% if user and user['hidden']: %}einen Ex-Teilnehmer{% elif user: %}{{ user['name'] }}{% endif %}
-{% endblock %}
+{% block page_title %}{{ user_title() }}{% endblock %}
+
+{% block heading %}{{ user_title() }}{% endblock %}
 
 {% block content %}
 {% if user == None: %}
-  <p>Ein Fehler ist aufgetreten: Entweder hast du keinen Benutzer angegeben oder der angegebene Benutzer existiert nicht.</p>
+  <p>{{ _('user.error') }}</p>
 {% else: %}
   <div id="wp-box">
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/20px-Wikipedia-logo-v2.svg.png" width="12" />
-    <a href="https://de.wikipedia.org/wiki/Benutzer:{{ user['name'] | replace(' ', '_') | urlencode }}">Benutzerseite</a>,
-    <a href="https://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user['name'] | replace(' ', '_') | urlencode }}">Diskussionsseite</a>
+    <a href="https://de.wikipedia.org/wiki/Benutzer:{{ user['name'] | replace(' ', '_') | urlencode }}">{{ _('user.user_page') }}</a>,
+    <a href="https://de.wikipedia.org/wiki/Benutzer_Diskussion:{{ user['name'] | replace(' ', '_') | urlencode }}">{{ _('user.talk_page') }}</a>
   </div>
 
   {% if home_wiki: %}
-    <p class="home-wiki"><b>Homewiki:</b>
+    <p class="home-wiki"><b>{{ _('home_wiki_label') }}</b>
     {% if not home_wiki['sul'] %}
-      <span class="no-sul">kein SUL-Konto auf dewiki</span>
+      <span class="no-sul">{{ _('no_sul_long') }}</span>
     {% elif home_wiki['url'] %}
       <a href="{{ home_wiki['url'] }}">{{ home_wiki['url'] | replace('https://', '') }}</a> ({{ home_wiki['db'] }})
     {% else %}
@@ -30,20 +30,20 @@
     </p>
   {% endif %}
   {% if user['comment'] != None: %}
-    <p><b>Kommentar:</b> {{ user['comment'] }}</p>
+    <p><b>{{ _('comment_label') }}</b> {{ user['comment'] }}</p>
   {% endif %}
   {% if user['was_banned'] == 1: %}
-    <p><span class="warning">{{ user['name'] }} wurde aus dem Projekt <em>Persönliche Bekanntschaften</em> ausgeschlossen.</span></p>
+    <p><span class="warning">{{ _('user.banned', name=user['name']) }}</span></p>
   {% endif%}
 
   <table class="toc dates">
     <tr class="participates-since">
-      <th>Nimmt teil seit</th>
+      <th>{{ _('col.participates_since') }}</th>
       <td>{{ user['participates_since'] | format_date }}</td>
     </tr>
     {% if user['verified_since'] != None: %}
     <tr class="verified-since">
-      <th>Ist bestätigt seit</th>
+      <th>{{ _('col.verified_since') }}</th>
       <td>{{ user['verified_since'] | format_date }}</td>
     </tr>
     {% endif %}
@@ -51,18 +51,18 @@
 
   <table class="toc">
     <tr class="taken">
-      <th>&darr; <a href="#taken" class="down">Erhaltene Bestätigungen</a></th>
+      <th>&darr; <a href="#taken" class="down">{{ _('user.received') }}</a></th>
       <td>{{ confirmations_received | length }}</td>
     </tr>
     <tr class="given">
-      <th>&darr; <a href="#given" class="down">Vergebene Bestätigungen</a></th>
+      <th>&darr; <a href="#given" class="down">{{ _('user.given') }}</a></th>
       <td>{{ confirmations_given | length }}</td>
     </tr>
   </table>
 
   {% for case in range(-1, 1): %}
     {% set table = 'given' if case == 0 else 'taken' %}
-  <h2><span id="{{ table }}">{{ 'Vergebene' if case == 0 else 'Erhaltene' }} Bestätigungen</span></h2>
+  <h2><span id="{{ table }}">{{ _('user.given') if case == 0 else _('user.received') }}</span></h2>
   <table class="full-width {{ table }} tablesorter" id="{{ table }}-confirmations">
     <colgroup>
       <col width="2%" />
@@ -74,10 +74,10 @@
     <thead>
       <tr>
         <th></th>
-        <th>{{ 'An' if case == 0 else 'Von' }}</th>
-        <th>Datum</th>
-        <th>Kommentar</th>
-        <th>Rückbestätigt?</th>
+        <th>{{ _('col.to') if case == 0 else _('col.from') }}</th>
+        <th>{{ _('col.date') }}</th>
+        <th>{{ _('col.comment') }}</th>
+        <th>{{ _('col.reconfirmed') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -94,12 +94,12 @@
         {% if not cf_user_is_hidden %}
           <a href="{{ url_for('user', user_name=cf_user_name) }}">{{cf_user_name}}</a>
         {% else %}
-          Ex-Teilnehmer
+          {{ _('user.ex_participant') }}
         {% endif %}
         </td>
         <td class="cf-date">{{ cf_date | format_date }}</td>
         <td class="cf-comment">{{ cf_comment | parse_comment }}</td>
-        <td class="cf-reconf">{{ 'ja' if cf_reconfirmed else 'nein' }}</td>
+        <td class="cf-reconf">{{ cf_reconfirmed | format_boolean }}</td>
       </tr>
     {% endfor %}
     </tbody>

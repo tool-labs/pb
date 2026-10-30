@@ -3,8 +3,10 @@ import datetime
 import gzip
 import os.path, os
 import re
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 import config
+import i18n
+from i18n import gettext as _
 from api import Database
 import flask
 from markupsafe import Markup, escape
@@ -41,6 +43,45 @@ def compress_response(response):
     response.vary.add('Accept-Encoding')
     return response
 
+@app.after_request
+def vary_by_language(response):
+    """The pages depend on the browser language and the language cookie."""
+    if response.mimetype == 'text/html':
+        response.vary.add('Accept-Language')
+        response.vary.add('Cookie')
+    return response
+
+def _url_without_forced_language():
+    """The current path and query string, without the forcedlang parameter."""
+    args = [(k, v) for k, v in flask.request.args.items(multi=True) if k != i18n.FORCE_PARAM]
+    return flask.request.path + ('?' + urlencode(args) if args else '')
+
+@app.context_processor
+def inject_language():
+    lang = i18n.current_language()
+    here = _url_without_forced_language()
+    return {'_': _, 'lang': lang, 'lang_dir': i18n.text_direction(lang),
+            'languages': [(code, flag, name, flask.url_for('set_language', code=code, next=here))
+                          for code, (flag, name) in i18n.LANGUAGES.items()]}
+
+@app.route('/lang/<code>')
+def set_language(code):
+    """
+    Manual choice in the language menu, then back to the page it came from.
+    The cookie is only stored if the choice differs from the browser language
+    (otherwise an old cookie is removed).
+    """
+    if code not in i18n.LANGUAGES:
+        flask.abort(404)
+    response = flask.redirect(i18n.local_url(flask.request.args.get('next')))
+    if code == i18n.browser_language(flask.request):
+        if i18n.COOKIE_NAME in flask.request.cookies:
+            response.delete_cookie(i18n.COOKIE_NAME)
+    else:
+        response.set_cookie(i18n.COOKIE_NAME, code, max_age=i18n.COOKIE_MAX_AGE,
+                            httponly=True, samesite='Lax')
+    return response
+
 @app.template_filter('format_date')
 def format_date(date):
     if date is None:
@@ -55,7 +96,7 @@ def format_time(time):
 
 @app.template_filter('format_boolean')
 def format_boolean(boolean):
-    return "ja" if boolean else "nein"
+    return _('yes') if boolean else _('no')
 
 LINK_RE = re.compile(r'\[\[([^\[\]|]+)(?:\|([^\[\]]*))?\]\]')
 
@@ -207,7 +248,7 @@ def _home_wiki_options(users, selected):
                 counts[key] = counts.get(key, 0) + 1
     if selected and selected not in counts:
         counts[selected] = 0
-    labels = {NO_SUL: 'kein SUL-Konto auf dewiki'}
+    labels = {NO_SUL: _('no_sul_long')}
     return [(key, labels.get(key, key), count)
             for key, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
 

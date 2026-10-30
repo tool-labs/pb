@@ -46,7 +46,8 @@ Same projects in other languages:
 | `web/api.py` | `Database`: read access to ToolsDB (and the dewiki replica for the bot), statistics |
 | `web/bot_api.py` | `BotDatabase`: write access, used by SpBot |
 | `web/config.py` | Configuration (Toolforge defaults, overridable by environment variables) |
-| `web/templates/`, `web/static/` | HTML templates (German UI), CSS, jQuery + tablesorter |
+| `web/templates/`, `web/static/` | HTML templates, CSS, jQuery + tablesorter |
+| `web/i18n.py`, `web/translations/` | Language choice and the UI texts in 24 languages (`<code>.json`, key → HTML text) |
 | `web/sql-dumps/` | Daily encrypted database dumps offered for download as an external backup (not in git) |
 | `jobs/` | Toolforge jobs: `toolforge-jobs.yaml`, statistics update, dump creation and cleanup |
 | `sql/schema.md` | Database schema: tables, meaning of the columns, DDL (matches production) |
@@ -87,6 +88,17 @@ they can be overridden by environment variables:
 | `PB_DB_NAME` | `s51344__pb` |
 | `PB_REPLICA_DB_NAME` | `dewiki_p` |
 | `PB_SQL_DUMP_FOLDER` | `/data/project/pb/www/python/src/sql-dumps` |
+
+## Languages
+
+The UI is available in 24 languages (`LANGUAGES` in `web/i18n.py`). The language of a page is,
+in this order: the URL parameter `forcedlang=<code>` (only for that request), the cookie
+`pb_lang`, the browser's `Accept-Language`, English. The menu at the top right (`/lang/<code>?next=<page>`)
+stores the cookie only if the choice differs from the browser language.
+
+To change a text, edit it in every `web/translations/*.json`; a new key must exist in all of
+them, with the same `{placeholders}` and links (checked by `tests/unit/test_i18n.py`). The
+texts are trusted HTML; the values filled in are escaped.
 
 ## Deployment on Toolforge
 

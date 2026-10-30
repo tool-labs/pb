@@ -309,7 +309,9 @@ class Response:
 def http(live_server, seeded):
     def get(path):
         try:
-            with urllib.request.urlopen(live_server + path, timeout=30) as resp:
+            # the assertions check the German texts
+            request = urllib.request.Request(live_server + path, headers={'Accept-Language': 'de'})
+            with urllib.request.urlopen(request, timeout=30) as resp:
                 return Response(resp.status, resp.headers, resp.read())
         except urllib.error.HTTPError as e:
             return Response(e.code, e.headers, e.read())

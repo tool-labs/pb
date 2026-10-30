@@ -17,10 +17,16 @@ def test_format_time():
 
 
 def test_format_boolean():
-    assert webapp.format_boolean(True) == 'ja'
-    assert webapp.format_boolean(1) == 'ja'
-    assert webapp.format_boolean(False) == 'nein'
-    assert webapp.format_boolean(None) == 'nein'
+    with webapp.app.test_request_context(headers={'Accept-Language': 'de'}):
+        assert webapp.format_boolean(True) == 'ja'
+        assert webapp.format_boolean(1) == 'ja'
+        assert webapp.format_boolean(False) == 'nein'
+        assert webapp.format_boolean(None) == 'nein'
+
+
+def test_format_boolean_outside_of_a_request_is_english():
+    assert webapp.format_boolean(True) == 'yes'
+    assert webapp.format_boolean(False) == 'no'
 
 
 @pytest.mark.parametrize('comment', [None, ''])
