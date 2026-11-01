@@ -33,6 +33,12 @@
 {%- set conf_counts = data['confirmations']['counts'] %}
 {%- set conf_sums = data['confirmations']['sums'] %}
 {%- set conf_totals = data['confirmations']['totals'] %}
+{#- bar widths in percent of the available cell width, the longest bar of each side gets 95% #}
+{%- set ns = namespace(user_max=1, conf_max=1) %}
+{%- for year_month in year_months %}
+    {%- set ns.user_max = [ns.user_max, user_counts[year_month][0]|default(0) + user_counts[year_month][1]|default(0)]|max %}
+    {%- set ns.conf_max = [ns.conf_max, conf_counts[year_month][0]|default(0)]|max %}
+{%- endfor %}
     <table class="stats stats_">
         <tbody>
             <tr>
@@ -58,14 +64,14 @@
                     <span class="count">{{user_counts[year_month][1]|default(0)+user_counts[year_month][0]|default(0)}}</span>
     {%- for group in range(0, 2) -%}
         {%- set count = user_counts[year_month][group]|default(0) -%}
-                    <div class="bar_{{group}}" style="width:{{count*1.6}}px;" title="{{year_month}}: {{count}}"></div><span class="count_{{group}}">{{count}}</span>
+                    <div class="bar_{{group}}" style="width:{{ '%.2f'|format(count / ns.user_max * 95) }}%;" title="{{year_month}}: {{count}}"></div><span class="count_{{group}}">{{count}}</span>
     {%- endfor %}
                 </td>
     {%- if new_year %}
                 <td rowspan="{{months[year1]}}" class="time">{{year1}}</td>
     {%- endif %}
                 <td class="bar conf">
-                    <div style="width:{{count*0.08}}px;" title="{{year_month}}: {{count}}"></div>
+                    <div style="width:{{ '%.2f'|format(count / ns.conf_max * 95) }}%;" title="{{year_month}}: {{count}}"></div>
                     <span class="month">{{year_month[5:]}}</span>
                     <span class="count">{{count}}</span>
                 </td>

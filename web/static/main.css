@@ -1,7 +1,9 @@
-body { background-color: white; color: black; margin: 20px auto; position: relative; width: 800px; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { background-color: white; color: black; margin: 20px auto; max-width: 800px; padding: 0 16px; position: relative; }
 h1 { border-bottom: 1px solid black; text-align: center; margin-top: 0px; }
 h2 { border-bottom: 1px solid black; }
 h1 span.h1-prefix { color: grey; }
+@media (max-width: 600px) { h1 { font-size: 1.5em; overflow-wrap: break-word; } }
 div#navi { /* font-size: 0.8em; */ color: grey; margin-bottom: 16px; }
 div#footer { border-top: 1px solid grey; font-size: 0.8em; color: grey; margin-top: 2em; }
 div#footer a { color: grey; text-decoration: underline; }
@@ -39,7 +41,7 @@ table.stats_ th.conf .total { color: #369; }
 table.stats_ tr.new_year td { border-top: 1px solid #ccc;}
 table.stats.stats_ td { padding: 4px; vertical-align: top; }
 table.stats_ td.time { color: #999; }
-table.stats_ td.bar { line-height: 0; padding: 1px 0; position: relative; }
+table.stats_ td.bar { line-height: 0; padding: 1px 0; position: relative; white-space: nowrap; width: 50%; }
 table.stats_ tr:hover td.bar { background-color: #eee; }
 table.stats_ td.bar.user { border-right: 1px solid #9c6; text-align: right; }
 table.stats_ td.bar.conf { border-left: 1px solid #69c; }
@@ -121,6 +123,11 @@ details#lang-switch ul { background-color: white; border: 1px solid #aaa; box-sh
 details#lang-switch li a { display: block; padding: 0.15em 1ex; text-decoration: none; }
 details#lang-switch li a:hover { background-color: #eee; }
 details#lang-switch li a.selected { font-weight: bold; }
+/* touch devices: bigger tap targets in the language menu, same font size as the navigation */
+@media (pointer: coarse) {
+    details#lang-switch summary { padding: 0.3em 0; }
+    details#lang-switch li a { padding: 0.6em 2ex; }
+}
 .flag { font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
 
 div.pager { margin: 1em 0; text-align: center; }
