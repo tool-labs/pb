@@ -306,3 +306,62 @@ def test_sql_dump_download_of_encrypted_dump(client, dump_folder):
 def test_static_files(client):
     assert client.get('/static/main.css').status_code == 200
     assert client.get('/static/jquery-3.7.1.min.js').status_code == 200
+
+
+def test_api_users(client):
+    response = client.get('/api/users.json')
+    assert response.status_code == 200
+    assert response.mimetype == 'application/json'
+    data = response.get_json()
+    assert data['columns'] == ['name', 'verified', 'homewiki', 'last_received', 'last_given']
+    # hidden Eve and banned Mallory are left out, only Eve's confirmation of Alice too
+    assert data['users'] == [
+        ['Alice', True, 'dewiki', '2017-01-02', '2008-02-20'],   # banned Mallory still counts
+        ['Bob', False, 'none', '2008-02-20', '2008-02-20'],
+    ]
+    assert 'confirmed' not in data
+
+
+def test_api_users_may_be_read_by_other_sites_and_cached(client):
+    response = client.get('/api/users.json')
+    assert response.headers['Access-Control-Allow-Origin'] == '*'
+    assert response.cache_control.public
+    assert response.cache_control.max_age == webapp.API_MAX_AGE
+
+
+def test_api_users_home_wiki_not_looked_up_yet(client, monkeypatch):
+    monkeypatch.delitem(fake_db.HOME_WIKIS, 2)
+    users = client.get('/api/users.json').get_json()['users']
+    assert users[1][:3] == ['Bob', False, None]
+
+
+@pytest.mark.parametrize('name', ['Alice', ' Alice ', 'Alice_'])
+def test_api_users_confirmed_by(client, name):
+    data = client.get('/api/users.json', query_string={'confirmed_by': name}).get_json()
+    assert data['confirmed_by'] == 'Alice'
+    assert data['confirmed'] == ['Bob']
+
+
+def test_api_users_confirmed_by_leaves_out_deleted_and_hidden(client, monkeypatch):
+    def confirmations(self, user_id, show_hidden_users=True):
+        assert show_hidden_users is False
+        # (user_name, user_id, timestamp, comment, was_deleted, is_hidden, reverse)
+        stamp = fake_db.ts(2008, 2, 20, 10, 0)
+        return [('Bob', 2, stamp, None, 0, 0, 1), ('Carol', 5, stamp, None, 1, 0, 0)]
+    monkeypatch.setattr(fake_db.FakeDatabase, 'get_confirmations_by_user', confirmations)
+    data = client.get('/api/users.json?confirmed_by=Alice').get_json()
+    assert data['confirmed'] == ['Bob']
+
+
+@pytest.mark.parametrize('name', ['Nobody', 'Eve'])  # unknown, hidden
+def test_api_users_confirmed_by_unknown_or_hidden_user(client, name):
+    data = client.get('/api/users.json', query_string={'confirmed_by': name}).get_json()
+    assert data['confirmed_by'] == name
+    assert data['confirmed'] is None
+
+
+def test_api_users_is_gzipped(client):
+    response = client.get('/api/users.json', headers={'Accept-Encoding': 'gzip'})
+    data = response.get_data()
+    # the fake data is shorter than the 1000 bytes from which on compress_response compresses
+    assert response.headers.get('Content-Encoding') == ('gzip' if len(data) >= 1000 else None)

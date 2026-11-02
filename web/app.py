@@ -32,7 +32,8 @@ def compress_response(response):
     """
     if (response.status_code != 200 or 'Content-Encoding' in response.headers
             or 'gzip' not in flask.request.headers.get('Accept-Encoding', '')
-            or response.mimetype not in ('text/html', 'text/css', 'text/javascript', 'application/javascript')):
+            or response.mimetype not in ('text/html', 'text/css', 'text/javascript', 'application/javascript',
+                                         'application/json')):
         return response
     response.direct_passthrough = False
     data = response.get_data()
@@ -261,6 +262,47 @@ def users():
     return render_template('users.html', users=users, total=len(all_users), filters=filters,
                            filtered=any(filters.values()), since=since, recent_months=RECENT_MONTHS,
                            home_wikis=_home_wiki_options(all_users, filters['homewiki']))
+
+API_USER_COLUMNS = ['name', 'verified', 'homewiki', 'last_received', 'last_given']
+API_MAX_AGE = 300  # seconds
+
+def _day(timestamp):
+    return timestamp.strftime('%Y-%m-%d') if timestamp else None
+
+def _api_home_wiki(home_wiki):
+    """Database name of the SUL home wiki, NO_SUL without SUL account, `None` if not looked up yet."""
+    if home_wiki is None:
+        return None
+    return home_wiki['db'] if home_wiki['sul'] else NO_SUL
+
+@app.route('/api/users.json')
+def api_users():
+    """
+    The visible participants for the filter of MediaWiki:Gadget-PB2.js on dewiki (same data
+    as /users). One array per user, the order of the fields is given in `columns`.
+    `?confirmed_by=<name>` adds `confirmed`: the names this user has confirmed (without deleted
+    confirmations and hidden users), `null` if the user is unknown or hidden.
+    The data is public, so every origin may read it (CORS).
+    """
+    db = get_db()
+    data = {'columns': API_USER_COLUMNS,
+            'users': [[user['name'], user['verified_since'] is not None, _api_home_wiki(user['home_wiki']),
+                       _day(user['last_taken']), _day(user['last_given'])]
+                      for user in db.get_user_list()]}
+    confirmed_by = flask.request.args.get('confirmed_by', '').replace('_', ' ').strip()
+    if confirmed_by:
+        user = db.get_user_by_name(confirmed_by)
+        data['confirmed_by'] = confirmed_by
+        data['confirmed'] = None
+        # user: (name, id, comment, is_hidden, was_banned, ...); hidden users must not be shown
+        if user is not None and not user[3]:
+            data['confirmed'] = sorted(row[0] for row in db.get_confirmations_by_user(user[1], show_hidden_users=False)
+                                       if not row[4])
+    response = flask.jsonify(data)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.cache_control.public = True
+    response.cache_control.max_age = API_MAX_AGE
+    return response
 
 @app.route('/sql-dumps')
 def sql_dumps():

@@ -1,4 +1,5 @@
 """System tests: HTTP requests against the running web app backed by a real MariaDB."""
+import json
 import urllib.parse
 
 import pytest
@@ -189,3 +190,31 @@ def test_sql_dump_download_rejects_other_files(http):
 
 def test_static_files(http):
     assert http('/static/main.css').status == 200
+
+
+def test_api_users(http):
+    response = http('/api/users.json')
+    assert response.status == 200
+    assert response.headers['Access-Control-Allow-Origin'] == '*'
+    data = json.loads(response.text)
+    # last confirmations without hidden users (Eve) and deleted ones;
+    # no home wikis yet: jobs/update_home_wikis.py has not run, see test_jobs.py
+    assert data['users'] == [
+        ['Alice', True, None, '2015-06-02', '2024-05-02'],
+        ['Bob', True, None, '2017-01-02', '2015-06-03'],
+        ['Carol', False, None, '2008-02-22', '2015-06-04'],
+        ['Dave', True, None, '2015-06-04', '2015-06-02'],
+        ['Zoë Ünicode', False, None, '2024-05-02', None],
+    ]
+
+
+@pytest.mark.parametrize('name, expected', [
+    ('Alice', ['Bob', 'Carol', 'Dave', 'Zoë Ünicode']),   # not hidden Eve
+    ('Carol', ['Alice', 'Bob', 'Dave']),                  # not the deleted one of Zoë
+    ('Zoë_Ünicode', []),
+    ('Eve', None),                                        # hidden
+    ('Nobody', None),
+])
+def test_api_users_confirmed_by(http, name, expected):
+    data = json.loads(http('/api/users.json?confirmed_by=' + urllib.parse.quote(name)).text)
+    assert data['confirmed'] == expected

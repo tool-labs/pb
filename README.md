@@ -37,6 +37,13 @@ Same projects in other languages:
    (`pers-bek-*.py`), but the database code they use is `web/bot_api.py` in this repository.
 3. This web app shows participants, confirmations and statistics. It only reads data;
    hiding or banning participants is done manually in the database.
+4. `/api/users.json` serves the participant list of `/users` as JSON (readable from any
+   origin via CORS, cached for 5 minutes) for the filter of
+   [MediaWiki:Gadget-PB2.js](https://de.wikipedia.org/wiki/MediaWiki:Gadget-PB2.js) on
+   *WP:PB/neue Anfragen*: `{"columns": [...], "users": [[name, verified, homewiki,
+   last_received, last_given], ...]}`; `homewiki` is `"none"` without SUL account and `null`
+   if not looked up yet. `?confirmed_by=<name>` adds `confirmed`, the names this user has
+   confirmed (`null` for unknown or hidden users).
 
 ## Repository layout
 
