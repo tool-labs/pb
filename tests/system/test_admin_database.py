@@ -89,6 +89,11 @@ def test_overview_and_search(db):
     assert [u['name'] for u in db.search_users('o')] == ['Bob', 'Carol', 'Mallory', 'Zoë Ünicode']
     assert [u['name'] for u in db.search_users('105')] == ['Eve']
     assert db.search_users('%') == []           # LIKE wildcards are taken literally
+    assert [u['name'] for u in db.search_users('', 'hidden')] == ['Eve']
+    assert [u['name'] for u in db.search_users('', 'banned')] == ['Mallory']
+    assert [u['name'] for u in db.search_users('', 'hidden_or_banned')] == ['Eve', 'Mallory']
+    assert [u['name'] for u in db.search_users('o', 'visible')] == ['Bob', 'Carol', 'Zoë Ünicode']
+    assert db.search_users('', '') == db.search_users('', 'unknown') == []
     assert db.get_user_admin(105)['hidden'] == 1
 
 

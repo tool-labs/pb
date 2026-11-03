@@ -4,10 +4,15 @@
 {% block admin_content %}
   <form method="get" action="{{ url_for('admin.users') }}" class="filters">
     <label>Name (Teil) oder user_id: <input type="search" name="q" value="{{ query }}" autofocus/></label>
+    <label>Status: <select name="status"><option value="">alle</option>
+{%- for value, (label, _sql) in statuses.items() %}<option value="{{ value }}"{% if value == status %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select></label>
     <button type="submit">Suchen</button>
+{%- if query or status %} <a href="{{ url_for('admin.users') }}">Filter zurücksetzen</a>{% endif %}
   </form>
-{%- if query %}
-  <p>{{ users | length }} Treffer{% if users | length >= 200 %} (nur die ersten 200){% endif %}. Versteckte und ausgeschlossene Benutzer werden mit angezeigt.</p>
+  <p>Name und Status lassen sich kombinieren; mit einem Status und leerem Namen werden alle Benutzer mit diesem Status gezeigt.</p>
+{%- if query or status %}
+  <p>{{ users | length }} Treffer{% if users | length >= 200 %} (nur die ersten 200){% endif %}.{% if not status %} Versteckte und ausgeschlossene Benutzer werden mit angezeigt.{% endif %}</p>
   <table class="full-width admin-table">
     <tr><th>Name</th><th>user_id</th><th>Teilnahme seit</th><th>verifiziert seit</th><th>Kommentar</th></tr>
 {%- for u in users %}

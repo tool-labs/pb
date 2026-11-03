@@ -22,7 +22,7 @@ import flask
 
 import config
 import i18n
-from admin_api import AdminDatabase, AdminError, RELINK_MOVE, VANISHED_RE
+from admin_api import AdminDatabase, AdminError, RELINK_MOVE, USER_STATUSES, VANISHED_RE
 from api import AUDIT_ACTIONS
 
 bp = flask.Blueprint('admin', __name__, url_prefix='/admin')
@@ -242,7 +242,10 @@ def index():
 @bp.route('/users')
 def users():
     query = flask.request.args.get('q', '').strip()
-    return render('admin/users.html', query=query, users=get_db().search_users(query))
+    status = flask.request.args.get('status', '')
+    status = status if status in USER_STATUSES else ''
+    return render('admin/users.html', query=query, status=status, statuses=USER_STATUSES,
+                  users=get_db().search_users(query, status))
 
 
 @bp.route('/user/<int:user_id>')

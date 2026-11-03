@@ -29,6 +29,14 @@ VANISHED_REASON_NO_LOG = ('Konto auf eigenen Wunsch verschwunden (kein Eintrag i
 # results of AdminDatabase.plan_relink
 RELINK_NONE, RELINK_RENAME, RELINK_MOVE, RELINK_UNKNOWN, RELINK_TAKEN = 'none', 'rename', 'move', 'unknown', 'taken'
 
+# filter of the user search: value -> (label, SQL condition)
+USER_STATUSES = {
+    'hidden': ('versteckt', '`user_is_hidden` = 1'),
+    'banned': ('ausgeschlossen', '`user_was_banned` = 1'),
+    'hidden_or_banned': ('versteckt oder ausgeschlossen', '(`user_is_hidden` = 1 OR `user_was_banned` = 1)'),
+    'visible': ('weder versteckt noch ausgeschlossen', '`user_is_hidden` = 0 AND `user_was_banned` = 0'),
+}
+
 USER_SELECT = '''SELECT `user_id`, `user_name`, `user_comment`, `user_participates_since`, `user_verified_since`,
                         `user_last_update`, `user_is_hidden`, `user_was_banned` FROM `user`'''
 
@@ -131,15 +139,25 @@ class AdminDatabase(Database):
                 'confirmations': confirmations, 'deleted': int(deleted or 0),
                 'audit_entries': audit_entries, 'last_audit': last_audit}
 
-    def search_users(self, query, limit=200):
-        """Users (also hidden and banned ones) whose name contains *query*, or with the id *query*."""
+    def search_users(self, query, status='', limit=200):
+        """
+        Users (also hidden and banned ones) whose name contains *query*, or with the id *query*,
+        restricted by *status* (one of `USER_STATUSES`). Without query and status: nothing.
+        """
         query = (query or '').strip()
-        if not query:
+        status = status if status in USER_STATUSES else ''
+        if not query and not status:
             return []
-        pattern = '%' + query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
+        where, args = [], []
+        if query:
+            pattern = '%' + query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
+            where.append('(`user_name` LIKE %s OR `user_id` = %s)')
+            args += [pattern, int(query) if query.isdigit() else -1]
+        if status:
+            where.append(USER_STATUSES[status][1])
         with self.conn.cursor() as curs:
-            curs.execute(USER_SELECT + ' WHERE `user_name` LIKE %s OR `user_id` = %s ORDER BY `user_name` LIMIT %s;',
-                         (pattern, int(query) if query.isdigit() else -1, limit))
+            curs.execute(USER_SELECT + ' WHERE ' + ' AND '.join(where) + ' ORDER BY `user_name` LIMIT %s;',
+                         args + [limit])
             return [_user(row) for row in curs.fetchall()]
 
     def get_user_admin(self, user_id):

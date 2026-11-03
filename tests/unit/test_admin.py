@@ -267,6 +267,25 @@ def test_user_search_shows_hidden_and_banned_users(logged_in):
     assert '<a href="/admin/user/1">Alice</a>' in page
 
 
+@pytest.mark.parametrize('query, expected_call, shown', [
+    ('?status=hidden', ('search_users', '', 'hidden'), ['Eve']),
+    ('?status=banned', ('search_users', '', 'banned'), ['Mallory']),
+    ('?status=hidden_or_banned', ('search_users', '', 'hidden_or_banned'), ['Eve', 'Mallory']),
+    ('?status=visible&q=o', ('search_users', 'o', 'visible'), ['Bob']),
+    ('?status=drop', ('search_users', '', ''), []),     # unknown status: ignored
+])
+def test_user_search_by_status(logged_in, query, expected_call, shown):
+    page = html(logged_in.get('/admin/users' + query))
+    assert FakeAdminDatabase.log == [expected_call]
+    assert [name for name in ('Alice', 'Bob', 'Eve', 'Mallory') if f'>{name}</a>' in page] == shown
+
+
+def test_user_search_keeps_the_status(logged_in):
+    page = html(logged_in.get('/admin/users?status=banned'))
+    assert '<option value="banned" selected>ausgeschlossen</option>' in page
+    assert '<a href="/admin/users">Filter zurücksetzen</a>' in page
+
+
 def test_user_page(logged_in):
     page = html(logged_in.get('/admin/user/2'))
     assert 'Admin: Bob' in page

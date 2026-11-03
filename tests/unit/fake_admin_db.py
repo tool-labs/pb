@@ -17,8 +17,14 @@ class FakeAdminDatabase(FakeDatabase):
         return {'users': 4, 'hidden': 1, 'banned': 1, 'confirmations': 4, 'deleted': 0,
                 'audit_entries': 1, 'last_audit': ts(2026, 10, 29, 23, 5)}
 
-    def search_users(self, query, limit=200):
-        return [_user(u) for u in USERS if query and (query.lower() in u[0].lower() or query == str(u[1]))]
+    def search_users(self, query, status='', limit=200):
+        FakeAdminDatabase.log.append(('search_users', query, status))
+        matches = {'': lambda u: True, 'hidden': lambda u: u[3], 'banned': lambda u: u[4],
+                   'hidden_or_banned': lambda u: u[3] or u[4], 'visible': lambda u: not u[3] and not u[4]}
+        if not query and not status:
+            return []
+        return [_user(u) for u in USERS if matches[status](u)
+                and (not query or query.lower() in u[0].lower() or query == str(u[1]))]
 
     def get_user_admin(self, user_id):
         user = self.get_user_by_id(user_id)
