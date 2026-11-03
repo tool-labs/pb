@@ -99,5 +99,6 @@ def test_rename_without_log_entry_fails_the_job(app_env, pb_sql, replica_sql):
     assert 'user 104 not renamed to Gruener-recke: no rename in the dewiki log' in result.stderr
     assert pb_names(pb_sql)[104] == 'Dave'
     with pb_sql.cursor() as curs:
-        curs.execute('SELECT COUNT(*) FROM audit_trail WHERE at_user_id = 104')
+        # test_admin_change_with_audit_entry already wrote a user_change entry for 104
+        curs.execute("SELECT COUNT(*) FROM audit_trail WHERE at_user_id = 104 AND at_action = 'rename'")
         assert curs.fetchone()[0] == 0
