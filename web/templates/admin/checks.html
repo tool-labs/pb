@@ -17,7 +17,7 @@
 {%- else %}<p class="ok">Keine.</p>{% endif %}
 
   <h2>Verifizierung passt nicht zu den Bestätigungen ({{ verification | length }})</h2>
-  <p>Nicht verifiziert trotz mindestens 3 Bestätigungen, oder verifiziert mit weniger als 3. Gezählt wird wie beim Bot:
+  <p>Nicht versteckte Benutzer, die trotz mindestens 3 Bestätigungen nicht verifiziert sind oder mit weniger als 3 verifiziert sind. Gezählt wird wie beim Bot:
     alle Bestätigungen, auch gelöschte und solche von versteckten Benutzern. <code>user_verified_since</code> wird nie
     automatisch zurückgesetzt; eine Korrektur geht bisher nur per SQL.</p>
 {%- if verification %}

@@ -171,6 +171,13 @@ def test_checks(db):
     assert [(c['id'], c['name']) for c in db.check_self_confirmations()] == [(103, 'Carol')]
     # Carol now has 3 confirmations (Alice, Bob, herself) but is not verified
     assert [(v['name'], v['count']) for v in db.check_verification()] == [('Carol', 3)]
+    # hidden users are left out
+    conn = connect(DB_NAME)
+    with conn.cursor() as curs:
+        curs.execute('UPDATE user SET user_is_hidden = 1 WHERE user_id = 103')
+        assert db.check_verification() == []
+        curs.execute('UPDATE user SET user_is_hidden = 0 WHERE user_id = 103')
+    conn.close()
     # Mallory's confirmation of Bob was marked as deleted above, nothing left
     assert db.check_banned_confirmations() == []
     assert db.check_dewiki_accounts() == {'missing': [], 'renamed': []}

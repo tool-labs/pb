@@ -420,7 +420,7 @@ class AdminDatabase(Database):
 
     def check_verification(self):
         """
-        Users whose `user_verified_since` does not fit their confirmations: not verified with
+        Visible users whose `user_verified_since` does not fit their confirmations: not verified with
         3 or more confirmations, or verified with fewer than 3 (the bot counts all, also deleted
         ones and those of hidden users, see sql/schema.md).
         """
@@ -429,6 +429,7 @@ class AdminDatabase(Database):
             SELECT `user_id`, `user_name`, `user_verified_since`, COUNT(`cf_user_id`),
                     COALESCE(SUM(`cf_was_deleted` = 0), 0)
                 FROM `user` LEFT JOIN `confirmation` ON `cf_confirmed_user_id` = `user_id`
+                WHERE `user_is_hidden` = 0
                 GROUP BY `user_id`, `user_name`, `user_verified_since`
                 HAVING (`user_verified_since` IS NULL AND COUNT(`cf_user_id`) >= 3)
                     OR (`user_verified_since` IS NOT NULL AND COUNT(`cf_user_id`) < 3)

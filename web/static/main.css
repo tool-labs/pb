@@ -147,8 +147,15 @@ form.admin-form.inline label { margin: 0.25em 0; }
 button.danger { color: #d33; }
 a.button { border: 1px solid #36c; border-radius: 3px; background-color: #36c; color: white; display: inline-block; padding: 0.5em 1em; text-decoration: none; }
 table.admin-table td { vertical-align: top; }
-table.audit { font-size: 0.85em; }
-table.audit td.values { word-break: break-word; }
+table.audit { font-size: 0.85em; table-layout: fixed; }
+table.audit td { overflow-wrap: anywhere; }
+table.audit col.col-time { width: 11%; }
+table.audit col.col-action { width: 10%; }
+table.audit col.col-user { width: 14%; }
+table.audit col.col-field { width: 10%; }
+table.audit col.col-values { width: 24%; }
+table.audit col.col-reason { width: 23%; }
+table.audit col.col-performer { width: 8%; }
 .nowrap { white-space: nowrap; }
 .badge { border-radius: 3px; font-size: 0.75em; padding: 0 0.5ex; white-space: nowrap; }
 .badge-hidden { background-color: #ddd; color: #333; }

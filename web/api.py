@@ -47,7 +47,7 @@ class WPPBException(Exception):
 AUDIT_ACTIONS = ('rename', 'user_change', 'confirmation_change', 'user_delete', 'confirmation_delete')
 AUDIT_FIELDS = {
     'rename': ('user_name',),
-    'user_change': ('user_was_banned', 'user_is_hidden', 'user_comment', 'user_id'),
+    'user_change': ('user_was_banned', 'user_is_hidden', 'user_comment', 'user_id', 'user_verified_since'),
     'confirmation_change': ('cf_comment', 'cf_was_deleted'),
     'user_delete': (None,),
     'confirmation_delete': (None,),

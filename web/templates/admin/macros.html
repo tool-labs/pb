@@ -11,6 +11,10 @@
 
 {%- macro audit_table(entries) %}
   <table class="full-width admin-table audit">
+    <colgroup>
+      <col class="col-time"/><col class="col-action"/><col class="col-user"/><col class="col-field"/>
+      <col class="col-values"/><col class="col-reason"/><col class="col-performer"/>
+    </colgroup>
     <tr><th>Zeit (UTC)</th><th>Aktion</th><th>Benutzer</th><th>Feld</th><th>alt → neu</th><th>Begründung</th><th>von</th></tr>
 {%- for e in entries %}
     <tr>

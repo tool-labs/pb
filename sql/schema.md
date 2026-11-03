@@ -95,7 +95,7 @@ without home wiki. The web app only reads this table, it has no replica connecti
 | `at_action` | `at_field` | Written by |
 |-------------|------------|------------|
 | `rename` | `user_name` | `jobs/update_user_names.py`, automatically with every rename; admin area ("mit dewiki abgleichen") |
-| `user_change` | `user_was_banned`, `user_is_hidden`, `user_comment`, `user_id` | admin area (`/admin`), formerly manually in SQL |
+| `user_change` | `user_was_banned`, `user_is_hidden`, `user_comment`, `user_id`, `user_verified_since` | admin area (`/admin`), formerly manually in SQL |
 | `confirmation_change` | `cf_comment`, `cf_was_deleted` | admin area |
 | `user_delete` | `NULL` | admins (only manually in SQL) |
 | `confirmation_delete` | `NULL` | admin area (`at_old_value` = the row as JSON) |
