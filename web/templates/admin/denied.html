@@ -1,0 +1,7 @@
+{% extends "admin/layout.html" %}
+{% block admin_title %}Kein Zugang{% endblock %}
+{% block admin_content %}
+  <p class="warning">{% if name %}Das Konto „{{ name }}“ ist{% else %}Dieses Konto ist{% endif %} kein Admin dieses Tools.</p>
+  <p>Der Admin-Bereich ist nur für die Betreuer des Projekts gedacht ({{ admins | join(', ') }}).
+    Du wurdest nicht angemeldet. Alle öffentlichen Daten findest du auf der <a href="{{ url_for('index') }}">Startseite</a>.</p>
+{% endblock %}

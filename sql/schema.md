@@ -3,7 +3,7 @@
 The tool uses two databases:
 
 * **`s51344__pb`** on ToolsDB (`tools.db.svc.wikimedia.cloud`, MariaDB 10.6): the data of
-  the project. The web app reads it. SpBot (`web/bot_api.py`) and admins (manually, in SQL) write it.
+  the project. The web app reads it. SpBot (`web/bot_api.py`), the jobs and the admin area (`web/admin_api.py`) write it.
 * **`dewiki_p`**, the German Wikipedia replica (read only): used to look up MediaWiki user ids
   and blocks.
 
@@ -30,7 +30,7 @@ audit_trail                    (log of admin actions, no foreign keys: entries o
 | `user_name` | `varchar(255)`, unique | User name as written in the request. Renames on the wiki are taken over hourly by `jobs/update_user_names.py` (by `user_id`), but only if the dewiki rename log leads from the old to the new name. |
 | `user_comment` | `text`, nullable | Admin note (e.g. "sockpuppet of …"). **Shown on the public user page.** |
 | `user_participates_since` | `timestamp`, nullable | Time of the `{{…/neuer Benutzer}}` request. |
-| `user_verified_since` | `timestamp`, nullable | Set once, by `BotDatabase.add_confirmation`, to the time of the confirmation that brought the user to 3 confirmations. `NULL` = not verified. Never cleared automatically. |
+| `user_verified_since` | `timestamp`, nullable | Set once, by `BotDatabase.add_confirmation`, to the time of the confirmation that brought the user to 3 confirmations. `NULL` = not verified. Never cleared automatically. The bot verified nobody from 2019 to early 2022; for the 77 users concerned it was filled in with the time of the 3rd confirmation on 2026-11-03 (`audit_trail` 121–197). |
 | `user_last_update` | `timestamp` | Set when the user is added and on every confirmation once the user has ≥ 3 (`touch_user`). |
 | `user_is_hidden` | `0`/`1` | The participant has left the project. The name is no longer shown and their confirmations are not counted. Not meant for sockpuppets. |
 | `user_was_banned` | `0`/`1` | Excluded from the project, e.g. sockpuppets. Not used for blocks on Wikipedia. |
@@ -94,17 +94,18 @@ without home wiki. The web app only reads this table, it has no replica connecti
 
 | `at_action` | `at_field` | Written by |
 |-------------|------------|------------|
-| `rename` | `user_name` | `jobs/update_user_names.py`, automatically with every rename |
-| `user_change` | `user_was_banned`, `user_is_hidden`, `user_comment`, `user_id` | admins (manually in SQL until the web UI exists) |
-| `confirmation_change` | `cf_comment`, `cf_was_deleted` | admins |
-| `user_delete` | `NULL` | admins |
-| `confirmation_delete` | `NULL` | admins |
+| `rename` | `user_name` | `jobs/update_user_names.py`, automatically with every rename; admin area ("mit dewiki abgleichen") |
+| `user_change` | `user_was_banned`, `user_is_hidden`, `user_comment`, `user_id`, `user_verified_since` | admin area (`/admin`), formerly manually in SQL |
+| `confirmation_change` | `cf_comment`, `cf_was_deleted` | admin area |
+| `user_delete` | `NULL` | admins (only manually in SQL) |
+| `confirmation_delete` | `NULL` | admin area (`at_old_value` = the row as JSON) |
 
 Privacy: the table is **not public**. It contains old names, also of accounts that vanished on
 request (`Vanished user …`, `Renamed user …`), and admin notes. The job log, which everyone on
 Toolforge can read, gets only user ids and new names.
 
-Until the web UI exists, a manual change is recorded in the same transaction, e.g.:
+The admin area does all of this itself. A change that is still made by hand in SQL is recorded in the
+same transaction, e.g.:
 
 ```
 START TRANSACTION;

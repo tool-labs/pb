@@ -1,0 +1,32 @@
+{% extends "admin/layout.html" %}
+{% from "admin/macros.html" import csrf, user_link with context %}
+{% block admin_title %}Verschwundene Konten{% endblock %}
+{% block admin_content %}
+  <p>Teilnehmer, die noch sichtbar sind, deren Name aber nach einem Verschwinden auf eigenen Wunsch aussieht
+    (<code>Vanished user …</code>, <code>Renamed user …</code>, <code>GelöschterBenutzer…</code>, <code>User JJJJMMTT-n</code>).
+    Die Begründung wird aus dem globalen Umbenennungs-Logbuch auf Meta vorgeschlagen und kann vor dem Verstecken angepasst werden.
+    Bereits versteckt: {{ hidden_count }}.</p>
+{%- if error %}
+  <p class="flash flash-error">{{ error }}</p>
+{%- endif %}
+{%- if not candidates and not error %}
+  <p>Keine Kandidaten – alles erledigt.</p>
+{%- endif %}
+{%- for u in candidates %}
+  <div class="vanished-candidate">
+    <h3>{{ user_link(u.id, u.name) }} <small>(user_id {{ u.id }}, Teilnahme seit {{ u.participates_since | format_date }})</small></h3>
+{%- if u.rename %}
+    <p>Globale Umbenennung am {{ u.rename.timestamp | format_datetime }} UTC durch {{ u.rename.performer }}: {{ u.rename.comment | parse_comment }}
+      (<a href="https://meta.wikimedia.org/w/index.php?title=Special:Log&amp;type=gblrename&amp;page=CentralAuth/{{ u.name | replace(' ', '_') | urlencode }}">Logbuch</a>)</p>
+{%- else %}
+    <p>Kein Eintrag im globalen Umbenennungs-Logbuch gefunden.</p>
+{%- endif %}
+    <form method="post" action="{{ url_for('admin.user_hide', user_id=u.id) }}" class="admin-form inline">
+      {{ csrf() }}
+      <input type="hidden" name="next" value="{{ url_for('admin.vanished') }}"/>
+      <label>Begründung <input type="text" name="reason" value="{{ u.reason }}" required/></label>
+      <button type="submit">Verstecken</button>
+    </form>
+  </div>
+{%- endfor %}
+{% endblock %}

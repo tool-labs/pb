@@ -35,8 +35,9 @@ Same projects in other languages:
    database, removes them from the page and updates the participant lists on the wiki.
    Its scripts live in the [spbot repository](https://github.com/euku/spbot/tree/spbot/scripts/userscripts)
    (`pers-bek-*.py`), but the database code they use is `web/bot_api.py` in this repository.
-3. This web app shows participants, confirmations and statistics. It only reads data;
-   hiding or banning participants is done manually in the database.
+3. This web app shows participants, confirmations and statistics. The public pages only read
+   data; hiding or banning participants and the other admin work is done in the admin area
+   `/admin` (see below).
 4. `/api/users.json` serves the participant list of `/users` as JSON (readable from any
    origin via CORS, cached for 5 minutes) for the filter of
    [MediaWiki:Gadget-PB2.js](https://de.wikipedia.org/wiki/MediaWiki:Gadget-PB2.js) on
@@ -52,6 +53,7 @@ Same projects in other languages:
 | `web/app.py` | Flask app: routes and Jinja filters |
 | `web/api.py` | `Database`: read access to ToolsDB (and the dewiki replica for the bot), statistics |
 | `web/bot_api.py` | `BotDatabase`: write access, used by SpBot |
+| `web/admin.py`, `web/admin_api.py` | Admin area `/admin`: OAuth login, pages, `AdminDatabase` (changes + `audit_trail`) |
 | `web/config.py` | Configuration (Toolforge defaults, overridable by environment variables) |
 | `web/templates/`, `web/static/` | HTML templates, CSS, jQuery + tablesorter |
 | `web/i18n.py`, `web/translations/` | Language choice and the UI texts in 24 languages (`<code>.json`, key → HTML text) |
@@ -79,7 +81,9 @@ ToolsDB database `s51344__pb` (MariaDB 10.6):
 * `user_home_wiki`: home wiki of the global (SUL) account of each participant, looked up in the
   CentralAuth replica by `jobs/update_home_wikis.py` (hourly, each user again after 7 days).
 
-`BotDatabase` (SpBot) also reads `user` and `block_target` from the dewiki replica (`dewiki_p`); the web app does not use the replica.
+`BotDatabase` (SpBot) also reads `user` and `block_target` from the dewiki replica (`dewiki_p`). The public pages
+do not use the replicas; the admin area reads `dewiki_p` (checks, name/user_id correction) and `metawiki_p`
+(global rename log).
 Credentials come from `~/replica.pb-db.cnf` (a symlink to Toolforge's `replica.my.cnf`).
 
 ## Configuration
@@ -95,6 +99,50 @@ they can be overridden by environment variables:
 | `PB_DB_NAME` | `s51344__pb` |
 | `PB_REPLICA_DB_NAME` | `dewiki_p` |
 | `PB_SQL_DUMP_FOLDER` | `/data/project/pb/www/python/src/sql-dumps` |
+| `PB_META_REPLICA_HOST`, `PB_META_REPLICA_DB_NAME` | `metawiki.web.db.svc.wikimedia.cloud`, `metawiki_p` |
+| `PB_SECRET_KEY` | – (signs the admin session cookie; **secret**, Toolforge envvar) |
+| `PB_OAUTH_CLIENT_ID`, `PB_OAUTH_CLIENT_SECRET` | – (OAuth 2.0 consumer on Meta; the secret is a Toolforge envvar) |
+| `PB_OAUTH_BASE_URL` | `https://meta.wikimedia.org/w/rest.php/oauth2` |
+| `PB_ADMINS` | `Euku,Wiegels` (global user names, comma separated) |
+| `PB_SESSION_COOKIE_SECURE` | `1` (`0` for local tests over plain HTTP) |
+| `PB_ADMIN_SESSION_HOURS` | `12` |
+| `PB_JOBS_FILE`, `PB_LOG_DIR` | `jobs/toolforge-jobs.yaml` of the checkout, `/data/project/pb/logs` |
+
+## Admin area
+
+`/admin` is for the maintainers of the project only. The login page explains what is behind it
+and names the admins; everybody else is refused after the login. The pages are German only.
+
+* **Login**: OAuth 2.0 with the Wikimedia account (consumer on Meta, "User identity verification only",
+  callback `https://pb.toolforge.org/oauth/callback`, which passes the request on to `/admin/oauth/callback`). Admins are the names in `PB_ADMINS`; the
+  list is checked on every request, so removing a name ends that admin's session. Blocked accounts are
+  refused. The session cookie `pb_admin` is limited to `/admin` (HttpOnly, Secure, SameSite=Lax);
+  every form has a CSRF token. Without `PB_SECRET_KEY`, `PB_OAUTH_CLIENT_ID` and `PB_OAUTH_CLIENT_SECRET`
+  the login is switched off.
+* **Users** (`/admin/users`, `/admin/user/<id>`): hide, ban, edit the (public) comment; "mit dewiki abgleichen"
+  renames a user or moves the row to the right user_id (with the confirmations, like the SQL template
+  in `sql/schema.md`), with a preview first.
+* **Confirmations** (`/admin/confirmation/<from>/<to>`): mark as deleted, edit the comment, delete
+  (the deleted row is kept as JSON in `audit_trail`).
+* **Admin-Log** (`/admin/audit`): `audit_trail` with filters for user, action and performer.
+* **Verschwundene Konten** (`/admin/vanished`): visible participants with vanished-account names, with the
+  reason suggested from the global rename log on Meta.
+* **Prüfungen** (`/admin/checks`): self confirmations, `user_verified_since` that does not fit the
+  confirmations, confirmations from/to banned users that are not marked as deleted, user_ids missing on
+  dewiki and names that differ from dewiki.
+* **Jobs** (`/admin/jobs`): schedule, age and last lines of the log files in `~/logs/`.
+
+Every change needs a reason and is written with its `audit_trail` entry in one transaction, the performer
+is the admin's user name.
+
+Setup on Toolforge (as `tools.pb`; `envvars create` asks for the value, so it does not end up in the shell history):
+
+```bash
+toolforge envvars create PB_OAUTH_CLIENT_ID
+toolforge envvars create PB_OAUTH_CLIENT_SECRET
+python3 -c 'import secrets; print(secrets.token_urlsafe(48))' | toolforge envvars create PB_SECRET_KEY
+toolforge webservice python3.13 restart
+```
 
 ## Languages
 

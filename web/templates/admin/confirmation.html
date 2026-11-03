@@ -1,0 +1,36 @@
+{% extends "admin/layout.html" %}
+{% from "admin/macros.html" import csrf, user_link, audit_table with context %}
+{% block admin_title %}Bestätigung {{ giver.name if giver else cf.user_id }} → {{ taker.name if taker else cf.confirmed_user_id }}{% endblock %}
+{% block admin_content %}
+  <table class="toc">
+    <tr><th>von</th><td>{{ user_link(cf.user_id, giver.name if giver else none, giver and giver.hidden, giver and giver.was_banned) }}</td></tr>
+    <tr><th>an</th><td>{{ user_link(cf.confirmed_user_id, taker.name if taker else none, taker and taker.hidden, taker and taker.was_banned) }}</td></tr>
+    <tr><th>Zeit (Wikizeit)</th><td>{{ cf.timestamp | format_datetime }}</td></tr>
+    <tr><th>Kommentar</th><td>{{ cf.comment | parse_comment }}</td></tr>
+    <tr><th>als gelöscht markiert</th><td>{{ 'ja' if cf.was_deleted else 'nein' }}</td></tr>
+    <tr><th>Gegenbestätigung</th><td>{% if reverse %}<a href="{{ url_for('admin.confirmation', user_id=cf.confirmed_user_id, confirmed_user_id=cf.user_id) }}">vorhanden</a>{% else %}keine{% endif %}</td></tr>
+  </table>
+
+  <h2>Ändern</h2>
+  <form method="post" action="{{ url_for('admin.confirmation_update', user_id=cf.user_id, confirmed_user_id=cf.confirmed_user_id) }}" class="admin-form">
+    {{ csrf() }}
+    <label><input type="checkbox" name="deleted" value="1"{% if cf.was_deleted %} checked{% endif %}/> als gelöscht markieren
+      <small>(widerrufen, z. B. nach aufgedeckter Sockenpuppe; nicht für versehentliche Bestätigungen)</small></label>
+    <label>Kommentar <small>(öffentlich)</small> <textarea name="comment" rows="2">{{ cf.comment or '' }}</textarea></label>
+    <label>Begründung (Pflicht) <input type="text" name="reason" required/></label>
+    <button type="submit">Speichern</button>
+  </form>
+
+  <h2>Löschen</h2>
+  <p>Für versehentliche oder doppelt eingetragene Bestätigungen. Der Datensatz wird im Admin-Log gesichert.
+    <code>user_verified_since</code> wird dabei nicht zurückgesetzt (siehe <a href="{{ url_for('admin.checks') }}">Prüfungen</a>).</p>
+  <form method="post" action="{{ url_for('admin.confirmation_delete', user_id=cf.user_id, confirmed_user_id=cf.confirmed_user_id) }}" class="admin-form">
+    {{ csrf() }}
+    <label>Begründung (Pflicht) <input type="text" name="reason" required/></label>
+    <label><input type="checkbox" name="really" value="1" required/> wirklich löschen</label>
+    <button type="submit" class="danger">Bestätigung löschen</button>
+  </form>
+
+  <h2>Admin-Log</h2>
+  {{ audit_table(entries) }}
+{% endblock %}

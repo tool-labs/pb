@@ -47,7 +47,7 @@ class WPPBException(Exception):
 AUDIT_ACTIONS = ('rename', 'user_change', 'confirmation_change', 'user_delete', 'confirmation_delete')
 AUDIT_FIELDS = {
     'rename': ('user_name',),
-    'user_change': ('user_was_banned', 'user_is_hidden', 'user_comment', 'user_id'),
+    'user_change': ('user_was_banned', 'user_is_hidden', 'user_comment', 'user_id', 'user_verified_since'),
     'confirmation_change': ('cf_comment', 'cf_was_deleted'),
     'user_delete': (None,),
     'confirmation_delete': (None,),
@@ -82,6 +82,31 @@ def _home_wiki(checked, has_sul, home_db, home_url):
         return None
     return {'sul': bool(has_sul), 'db': home_db, 'url': home_url}
 
+def read_db_credentials():
+    """
+    `(user, password, host)` from `config.db_conf_file` (~/replica.pb-db.cnf); *host* is the
+    dewiki replica. Raises `WPPBException` if something is missing.
+    """
+    user_name = password = wp_host = None
+    p = config.db_conf_file
+    if os.path.exists(p):
+        parser = configparser.ConfigParser()
+        parser.read(p)
+        if parser.has_section('client'):
+            if parser.has_option('client', 'user'):
+                user_name = parser.get('client', 'user').strip('"\'')
+            if parser.has_option('client', 'password'):
+                password = parser.get('client', 'password').strip('"\'')
+            if parser.has_option('client', 'host'):
+                wp_host = parser.get('client', 'host').strip('"\'')
+
+    if user_name is None or password is None or wp_host is None:
+        raise WPPBException('You did not specify enough information on' +
+                            ' the database connection. The ~/replica.pb-db.cnf ' +
+                            'file did not contain the required ' +
+                            'information.')
+    return user_name, password, wp_host
+
 class Database:
     """
     This class provides access to the database.
@@ -94,25 +119,7 @@ class Database:
         """
         pb_database=config.db_name
         wp_replica_db=config.replica_db_name
-        user_name = password = wp_host = None
-        # try to read the replica.pb-db.cnf
-        p = config.db_conf_file
-        if os.path.exists(p):
-            parser = configparser.ConfigParser()
-            parser.read(p)
-            if parser.has_section('client'):
-                if parser.has_option('client', 'user'):
-                    user_name = parser.get('client', 'user').strip('"\'')
-                if parser.has_option('client', 'password'):
-                    password = parser.get('client', 'password').strip('"\'')
-                if parser.has_option('client', 'host'):
-                    wp_host = parser.get('client', 'host').strip('"\'')
-
-        if user_name is None or password is None or wp_host is None:
-            raise WPPBException('You did not specify enough information on' +
-                                ' the database connection. The ~/replica.pb-db.cnf ' +
-                                'file did not contain the required ' +
-                                'information.')
+        user_name, password, wp_host = read_db_credentials()
 
         try:
             self.conn = pymysql.connections.Connection(host=config.db_host, port=config.db_port, user=user_name, password=password, database=pb_database,

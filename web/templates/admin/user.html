@@ -1,0 +1,81 @@
+{% extends "admin/layout.html" %}
+{% from "admin/macros.html" import csrf, user_link, audit_table with context %}
+{% block admin_title %}{{ user.name }}{% endblock %}
+{% block admin_content %}
+  <p>
+{%- if not user.hidden %}<a href="{{ url_for('user', user_name=user.name) }}">öffentliche Seite</a> | {% endif %}
+    <a href="https://de.wikipedia.org/wiki/Benutzer:{{ user.name | replace(' ', '_') | urlencode }}">Benutzerseite auf dewiki</a> |
+    <a href="https://de.wikipedia.org/wiki/Spezial:Beitr%C3%A4ge/{{ user.name | replace(' ', '_') | urlencode }}">Beiträge</a> |
+    <a href="https://meta.wikimedia.org/wiki/Special:CentralAuth/{{ user.name | replace(' ', '_') | urlencode }}">CentralAuth</a>
+  </p>
+  <table class="toc">
+    <tr><th>user_id</th><td>{{ user.id }}</td></tr>
+    <tr><th>Teilnahme seit</th><td>{{ user.participates_since | format_datetime }}</td></tr>
+    <tr><th>verifiziert seit</th><td>{{ user.verified_since | format_datetime or 'nicht verifiziert' }}</td></tr>
+    <tr><th>letzte Aktualisierung</th><td>{{ user.last_update | format_datetime }}</td></tr>
+    <tr><th>Homewiki</th><td>{% if home_wiki is none %}noch nicht ermittelt{% elif not home_wiki.sul %}kein SUL-Konto{% else %}{{ home_wiki.db }}{% endif %}</td></tr>
+    <tr><th>versteckt</th><td>{{ 'ja' if user.hidden else 'nein' }}</td></tr>
+    <tr><th>ausgeschlossen</th><td>{{ 'ja' if user.was_banned else 'nein' }}</td></tr>
+  </table>
+{%- if vanished and not user.hidden %}
+  <p class="warning">Der Name deutet auf ein verschwundenes Konto hin, siehe <a href="{{ url_for('admin.vanished') }}">Verschwundene Konten</a>.</p>
+{%- endif %}
+
+  <h2>Daten ändern</h2>
+  <form method="post" action="{{ url_for('admin.user_update', user_id=user.id) }}" class="admin-form">
+    {{ csrf() }}
+    <label><input type="checkbox" name="hidden" value="1"{% if user.hidden %} checked{% endif %}/> versteckt
+      <small>(hat das Projekt verlassen: Name wird nicht mehr gezeigt, Bestätigungen zählen nicht)</small></label>
+    <label><input type="checkbox" name="banned" value="1"{% if user.was_banned %} checked{% endif %}/> ausgeschlossen
+      <small>(z. B. Sockenpuppe, nicht für Sperren auf Wikipedia)</small></label>
+    <label>Kommentar <small class="warning">(wird auf der öffentlichen Benutzerseite angezeigt)</small>
+      <textarea name="comment" rows="2">{{ user.comment or '' }}</textarea></label>
+    <label>Begründung (Pflicht, Wikilinks erlaubt) <input type="text" name="reason" required/></label>
+    <button type="submit">Speichern</button>
+  </form>
+
+  <h2>Name und user_id mit dewiki abgleichen</h2>
+  <p>Für Umbenennungen, die der Job <code>update-user-names</code> nicht übernimmt, und für falsche user_ids aus der Anfangszeit.
+    Gib den richtigen Benutzernamen auf dewiki an; die user_id wird im Replikat nachgeschlagen.</p>
+  <form method="post" action="{{ url_for('admin.user_relink', user_id=user.id) }}" class="admin-form">
+    {{ csrf() }}
+    <label>Benutzername auf dewiki <input type="text" name="name" value="{{ relink_name }}" required/></label>
+    <label>Begründung <input type="text" name="reason" value="{{ relink_reason }}"/></label>
+    <button type="submit">Prüfen</button>
+  </form>
+{%- if plan %}
+  <div class="relink-plan relink-{{ plan.action }}">
+    <p><b>Ergebnis der Prüfung:</b> {{ plan.message }}</p>
+{%- if plan.action in ('rename', 'move') %}
+    <form method="post" action="{{ url_for('admin.user_relink', user_id=user.id) }}" class="admin-form">
+      {{ csrf() }}
+      <input type="hidden" name="name" value="{{ plan.name }}"/>
+      <input type="hidden" name="confirm" value="1"/>
+      <label>Begründung (Pflicht) <input type="text" name="reason" value="{{ relink_reason }}" required/></label>
+      <button type="submit">Jetzt ausführen</button>
+    </form>
+{%- endif %}
+  </div>
+{%- endif %}
+
+{%- for title, rows, given_dir in (('Vergebene Bestätigungen', given, true), ('Erhaltene Bestätigungen', received, false)) %}
+  <h2>{{ title }} ({{ rows | length }})</h2>
+  <table class="full-width admin-table">
+    <tr><th>{{ 'an' if given_dir else 'von' }}</th><th>Datum</th><th>Kommentar</th><th>gelöscht</th><th>gegenseitig</th><th></th></tr>
+{%- for name, other_id, stamp, comment, deleted, hidden, reconfirmed in rows %}
+    <tr class="{% if deleted %}cf_deleted{% endif %}">
+      <td>{{ user_link(other_id, name, hidden) }}</td>
+      <td class="nowrap">{{ stamp | format_datetime }}</td>
+      <td>{{ comment | parse_comment }}</td>
+      <td>{{ 'ja' if deleted else '' }}</td>
+      <td>{{ 'ja' if reconfirmed else 'nein' }}</td>
+      <td><a href="{{ url_for('admin.confirmation', user_id=(user.id if given_dir else other_id), confirmed_user_id=(other_id if given_dir else user.id)) }}">bearbeiten</a></td>
+    </tr>
+{%- endfor %}
+  </table>
+{%- endfor %}
+
+  <h2>Admin-Log</h2>
+  {{ audit_table(entries) }}
+  <p><a href="{{ url_for('admin.audit', user=user.id) }}">alle Einträge zu diesem Benutzer</a></p>
+{% endblock %}

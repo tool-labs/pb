@@ -331,6 +331,9 @@ def _scan_dir(root_dir: str):
                 result.append([file, file_size])
     return result
 
+import admin
+admin.init_app(app)
+
 if __name__ == "__main__":
     # only for local tests, the webservice runs the app via uwsgi
     app.run(debug = True, threaded = True, host='0.0.0.0', port=80, use_reloader=True)

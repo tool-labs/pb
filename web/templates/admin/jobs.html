@@ -1,0 +1,41 @@
+{% extends "admin/layout.html" %}
+{% block admin_title %}Jobs{% endblock %}
+{% block admin_content %}
+  <p>Die Toolforge-Jobs aus <code>jobs/toolforge-jobs.yaml</code> und ihre Logdateien (Serverzeit UTC). „Veraltet“ heißt:
+    Das Log wurde länger nicht geschrieben, als der Zeitplan erwarten lässt; Jobs ohne jede Ausgabe
+    lassen ihre leeren Logs unverändert („keine Ausgabe“). Den Status in Kubernetes zeigt
+    <code>toolforge jobs list</code>.</p>
+{%- if error %}
+  <p class="flash flash-error">{{ error }}</p>
+{%- endif %}
+  <table class="full-width admin-table">
+    <tr><th>Job</th><th>Zeitplan</th><th>letzte Logausgabe</th><th>Status</th><th>letzter erfolgreicher Lauf</th></tr>
+{%- for job in jobs %}
+    <tr>
+      <td><a href="#job-{{ job.name }}">{{ job.name }}</a></td>
+      <td><code>{{ job.schedule or job.continuous or '' }}</code></td>
+      <td class="nowrap">{{ job.newest | format_datetime }}</td>
+      <td>{% if job.silent %}keine Ausgabe{% elif job.stale %}<span class="warning">veraltet</span>{% elif job.has_problems %}<span class="warning">Fehler im Log</span>{% else %}<span class="ok">ok</span>{% endif %}</td>
+      <td>{{ (job.stderr and job.stderr.last_completed) or (job.stdout and job.stdout.last_completed) or '' }}</td>
+    </tr>
+{%- endfor %}
+  </table>
+{%- for job in jobs %}
+  <h2 id="job-{{ job.name }}">{{ job.name }}</h2>
+  <p><code>{{ job.command }}</code></p>
+{%- for label, log in (('stdout', job.stdout), ('stderr', job.stderr)) %}
+{%- if log %}
+  <p><b>{{ label }}</b> <code>{{ log.path }}</code>, {{ log.size }} Bytes, geändert {{ log.modified | format_datetime }}</p>
+{%- if log.problems %}
+  <p class="warning">Auffällige Zeilen:</p>
+  <pre class="log problems">{{ log.problems | join('\n') }}</pre>
+{%- endif %}
+{%- if log.tail %}
+  <pre class="log">{{ log.tail | join('\n') }}</pre>
+{%- endif %}
+{%- elif job.get('filelog-' + label) %}
+  <p><b>{{ label }}</b>: Logdatei nicht gefunden.</p>
+{%- endif %}
+{%- endfor %}
+{%- endfor %}
+{% endblock %}
