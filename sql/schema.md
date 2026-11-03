@@ -3,7 +3,7 @@
 The tool uses two databases:
 
 * **`s51344__pb`** on ToolsDB (`tools.db.svc.wikimedia.cloud`, MariaDB 10.6): the data of
-  the project. The web app reads it. SpBot (`web/bot_api.py`) and admins (manually, in SQL) write it.
+  the project. The web app reads it. SpBot (`web/bot_api.py`), the jobs and the admin area (`web/admin_api.py`) write it.
 * **`dewiki_p`**, the German Wikipedia replica (read only): used to look up MediaWiki user ids
   and blocks.
 
@@ -94,17 +94,18 @@ without home wiki. The web app only reads this table, it has no replica connecti
 
 | `at_action` | `at_field` | Written by |
 |-------------|------------|------------|
-| `rename` | `user_name` | `jobs/update_user_names.py`, automatically with every rename |
-| `user_change` | `user_was_banned`, `user_is_hidden`, `user_comment`, `user_id` | admins (manually in SQL until the web UI exists) |
-| `confirmation_change` | `cf_comment`, `cf_was_deleted` | admins |
-| `user_delete` | `NULL` | admins |
-| `confirmation_delete` | `NULL` | admins |
+| `rename` | `user_name` | `jobs/update_user_names.py`, automatically with every rename; admin area ("mit dewiki abgleichen") |
+| `user_change` | `user_was_banned`, `user_is_hidden`, `user_comment`, `user_id` | admin area (`/admin`), formerly manually in SQL |
+| `confirmation_change` | `cf_comment`, `cf_was_deleted` | admin area |
+| `user_delete` | `NULL` | admins (only manually in SQL) |
+| `confirmation_delete` | `NULL` | admin area (`at_old_value` = the row as JSON) |
 
 Privacy: the table is **not public**. It contains old names, also of accounts that vanished on
 request (`Vanished user …`, `Renamed user …`), and admin notes. The job log, which everyone on
 Toolforge can read, gets only user ids and new names.
 
-Until the web UI exists, a manual change is recorded in the same transaction, e.g.:
+The admin area does all of this itself. A change that is still made by hand in SQL is recorded in the
+same transaction, e.g.:
 
 ```
 START TRANSACTION;

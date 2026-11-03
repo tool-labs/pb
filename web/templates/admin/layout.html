@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{#- The admin area is German only (web/admin.py). #}
+{% block title %}{% block admin_title %}Übersicht{% endblock %} | Admin | Wikipedia:Persönliche Bekanntschaften{% endblock %}
+{% block heading %}Admin: {{ self.admin_title() }}{% endblock %}
+{% block content %}
+{%- if admin_user %}
+  <div id="admin-navi">
+    <a href="{{ url_for('admin.index') }}">Übersicht</a> |
+    <a href="{{ url_for('admin.users') }}">Benutzer</a> |
+    <a href="{{ url_for('admin.audit') }}">Admin-Log</a> |
+    <a href="{{ url_for('admin.vanished') }}">Verschwundene Konten</a> |
+    <a href="{{ url_for('admin.checks') }}">Prüfungen</a> |
+    <a href="{{ url_for('admin.jobs') }}">Jobs</a>
+    <form class="logout" method="post" action="{{ url_for('admin.logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+      angemeldet als <b>{{ admin_user }}</b> <button type="submit">Abmelden</button>
+    </form>
+  </div>
+{%- endif %}
+{%- with messages = get_flashed_messages(with_categories=true) %}
+{%- for category, message in messages %}
+  <p class="flash flash-{{ category }}">{{ message }}</p>
+{%- endfor %}
+{%- endwith %}
+{% block admin_content %}{% endblock %}
+{% endblock %}
+

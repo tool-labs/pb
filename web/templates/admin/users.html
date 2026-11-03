@@ -1,0 +1,24 @@
+{% extends "admin/layout.html" %}
+{% from "admin/macros.html" import user_link with context %}
+{% block admin_title %}Benutzer{% endblock %}
+{% block admin_content %}
+  <form method="get" action="{{ url_for('admin.users') }}" class="filters">
+    <label>Name (Teil) oder user_id: <input type="search" name="q" value="{{ query }}" autofocus/></label>
+    <button type="submit">Suchen</button>
+  </form>
+{%- if query %}
+  <p>{{ users | length }} Treffer{% if users | length >= 200 %} (nur die ersten 200){% endif %}. Versteckte und ausgeschlossene Benutzer werden mit angezeigt.</p>
+  <table class="full-width admin-table">
+    <tr><th>Name</th><th>user_id</th><th>Teilnahme seit</th><th>verifiziert seit</th><th>Kommentar</th></tr>
+{%- for u in users %}
+    <tr>
+      <td>{{ user_link(u.id, u.name, u.hidden, u.was_banned) }}</td>
+      <td>{{ u.id }}</td>
+      <td>{{ u.participates_since | format_date }}</td>
+      <td>{{ u.verified_since | format_date }}</td>
+      <td>{{ u.comment or '' }}</td>
+    </tr>
+{%- endfor %}
+  </table>
+{%- endif %}
+{% endblock %}

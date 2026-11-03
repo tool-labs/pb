@@ -1,0 +1,23 @@
+{% extends "admin/layout.html" %}
+{% from "admin/macros.html" import audit_table with context %}
+{% block admin_title %}Admin-Log{% endblock %}
+{% block admin_content %}
+  <form method="get" action="{{ url_for('admin.audit') }}" class="filters">
+    <label>Benutzer (Name oder user_id) <input type="search" name="user" value="{{ filters.user }}"/></label>
+    <label>Aktion <select name="action"><option value="">alle</option>
+{%- for action in actions %}<option value="{{ action }}"{% if action == filters.action %} selected{% endif %}>{{ action }}</option>{% endfor %}
+    </select></label>
+    <label>von <select name="performer"><option value="">alle</option>
+{%- for performer in performers %}<option value="{{ performer }}"{% if performer == filters.performer %} selected{% endif %}>{{ performer }}</option>{% endfor %}
+    </select></label>
+    <button type="submit">Filtern</button>
+{%- if filters.user or filters.action or filters.performer %} <a href="{{ url_for('admin.audit') }}">Filter zurücksetzen</a>{% endif %}
+  </form>
+  <p>Das Log ist nicht öffentlich: Es enthält alte Namen, auch von Konten, die auf eigenen Wunsch verschwunden sind.</p>
+  {{ audit_table(entries) }}
+  <div class="pager">
+{%- if page > 1 %}<a href="{{ page_url(page - 1) }}">← Neuere</a>{% endif %}
+{%- if page > 1 and has_more %} | {% endif %}
+{%- if has_more %}<a href="{{ page_url(page + 1) }}">Ältere →</a>{% endif %}
+  </div>
+{% endblock %}

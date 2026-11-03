@@ -133,3 +133,30 @@ details#lang-switch li a.selected { font-weight: bold; }
 div.pager { margin: 1em 0; text-align: center; }
 table.recent tr:hover td { background-color: #ffd; }
 span.hidden { visibility: hidden; }
+
+/* admin area (web/admin.py) */
+div#admin-navi { border: 1px solid #ccc; background-color: #f6f6f6; padding: 0.5em 1ex; margin-bottom: 1em; }
+div#admin-navi form.logout { display: inline; float: right; font-size: smaller; }
+[dir=rtl] div#admin-navi form.logout { float: left; }
+p.flash { border: 1px solid #aaa; padding: 0.5em 1ex; }
+p.flash-info { background-color: #eef7ee; border-color: #6a6; }
+p.flash-error { background-color: #fdecec; border-color: #d33; }
+form.admin-form label { display: block; margin: 0.5em 0; }
+form.admin-form input[type=text], form.admin-form textarea { box-sizing: border-box; display: block; width: 100%; }
+form.admin-form.inline label { margin: 0.25em 0; }
+button.danger { color: #d33; }
+a.button { border: 1px solid #36c; border-radius: 3px; background-color: #36c; color: white; display: inline-block; padding: 0.5em 1em; text-decoration: none; }
+table.admin-table td { vertical-align: top; }
+table.audit { font-size: 0.85em; }
+table.audit td.values { word-break: break-word; }
+.nowrap { white-space: nowrap; }
+.badge { border-radius: 3px; font-size: 0.75em; padding: 0 0.5ex; white-space: nowrap; }
+.badge-hidden { background-color: #ddd; color: #333; }
+.badge-banned { background-color: #fdd; color: #a00; }
+.admin-missing { color: #999; }
+.ok { color: #393; }
+pre.log { background-color: #f6f6f6; border: 1px solid #ddd; font-size: 0.8em; overflow-x: auto; padding: 0.5em; }
+pre.log.problems { background-color: #fdecec; }
+div.relink-plan { border: 1px solid #aaa; margin: 1em 0; padding: 0 1ex; }
+div.relink-plan.relink-rename, div.relink-plan.relink-move { border-color: #c90; background-color: #fff8e5; }
+div.vanished-candidate { border-bottom: 1px solid #ddd; padding-bottom: 0.5em; }

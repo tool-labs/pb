@@ -1,0 +1,39 @@
+{% extends "admin/layout.html" %}
+{% block admin_title %}Anmeldung{% endblock %}
+{% block admin_content %}
+{%- if error %}
+  <p class="flash flash-error">{{ error }}</p>
+{%- endif %}
+  <p>Hier pflegen die Betreuer des Projekts
+    <a href="https://de.wikipedia.org/wiki/Wikipedia:Pers%C3%B6nliche_Bekanntschaften">Wikipedia:Persönliche Bekanntschaften</a>
+    die Datenbank. Für alle anderen gibt es hier nichts zu sehen: Die Teilnehmer und Bestätigungen stehen
+    öffentlich auf den <a href="{{ url_for('index') }}">normalen Seiten</a>, Anträge laufen über die Projektseite auf dewiki.</p>
+
+  <h2>Was hinter der Anmeldung liegt</h2>
+  <ul class="admin-features">
+{%- for title, text in features %}
+    <li><b>{{ title }}:</b> {{ text }}</li>
+{%- endfor %}
+  </ul>
+  <p>Jede Änderung braucht eine Begründung und wird mit Name und Zeit im nicht öffentlichen Admin-Log festgehalten.</p>
+
+  <h2>Admins</h2>
+  <ul>
+{%- for name in admins %}
+    <li><a href="https://de.wikipedia.org/wiki/Benutzer:{{ name | replace(' ', '_') | urlencode }}">{{ name }}</a></li>
+{%- endfor %}
+  </ul>
+  <p>Fragen und Korrekturwünsche bitte auf der
+    <a href="https://de.wikipedia.org/wiki/Wikipedia_Diskussion:Pers%C3%B6nliche_Bekanntschaften">Diskussionsseite des Projekts</a>.</p>
+
+  <h2>Anmelden</h2>
+{%- if admin_user %}
+  <p>Du bist als <b>{{ admin_user }}</b> angemeldet: <a href="{{ url_for('admin.index') }}">zur Übersicht</a>.</p>
+{%- elif configured %}
+  <p>Die Anmeldung läuft über dein Wikimedia-Konto (OAuth auf meta.wikimedia.org). Das Tool erfährt dabei nur
+    deinen Benutzernamen und bekommt keine Rechte im Wiki.</p>
+  <p><a class="button" href="{{ url_for('admin.login_start', next=next or None) }}">Mit Wikimedia-Konto anmelden</a></p>
+{%- else %}
+  <p class="warning">Die Anmeldung ist noch nicht eingerichtet (OAuth-Zugangsdaten fehlen).</p>
+{%- endif %}
+{% endblock %}

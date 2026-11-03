@@ -1,0 +1,32 @@
+{#- Macros of the admin pages; import them "with context" (csrf_token). #}
+{%- macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>{% endmacro %}
+
+{%- macro user_link(id, name, hidden=false, banned=false) -%}
+{%- if name is none %}<span class="admin-missing">#{{ id }}</span>
+{%- else %}<a href="{{ url_for('admin.user', user_id=id) }}">{{ name }}</a>
+{%- if hidden %} <span class="badge badge-hidden">versteckt</span>{% endif %}
+{%- if banned %} <span class="badge badge-banned">ausgeschlossen</span>{% endif %}
+{%- endif %}
+{%- endmacro %}
+
+{%- macro audit_table(entries) %}
+  <table class="full-width admin-table audit">
+    <tr><th>Zeit (UTC)</th><th>Aktion</th><th>Benutzer</th><th>Feld</th><th>alt → neu</th><th>Begründung</th><th>von</th></tr>
+{%- for e in entries %}
+    <tr>
+      <td class="nowrap">{{ e.timestamp | format_datetime }}</td>
+      <td>{{ e.action }}</td>
+      <td>{{ user_link(e.user_id, e.user_name) if e.user_id is not none else '' }}
+{%- if e.confirmed_user_id is not none %} → {{ user_link(e.confirmed_user_id, e.confirmed_user_name) }}
+ (<a href="{{ url_for('admin.confirmation', user_id=e.user_id, confirmed_user_id=e.confirmed_user_id) }}">Bestätigung</a>){% endif %}</td>
+      <td>{{ e.field or '' }}</td>
+      <td class="values">{% if e.old_value is not none %}<span class="old">{{ e.old_value | truncate(300) }}</span>{% endif %}
+{%- if e.new_value is not none %} → <span class="new">{{ e.new_value | truncate(300) }}</span>{% endif %}</td>
+      <td>{{ e.reason | parse_comment }}</td>
+      <td>{{ e.performer }}</td>
+    </tr>
+{%- else %}
+    <tr><td colspan="7">Keine Einträge.</td></tr>
+{%- endfor %}
+  </table>
+{%- endmacro %}

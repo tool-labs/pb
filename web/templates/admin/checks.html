@@ -1,0 +1,70 @@
+{% extends "admin/layout.html" %}
+{% from "admin/macros.html" import user_link with context %}
+{% block admin_title %}Konsistenzprüfungen{% endblock %}
+{% block admin_content %}
+  <p>Doppelte Bestätigungen kann es nicht geben (Primärschlüssel <code>cf_user_id, cf_confirmed_user_id</code>),
+    Bestätigungen ohne Benutzer auch nicht (Fremdschlüssel).</p>
+
+  <h2>Selbstbestätigungen ({{ self_confirmations | length }})</h2>
+{%- if self_confirmations %}
+  <table class="admin-table">
+    <tr><th>Benutzer</th><th>Zeit</th><th>gelöscht</th><th></th></tr>
+{%- for c in self_confirmations %}
+    <tr><td>{{ user_link(c.id, c.name) }}</td><td>{{ c.timestamp | format_datetime }}</td><td>{{ 'ja' if c.was_deleted else '' }}</td>
+      <td><a href="{{ url_for('admin.confirmation', user_id=c.id, confirmed_user_id=c.id) }}">bearbeiten</a></td></tr>
+{%- endfor %}
+  </table>
+{%- else %}<p class="ok">Keine.</p>{% endif %}
+
+  <h2>Verifizierung passt nicht zu den Bestätigungen ({{ verification | length }})</h2>
+  <p>Nicht verifiziert trotz mindestens 3 Bestätigungen, oder verifiziert mit weniger als 3. Gezählt wird wie beim Bot:
+    alle Bestätigungen, auch gelöschte und solche von versteckten Benutzern. <code>user_verified_since</code> wird nie
+    automatisch zurückgesetzt; eine Korrektur geht bisher nur per SQL.</p>
+{%- if verification %}
+  <table class="admin-table">
+    <tr><th>Benutzer</th><th>verifiziert seit</th><th>Bestätigungen</th><th>davon nicht gelöscht</th></tr>
+{%- for v in verification %}
+    <tr><td>{{ user_link(v.id, v.name) }}</td><td>{{ v.verified_since | format_date or 'nein' }}</td><td>{{ v.count }}</td><td>{{ v.valid_count }}</td></tr>
+{%- endfor %}
+  </table>
+{%- else %}<p class="ok">Keine.</p>{% endif %}
+
+  <h2>Bestätigungen von oder an ausgeschlossene Benutzer, nicht als gelöscht markiert ({{ banned | length }})</h2>
+{%- if banned %}
+  <table class="admin-table">
+    <tr><th>von</th><th>an</th><th>Zeit</th><th></th></tr>
+{%- for b in banned %}
+    <tr><td>{{ user_link(b.user_id, b.user_name, false, b.user_banned) }}</td>
+      <td>{{ user_link(b.confirmed_user_id, b.confirmed_user_name, false, b.confirmed_banned) }}</td>
+      <td>{{ b.timestamp | format_datetime }}</td>
+      <td><a href="{{ url_for('admin.confirmation', user_id=b.user_id, confirmed_user_id=b.confirmed_user_id) }}">bearbeiten</a></td></tr>
+{%- endfor %}
+  </table>
+{%- else %}<p class="ok">Keine.</p>{% endif %}
+
+  <h2>Abgleich mit dewiki</h2>
+{%- if dewiki_error %}
+  <p class="flash flash-error">Das dewiki-Replikat ist gerade nicht erreichbar ({{ dewiki_error }}).</p>
+{%- else %}
+  <h3>user_id gibt es auf dewiki nicht ({{ dewiki.missing | length }})</h3>
+{%- if dewiki.missing %}
+  <table class="admin-table">
+    <tr><th>Benutzer</th><th>user_id</th></tr>
+{%- for u in dewiki.missing %}
+    <tr><td>{{ user_link(u.id, u.name, u.hidden) }}</td><td>{{ u.id }}</td></tr>
+{%- endfor %}
+  </table>
+{%- else %}<p class="ok">Keine.</p>{% endif %}
+  <h3>Name weicht von dewiki ab ({{ dewiki.renamed | length }})</h3>
+  <p>Umbenennungen, die im dewiki-Logbuch stehen, übernimmt der Job <code>update-user-names</code> stündlich. Was hier
+    länger stehen bleibt, ist meist eine falsche user_id: auf der Benutzerseite mit „mit dewiki abgleichen“ korrigieren.</p>
+{%- if dewiki.renamed %}
+  <table class="admin-table">
+    <tr><th>Benutzer in pb</th><th>user_id</th><th>Name auf dewiki</th></tr>
+{%- for u in dewiki.renamed %}
+    <tr><td>{{ user_link(u.id, u.name, u.hidden) }}</td><td>{{ u.id }}</td><td>{{ u.dewiki_name }}</td></tr>
+{%- endfor %}
+  </table>
+{%- else %}<p class="ok">Keine.</p>{% endif %}
+{%- endif %}
+{% endblock %}
