@@ -110,7 +110,7 @@ th.headerSortUp { background-image: url('sort_up.gif'); }
 th.headerSortDown { background-image: url('sort_down.gif'); }
 
 div#wp-box { float: right; }
-[dir=rtl] div#wp-box { left: 0; right: auto; }
+[dir=rtl] div#wp-box { float: left; }
 
 /* language menu at the right end of the navigation line (left end for right-to-left languages) */
 details#lang-switch { float: right; position: relative; z-index: 10; }
