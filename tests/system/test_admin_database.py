@@ -60,7 +60,7 @@ def query(sql, args=()):
     conn = connect(DB_NAME)
     with conn.cursor(pymysql.cursors.DictCursor) as curs:
         curs.execute(sql, args)
-        rows = curs.fetchall()
+        rows = list(curs.fetchall())     # PyMySQL returns an empty tuple when nothing matches
     conn.close()
     return rows
 
