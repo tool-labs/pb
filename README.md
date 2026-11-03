@@ -66,7 +66,7 @@ Same projects in other languages:
 ToolsDB database `s51344__pb` (MariaDB 10.6):
 
 * `user`: participants. `user_id` is the MediaWiki user id; renames on dewiki are taken over
-  hourly by `jobs/update_user_names.py`. `user_participates_since`,
+  hourly by `jobs/update_user_names.py` if they are in the dewiki rename log. `user_participates_since`,
   `user_verified_since` (set by the bot with the third confirmation), `user_is_hidden`
   (participant left the project, the name is no longer shown), `user_was_banned`
   (excluded, e.g. sockpuppets), `user_comment` (admin note).

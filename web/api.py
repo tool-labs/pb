@@ -47,12 +47,30 @@ class WPPBException(Exception):
 AUDIT_ACTIONS = ('rename', 'user_change', 'confirmation_change', 'user_delete', 'confirmation_delete')
 AUDIT_FIELDS = {
     'rename': ('user_name',),
-    'user_change': ('user_was_banned', 'user_is_hidden', 'user_comment'),
+    'user_change': ('user_was_banned', 'user_is_hidden', 'user_comment', 'user_id'),
     'confirmation_change': ('cf_comment', 'cf_was_deleted'),
     'user_delete': (None,),
     'confirmation_delete': (None,),
 }
 UPDATE_USER_NAMES_PERFORMER = 'update-user-names (Job)'
+# results of Database.update_user_names
+RENAME_DONE, RENAME_DRY_RUN, RENAME_NAME_TAKEN, RENAME_NOT_LOGGED = 'renamed', 'dry run', 'name taken', 'not logged'
+# longest chain of renames (A -> B -> C ...) followed in the rename log
+RENAME_CHAIN_MAX = 10
+
+def _rename_target(params):
+    """
+    New user name from `log_params` of a `renameuser` log entry: PHP-serialized since about 2014
+    (`5::newuser`), only the new name in older entries.
+    """
+    params = bytes(params) if isinstance(params, (bytes, bytearray)) else params.encode('utf-8')
+    if params.startswith(b'a:'):
+        match = re.search(rb's:\d+:"5::newuser";s:(\d+):"', params)
+        if match is None:
+            return None
+        start = match.end()
+        return params[start:start + int(match.group(1))].decode('utf-8')
+    return params.decode('utf-8').split('\n')[0].replace('_', ' ') or None
 
 def _text(value):
     """The replicas return names as bytes (varbinary)."""
@@ -243,9 +261,14 @@ class Database:
         """
         Takes over renames on dewiki: sets `user_name` to the current name of `user_id` on the
         dewiki replica. Users missing on the replica are left alone. Needs the replica connection.
-        Returns `(user_id, old_name, new_name, done)` for every renamed user; *done* is `False`
-        with *dry_run* and if the new name is taken by another participant (unique key). Names
-        that are passed on between participants (A -> B, B -> C) are set in the right order.
+        A rename is only taken over if the dewiki rename log leads from the old to the new name
+        (also over several renames): in the early years some participants were copied into the
+        database by hand, with the user id of another account.
+        Returns `(user_id, old_name, new_name, status)` for every user whose name differs, with
+        *status* one of `RENAME_DONE`, `RENAME_DRY_RUN`, `RENAME_NOT_LOGGED` (no rename in the
+        log, probably a wrong user id) or `RENAME_NAME_TAKEN` (the new name is used by another
+        participant, unique key). Names that are passed on between participants (A -> B, B -> C)
+        are set in the right order.
         """
         if self.wp_conn is None:
             raise WPPBException('update_user_names needs the replica connection (use_replica=True)')
@@ -256,10 +279,14 @@ class Database:
         mw_names = {}
         for start in range(0, len(user_ids), batch_size):
             mw_names.update(self._get_mw_user_names(user_ids[start:start + batch_size]))
-        pending = [(user_id, pb_names[user_id], mw_names[user_id])
+        changed = [(user_id, pb_names[user_id], mw_names[user_id])
                    for user_id in user_ids if user_id in mw_names and mw_names[user_id] != pb_names[user_id]]
+        pending, not_logged = [], []
+        for rename in changed:
+            (pending if self._rename_is_logged(rename[1], rename[2]) else not_logged).append(rename)
+        not_logged = [rename + (RENAME_NOT_LOGGED,) for rename in not_logged]
         if dry_run:
-            return [rename + (False,) for rename in pending]
+            return [rename + (RENAME_DRY_RUN,) for rename in pending] + not_logged
         results = []
         while pending:
             failed = []
@@ -271,7 +298,7 @@ class Database:
                                          old_value=old_name,
                                          new_value=new_name, commit=False)
                     self.conn.commit()
-                    results.append((user_id, old_name, new_name, True))
+                    results.append((user_id, old_name, new_name, RENAME_DONE))
                 except pymysql.IntegrityError:
                     # the name is still used by another participant who may be renamed later in this run
                     self.conn.rollback()
@@ -279,7 +306,45 @@ class Database:
             if len(failed) == len(pending):
                 break
             pending = failed
-        return results + [rename + (False,) for rename in pending]
+        return results + [rename + (RENAME_NAME_TAKEN,) for rename in pending] + not_logged
+
+    def _rename_is_logged(self, old_name, new_name):
+        """
+        `True` if the dewiki rename log leads from *old_name* to *new_name*, directly or over
+        up to `RENAME_CHAIN_MAX` renames. Global renames are logged there too ("derived").
+        """
+        seen = {old_name}
+        frontier = {old_name}
+        for _ in range(RENAME_CHAIN_MAX):
+            targets = set()
+            for names in self._get_mw_renames(frontier).values():
+                targets.update(names)
+            if new_name in targets:
+                return True
+            frontier = targets - seen
+            if not frontier:
+                return False
+            seen |= frontier
+        return False
+
+    def _get_mw_renames(self, user_names):
+        """Returns `{old_name: [new_name, ...]}` from the `renameuser` log on the dewiki replica."""
+        user_names = list(user_names)
+        if not user_names:
+            return {}
+        with self.wp_conn.cursor() as curs:
+            curs.execute("""
+            SELECT `log_title`, `log_params`
+                FROM `logging_logindex`
+                WHERE `log_type` = 'renameuser' AND `log_namespace` = 2 AND `log_title` IN (%s)
+                ORDER BY `log_timestamp`
+            ;""" % ', '.join(['%s'] * len(user_names)), [name.replace(' ', '_') for name in user_names])
+            renames = {}
+            for title, params in curs.fetchall():
+                target = _rename_target(params)
+                if target is not None:
+                    renames.setdefault(_text(title).replace('_', ' '), []).append(target)
+            return renames
 
     def add_audit_entry(self, action, performer, user_id=None, confirmed_user_id=None, field=None,
                         old_value=None, new_value=None, reason=None, timestamp=None, commit=True):

@@ -26,8 +26,8 @@ audit_trail                    (log of admin actions, no foreign keys: entries o
 
 | Column | Type | Meaning |
 |--------|------|---------|
-| `user_id` | `int unsigned`, unique | MediaWiki user id on dewiki. The bot looks it up in the replica when it adds the user, so only existing accounts can join. |
-| `user_name` | `varchar(255)`, unique | User name as written in the request. Renames on the wiki are taken over hourly by `jobs/update_user_names.py` (by `user_id`). |
+| `user_id` | `int unsigned`, unique | MediaWiki user id on dewiki. The bot looks it up in the replica when it adds the user, so only existing accounts can join. Some participants of the early years were copied in by hand, partly with the id of another account (corrected on 2026-11-03 for the cases found, see below). |
+| `user_name` | `varchar(255)`, unique | User name as written in the request. Renames on the wiki are taken over hourly by `jobs/update_user_names.py` (by `user_id`), but only if the dewiki rename log leads from the old to the new name. |
 | `user_comment` | `text`, nullable | Admin note (e.g. "sockpuppet of …"). **Shown on the public user page.** |
 | `user_participates_since` | `timestamp`, nullable | Time of the `{{…/neuer Benutzer}}` request. |
 | `user_verified_since` | `timestamp`, nullable | Set once, by `BotDatabase.add_confirmation`, to the time of the confirmation that brought the user to 3 confirmations. `NULL` = not verified. Never cleared automatically. |
@@ -95,7 +95,7 @@ without home wiki. The web app only reads this table, it has no replica connecti
 | `at_action` | `at_field` | Written by |
 |-------------|------------|------------|
 | `rename` | `user_name` | `jobs/update_user_names.py`, automatically with every rename |
-| `user_change` | `user_was_banned`, `user_is_hidden`, `user_comment` | admins (manually in SQL until the web UI exists) |
+| `user_change` | `user_was_banned`, `user_is_hidden`, `user_comment`, `user_id` | admins (manually in SQL until the web UI exists) |
 | `confirmation_change` | `cf_comment`, `cf_was_deleted` | admins |
 | `user_delete` | `NULL` | admins |
 | `confirmation_delete` | `NULL` | admins |
@@ -111,6 +111,25 @@ START TRANSACTION;
 UPDATE user SET user_is_hidden = 1 WHERE user_id = 123;
 INSERT INTO audit_trail (at_timestamp, at_action, at_user_id, at_field, at_old_value, at_new_value, at_reason, at_performer)
   VALUES (UTC_TIMESTAMP(), 'user_change', 123, 'user_is_hidden', '0', '1', 'left the project, see [[Diskussion:…]]', 'AdminName');
+COMMIT;
+```
+
+A wrong `user_id` (the account with that id on dewiki is somebody else; the job reports it as
+"no rename in the dewiki log") is corrected by moving the row, because `confirmation` refers to
+`user_id` and has no `ON UPDATE CASCADE`. Per user, in one transaction:
+
+```
+START TRANSACTION;
+UPDATE user SET user_name = CONCAT('tmp-fix-', user_id) WHERE user_id = 38;
+INSERT INTO user (user_id, user_name, user_comment, user_participates_since, user_verified_since, user_last_update, user_is_hidden, user_was_banned)
+  SELECT 40182, 'Bubo bubo', user_comment, user_participates_since, user_verified_since, user_last_update, user_is_hidden, user_was_banned FROM user WHERE user_id = 38;
+UPDATE confirmation SET cf_user_id = 40182 WHERE cf_user_id = 38;
+UPDATE confirmation SET cf_confirmed_user_id = 40182 WHERE cf_confirmed_user_id = 38;
+DELETE FROM user WHERE user_id = 38;
+DELETE FROM user_home_wiki WHERE hw_user_id = 38;
+INSERT INTO audit_trail (at_timestamp, at_action, at_user_id, at_field, at_old_value, at_new_value, at_reason, at_performer) VALUES
+  (UTC_TIMESTAMP(), 'user_change', 40182, 'user_id', '38', '40182', 'wrong user id, see …', 'AdminName'),
+  (UTC_TIMESTAMP(), 'rename', 40182, 'user_name', 'Gruener-recke', 'Bubo bubo', 'wrong user id, see …', 'AdminName');
 COMMIT;
 ```
 
@@ -134,6 +153,9 @@ COMMIT;
 * `block_target` (`bt_user`): `Database.user_blocked`. The result is currently not displayed.
 * `user` (`user_id`, `user_name`): also `Database.update_home_wikis` and `Database.update_user_names`
   (job `update-user-names`), to get the current names.
+* `logging_logindex` (`renameuser` entries: `log_title` = old name, new name in `log_params`):
+  `Database.update_user_names` takes over a rename only if this log leads from the old to the new
+  name, also over several renames. Global renames are logged there too.
 
 ## CentralAuth replica tables used (`centralauth_p`, `meta_p`)
 
