@@ -178,11 +178,16 @@ def test_checks(db):
     assert [(v['name'], v['count']) for v in db.check_verification()] == [('Carol', 3)]
     # hidden users are left out
     conn = connect(DB_NAME)
-    with conn.cursor() as curs:
-        curs.execute('UPDATE user SET user_is_hidden = 1 WHERE user_id = 103')
+    try:
+        with conn.cursor() as curs:
+            curs.execute('UPDATE user SET user_is_hidden = 1 WHERE user_id = 103')
+        db.conn.rollback()      # end the snapshot of db's open transaction, so it sees the change
         assert db.check_verification() == []
-        curs.execute('UPDATE user SET user_is_hidden = 0 WHERE user_id = 103')
-    conn.close()
+    finally:
+        with conn.cursor() as curs:
+            curs.execute('UPDATE user SET user_is_hidden = 0 WHERE user_id = 103')
+        conn.close()
+    db.conn.rollback()
     # Mallory's confirmation of Bob was marked as deleted above, nothing left
     assert db.check_banned_confirmations() == []
     assert db.check_dewiki_accounts() == {'missing': [], 'renamed': []}
