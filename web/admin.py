@@ -5,9 +5,9 @@ user names in `config.admins`. Everything an admin changes is recorded in `audit
 (web/admin_api.py). The pages are in German only, like the project.
 
 Setup (Toolforge envvars of the tool pb): PB_OAUTH_CLIENT_ID, PB_OAUTH_CLIENT_SECRET,
-PB_SECRET_KEY (random, signs the session cookie). The OAuth consumer on Meta needs the
-callback URL https://pb.toolforge.org/admin/oauth/callback and only "User identity
-verification only".
+PB_SECRET_KEY (random, signs the session cookie). The OAuth consumer on Meta has the
+callback URL https://pb.toolforge.org/oauth/callback (passed on to /admin/oauth/callback)
+and only "User identity verification only".
 """
 import datetime
 import json
@@ -63,6 +63,16 @@ def init_app(app):
         PERMANENT_SESSION_LIFETIME=datetime.timedelta(hours=config.admin_session_hours),
     )
     app.register_blueprint(bp)
+    app.add_url_rule('/oauth/callback', 'oauth_callback_redirect', oauth_callback_redirect)
+
+
+def oauth_callback_redirect():
+    """
+    The callback URL registered for the OAuth consumer on Meta. The session cookie is only sent
+    below /admin, so the request is passed on to /admin/oauth/callback with the same parameters.
+    """
+    query = flask.request.query_string.decode('ascii', 'replace')
+    return flask.redirect(flask.url_for('admin.oauth_callback') + ('?' + query if query else ''))
 
 
 def is_configured():
@@ -150,7 +160,8 @@ def login_start():
         flask.abort(503)
     state = secrets.token_urlsafe(32)
     flask.session['oauth_state'] = state
-    flask.session['next'] = i18n.local_url(flask.request.args.get('next'))
+    next_url = flask.request.args.get('next')
+    flask.session['next'] = i18n.local_url(next_url) if next_url else flask.url_for('admin.index')
     query = urllib.parse.urlencode({'response_type': 'code', 'client_id': config.oauth_client_id, 'state': state})
     return flask.redirect(config.oauth_base_url + '/authorize?' + query)
 

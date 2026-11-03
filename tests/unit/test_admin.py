@@ -151,6 +151,21 @@ def test_login_of_a_blocked_admin_is_refused(anon, monkeypatch):
     assert anon.get('/admin/').status_code == 302
 
 
+def test_registered_callback_url_passes_the_request_on(anon, monkeypatch):
+    response = anon.get('/oauth/callback?code=the-code&state=abc')
+    assert response.status_code == 302
+    assert response.headers['Location'] == '/admin/oauth/callback?code=the-code&state=abc'
+
+
+def test_login_through_the_registered_callback_url(anon, monkeypatch):
+    monkeypatch.setattr(admin, 'fetch_profile', lambda code: {'username': 'Euku'})
+    location = anon.get('/admin/login/start').headers['Location']
+    state = urllib.parse.parse_qs(urllib.parse.urlsplit(location).query)['state'][0]
+    response = anon.get('/oauth/callback?code=x&state=' + state, follow_redirects=True)
+    assert response.status_code == 200
+    assert 'angemeldet als <b>Euku</b>' in html(response)
+
+
 def test_callback_with_a_wrong_state(anon, monkeypatch):
     called = []
     monkeypatch.setattr(admin, 'fetch_profile', lambda code: called.append(code))

@@ -114,7 +114,7 @@ they can be overridden by environment variables:
 and names the admins; everybody else is refused after the login. The pages are German only.
 
 * **Login**: OAuth 2.0 with the Wikimedia account (consumer on Meta, "User identity verification only",
-  callback `https://pb.toolforge.org/admin/oauth/callback`). Admins are the names in `PB_ADMINS`; the
+  callback `https://pb.toolforge.org/oauth/callback`, which passes the request on to `/admin/oauth/callback`). Admins are the names in `PB_ADMINS`; the
   list is checked on every request, so removing a name ends that admin's session. Blocked accounts are
   refused. The session cookie `pb_admin` is limited to `/admin` (HttpOnly, Secure, SameSite=Lax);
   every form has a CSRF token. Without `PB_SECRET_KEY`, `PB_OAUTH_CLIENT_ID` and `PB_OAUTH_CLIENT_SECRET`
