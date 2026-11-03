@@ -11,6 +11,16 @@ def run_update_user_names(app_env, *args):
                           env=app_env, capture_output=True, text=True, timeout=60)
 
 
+def log_rename(replica_sql, old_name, new_name, timestamp='20261101120000'):
+    """A `renameuser` entry like MediaWiki writes it (PHP-serialized parameters)."""
+    old, new = old_name.encode('utf-8'), new_name.encode('utf-8')
+    params = b'a:3:{s:10:"4::olduser";s:%d:"%s";s:10:"5::newuser";s:%d:"%s";s:8:"6::edits";i:1;}' % (
+        len(old), old, len(new), new)
+    with replica_sql.cursor() as curs:
+        curs.execute("INSERT INTO logging_logindex (log_type, log_action, log_timestamp, log_namespace, log_title, log_params)"
+                     " VALUES ('renameuser', 'renameuser', %s, 2, %s, %s)", (timestamp, old.replace(b' ', b'_'), params))
+
+
 def pb_names(pb_sql):
     with pb_sql.cursor() as curs:
         curs.execute('SELECT user_id, user_name FROM user ORDER BY user_id')
@@ -27,6 +37,9 @@ def test_dry_run(app_env, pb_sql, replica_sql):
     with replica_sql.cursor() as curs:
         curs.execute("UPDATE user SET user_name = 'Roberta' WHERE user_id = 102")
         curs.execute("UPDATE user SET user_name = 'Zoe' WHERE user_id = 107")
+    log_rename(replica_sql, 'Bob', 'Roberta')
+    log_rename(replica_sql, 'Zoë Ünicode', 'Zoë')          # renamed twice
+    log_rename(replica_sql, 'Zoë', 'Zoe', '20261102120000')
     result = run_update_user_names(app_env, '--dry-run')
     assert result.returncode == 0, result.stderr
     assert 'user 102 would be renamed to Roberta' in result.stderr
@@ -70,7 +83,21 @@ def test_name_used_by_another_participant_fails_the_job(app_env, pb_sql, replica
     with replica_sql.cursor() as curs:
         curs.execute("DELETE FROM user WHERE user_id = 103")
         curs.execute("UPDATE user SET user_name = 'Carol' WHERE user_id = 101")
+    log_rename(replica_sql, 'Alice', 'Carol')
     result = run_update_user_names(app_env)
     assert result.returncode == 1
     assert 'user 101 could not be renamed to Carol' in result.stderr
     assert pb_names(pb_sql)[101] == 'Alice'
+
+
+def test_rename_without_log_entry_fails_the_job(app_env, pb_sql, replica_sql):
+    # wrong user id in pb: on dewiki, 104 is another account that was never renamed
+    with replica_sql.cursor() as curs:
+        curs.execute("UPDATE user SET user_name = 'Gruener-recke' WHERE user_id = 104")
+    result = run_update_user_names(app_env)
+    assert result.returncode == 1
+    assert 'user 104 not renamed to Gruener-recke: no rename in the dewiki log' in result.stderr
+    assert pb_names(pb_sql)[104] == 'Dave'
+    with pb_sql.cursor() as curs:
+        curs.execute('SELECT COUNT(*) FROM audit_trail WHERE at_user_id = 104')
+        assert curs.fetchone()[0] == 0

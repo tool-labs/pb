@@ -179,7 +179,7 @@ def reset_databases():
     conn.close()
     conn = connect(REPLICA_DB_NAME)
     with conn.cursor() as curs:
-        curs.execute('DROP TABLE IF EXISTS `user`, `block_target`')
+        curs.execute('DROP TABLE IF EXISTS `user`, `block_target`, `logging_logindex`')
     run_sql(conn, REPLICA_SCHEMA_FILE.read_text())
     with conn.cursor() as curs:
         curs.executemany('INSERT INTO `user` (user_id, user_name) VALUES (%s, %s)',
