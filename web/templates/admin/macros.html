@@ -18,7 +18,7 @@
     <tr><th>Zeit (UTC)</th><th>Aktion</th><th>Benutzer</th><th>Feld</th><th>alt → neu</th><th>Begründung</th><th>von</th></tr>
 {%- for e in entries %}
     <tr>
-      <td class="nowrap">{{ e.timestamp | format_datetime }}</td>
+      <td>{{ e.timestamp | format_datetime }}</td>
       <td>{{ e.action }}</td>
       <td>{{ user_link(e.user_id, e.user_name) if e.user_id is not none else '' }}
 {%- if e.confirmed_user_id is not none %} → {{ user_link(e.confirmed_user_id, e.confirmed_user_name) }}

@@ -30,7 +30,7 @@ audit_trail                    (log of admin actions, no foreign keys: entries o
 | `user_name` | `varchar(255)`, unique | User name as written in the request. Renames on the wiki are taken over hourly by `jobs/update_user_names.py` (by `user_id`), but only if the dewiki rename log leads from the old to the new name. |
 | `user_comment` | `text`, nullable | Admin note (e.g. "sockpuppet of …"). **Shown on the public user page.** |
 | `user_participates_since` | `timestamp`, nullable | Time of the `{{…/neuer Benutzer}}` request. |
-| `user_verified_since` | `timestamp`, nullable | Set once, by `BotDatabase.add_confirmation`, to the time of the confirmation that brought the user to 3 confirmations. `NULL` = not verified. Never cleared automatically. |
+| `user_verified_since` | `timestamp`, nullable | Set once, by `BotDatabase.add_confirmation`, to the time of the confirmation that brought the user to 3 confirmations. `NULL` = not verified. Never cleared automatically. The bot verified nobody from 2019 to early 2022; for the 77 users concerned it was filled in with the time of the 3rd confirmation on 2026-11-03 (`audit_trail` 121–197). |
 | `user_last_update` | `timestamp` | Set when the user is added and on every confirmation once the user has ≥ 3 (`touch_user`). |
 | `user_is_hidden` | `0`/`1` | The participant has left the project. The name is no longer shown and their confirmations are not counted. Not meant for sockpuppets. |
 | `user_was_banned` | `0`/`1` | Excluded from the project, e.g. sockpuppets. Not used for blocks on Wikipedia. |
