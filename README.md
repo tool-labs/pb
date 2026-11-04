@@ -111,7 +111,7 @@ they can be overridden by environment variables:
 ## Admin area
 
 `/admin` is for the maintainers of the project only. The login page explains what is behind it
-and names the admins; everybody else is refused after the login. The pages are German only.
+and names the admins; everybody else is refused after the login. The login page is translated, the pages behind it are German only.
 
 * **Login**: OAuth 2.0 with the Wikimedia account (consumer on Meta, "User identity verification only",
   callback `https://pb.toolforge.org/oauth/callback`, which passes the request on to `/admin/oauth/callback`). Admins are the names in `PB_ADMINS`; the

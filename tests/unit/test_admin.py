@@ -1,5 +1,6 @@
 """Tests for the admin area (web/admin.py): login, access control, CSRF and the pages."""
 import datetime as dt
+import re
 import urllib.parse
 
 import pytest
@@ -8,6 +9,7 @@ import admin
 import admin_api
 import app as webapp
 import config
+import i18n
 from tests.unit.fake_admin_db import FakeAdminDatabase
 
 CSRF = 'test-csrf-token'
@@ -30,6 +32,8 @@ def configured(monkeypatch, fake_db_class):
 def anon(configured):
     webapp.app.config['TESTING'] = True
     with webapp.app.test_client() as test_client:
+        # the assertions check the German texts (the login page is translated, the other pages are German only)
+        test_client.environ_base['HTTP_ACCEPT_LANGUAGE'] = 'de'
         yield test_client
 
 
@@ -69,10 +73,55 @@ def test_login_page_explains_the_area_and_names_the_admins(anon):
 def test_login_page_without_oauth_configuration(fake_db_class, monkeypatch):
     monkeypatch.setattr(config, 'oauth_client_secret', None)
     with webapp.app.test_client() as client:
-        assert 'noch nicht eingerichtet' in html(client.get('/admin/login'))
+        assert 'noch nicht eingerichtet' in html(client.get('/admin/login?forcedlang=de'))
         assert client.get('/admin/login/start').status_code == 503
         assert client.get('/admin/oauth/callback?code=x&state=y').status_code == 503
         assert client.get('/admin/').status_code == 302
+
+
+@pytest.mark.parametrize('code', sorted(i18n.LANGUAGES))
+def test_login_page_is_translated(anon, code):
+    page = html(anon.get('/admin/login', query_string={'forcedlang': code}))
+    assert f'<html lang="{code}"' in page
+    catalog = i18n.CATALOGS[code]
+    for key in ('title', 'features_heading', 'feature_users', 'feature_jobs', 'audit_note', 'contact', 'oauth_note',
+                'button'):
+        assert catalog[f'admin_login.{key}'] in page
+    assert catalog['admin_login.intro'].format(home_url='/') in page
+    assert 'href="/admin/login/start"' in page
+    assert '<a href="https://de.wikipedia.org/wiki/Benutzer:Euku">Euku</a>' in page
+    assert not re.search(r'>[^<]*\{\w+\}', page.split('</head>', 1)[1].split('<script', 1)[0])
+    if code != 'de':
+        assert 'Anmeldung' not in page
+
+
+def test_login_page_follows_the_browser_language(configured):
+    with webapp.app.test_client() as client:
+        page = html(client.get('/admin/login', headers={'Accept-Language': 'fr'}))
+    assert i18n.CATALOGS['fr']['admin_login.button'] in page
+
+
+def test_login_page_when_logged_in_is_translated(logged_in):
+    page = html(logged_in.get('/admin/login?forcedlang=en'))
+    assert 'You are logged in as <b>Euku</b>: <a href="/admin/">go to the overview</a>.' in page
+
+
+def test_login_errors_are_translated_and_escaped(anon):
+    anon.get('/admin/login/start')
+    response = anon.get('/admin/oauth/callback', query_string={'error': '<x>', 'forcedlang': 'en'})
+    assert response.status_code == 400
+    assert 'The login was cancelled (&lt;x&gt;).' in html(response)
+
+
+def test_logout_message_is_translated(logged_in):
+    post(logged_in, '/admin/logout?forcedlang=fr')
+    assert i18n.CATALOGS['fr']['admin_login.logged_out'] in html(logged_in.get('/admin/login?forcedlang=fr'))
+
+
+def test_pages_behind_the_login_stay_german(logged_in):
+    page = html(logged_in.get('/admin/?forcedlang=en'))
+    assert 'Benutzer bearbeiten' in page and 'angemeldet als <b>Euku</b>' in page
+    assert 'Edit users' not in page
 
 
 @pytest.mark.parametrize('path', ['/admin/', '/admin/users?q=Al', '/admin/user/1', '/admin/confirmation/1/2',

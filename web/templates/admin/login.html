@@ -1,39 +1,39 @@
 {% extends "admin/layout.html" %}
-{% block admin_title %}Anmeldung{% endblock %}
+{#- The only page of the admin area that is translated, the pages behind the login are German only. #}
+{% block title %}{{ _('admin_login.title') }} | {{ _('site.namespace') }}:{{ _('site.name') }}{% endblock %}
+{% block heading %}{{ _('admin_login.title') }}{% endblock %}
 {% block admin_content %}
 {%- if error %}
   <p class="flash flash-error">{{ error }}</p>
 {%- endif %}
-  <p>Hier pflegen die Betreuer des Projekts
-    <a href="https://de.wikipedia.org/wiki/Wikipedia:Pers%C3%B6nliche_Bekanntschaften">Wikipedia:Persönliche Bekanntschaften</a>
-    die Datenbank. Für alle anderen gibt es hier nichts zu sehen: Die Teilnehmer und Bestätigungen stehen
-    öffentlich auf den <a href="{{ url_for('index') }}">normalen Seiten</a>, Anträge laufen über die Projektseite auf dewiki.</p>
+  <p>{{ _('admin_login.intro', home_url=url_for('index')) }}</p>
 
-  <h2>Was hinter der Anmeldung liegt</h2>
+  <h2>{{ _('admin_login.features_heading') }}</h2>
   <ul class="admin-features">
-{%- for title, text in features %}
-    <li><b>{{ title }}:</b> {{ text }}</li>
-{%- endfor %}
+    <li>{{ _('admin_login.feature_users') }}</li>
+    <li>{{ _('admin_login.feature_confirmations') }}</li>
+    <li>{{ _('admin_login.feature_audit') }}</li>
+    <li>{{ _('admin_login.feature_vanished') }}</li>
+    <li>{{ _('admin_login.feature_checks') }}</li>
+    <li>{{ _('admin_login.feature_jobs') }}</li>
   </ul>
-  <p>Jede Änderung braucht eine Begründung und wird mit Name und Zeit im nicht öffentlichen Admin-Log festgehalten.</p>
+  <p>{{ _('admin_login.audit_note') }}</p>
 
-  <h2>Admins</h2>
+  <h2>{{ _('admin_login.admins_heading') }}</h2>
   <ul>
 {%- for name in admins %}
     <li><a href="https://de.wikipedia.org/wiki/Benutzer:{{ name | replace(' ', '_') | urlencode }}">{{ name }}</a></li>
 {%- endfor %}
   </ul>
-  <p>Fragen und Korrekturwünsche bitte auf der
-    <a href="https://de.wikipedia.org/wiki/Wikipedia_Diskussion:Pers%C3%B6nliche_Bekanntschaften">Diskussionsseite des Projekts</a>.</p>
+  <p>{{ _('admin_login.contact') }}</p>
 
-  <h2>Anmelden</h2>
+  <h2>{{ _('admin_login.login_heading') }}</h2>
 {%- if admin_user %}
-  <p>Du bist als <b>{{ admin_user }}</b> angemeldet: <a href="{{ url_for('admin.index') }}">zur Übersicht</a>.</p>
+  <p>{{ _('admin_login.logged_in', name=admin_user, overview_url=url_for('admin.index')) }}</p>
 {%- elif configured %}
-  <p>Die Anmeldung läuft über dein Wikimedia-Konto (OAuth auf meta.wikimedia.org). Das Tool erfährt dabei nur
-    deinen Benutzernamen und bekommt keine Rechte im Wiki.</p>
-  <p><a class="button" href="{{ url_for('admin.login_start', next=next or None) }}">Mit Wikimedia-Konto anmelden</a></p>
+  <p>{{ _('admin_login.oauth_note') }}</p>
+  <p><a class="button" href="{{ url_for('admin.login_start', next=next or None) }}">{{ _('admin_login.button') }}</a></p>
 {%- else %}
-  <p class="warning">Die Anmeldung ist noch nicht eingerichtet (OAuth-Zugangsdaten fehlen).</p>
+  <p class="warning">{{ _('admin_login.not_configured') }}</p>
 {%- endif %}
 {% endblock %}
