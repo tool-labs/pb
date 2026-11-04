@@ -27,8 +27,9 @@ def test_catalog_is_complete_and_consistent(code):
 
 
 def test_every_key_used_in_the_templates_exists():
-    sources = [*(WEB_DIR / 'templates').glob('*.html'), WEB_DIR / 'app.py']
-    used = {key for path in sources for key in re.findall(r"_\('([\w.]+)'", path.read_text())}
+    sources = [*(WEB_DIR / 'templates').glob('*.html'), WEB_DIR / 'templates' / 'admin' / 'login.html',
+               WEB_DIR / 'app.py', WEB_DIR / 'admin.py']
+    used = {key for path in sources for key in re.findall(r"(?:\b_|gettext)\('([\w.]+)'", path.read_text())}
     assert used and used <= set(i18n.CATALOGS['en'])
 
 

@@ -2,7 +2,8 @@
 """
 Admin area under /admin: login with OAuth 2.0 on Meta (Wikimedia account), only for the
 user names in `config.admins`. Everything an admin changes is recorded in `audit_trail`
-(web/admin_api.py). The pages are in German only, like the project.
+(web/admin_api.py). The pages are in German only, like the project; only the login page,
+which explains the area to everybody, is translated.
 
 Setup (Toolforge envvars of the tool pb): PB_OAUTH_CLIENT_ID, PB_OAUTH_CLIENT_SECRET,
 PB_SECRET_KEY (random, signs the session cookie). The OAuth consumer on Meta has the
@@ -194,16 +195,16 @@ def oauth_callback():
     args = flask.request.args
     if args.get('error'):
         return render('admin/login.html', configured=True, next=next_url,
-                      error='Die Anmeldung wurde abgebrochen (%s).' % args.get('error')), 400
+                      error=i18n.gettext('admin_login.error_cancelled', error=args.get('error'))), 400
     if not expected_state or not secrets.compare_digest(args.get('state', ''), expected_state):
         return render('admin/login.html', configured=True, next=next_url,
-                      error='Die Anmeldung ist abgelaufen oder ungültig, bitte noch einmal versuchen.'), 400
+                      error=i18n.gettext('admin_login.error_expired')), 400
     try:
         profile = fetch_profile(args.get('code', ''))
     except (urllib.error.URLError, ValueError, KeyError, OSError) as e:
         flask.current_app.logger.warning('OAuth login failed: %s', e)
         return render('admin/login.html', configured=True, next=next_url,
-                      error='Die Anmeldung bei Wikimedia ist fehlgeschlagen, bitte später noch einmal versuchen.'), 502
+                      error=i18n.gettext('admin_login.error_failed')), 502
     name = profile.get('username')
     flask.session.clear()
     if name not in config.admins or profile.get('blocked'):
@@ -222,7 +223,7 @@ def logout():
     if current_admin() is not None:
         check_csrf()
     flask.session.clear()
-    flask.flash('Du bist abgemeldet.', 'info')
+    flask.flash(i18n.gettext('admin_login.logged_out'), 'info')
     return flask.redirect(flask.url_for('admin.login'))
 
 
