@@ -76,6 +76,10 @@ class FakeDatabase(api.Database):
     def get_confirmations_by_confirmed(self, user_id, show_hidden_users=True):
         return self._confirmations(user_id, 1, 0, show_hidden_users)
 
+    def get_cf_count_by_confirmed(self, user_id, count_hidden_users=True):
+        return len([key for key in CONFIRMATIONS
+                    if key[1] == user_id and (count_hidden_users or not self.get_user_by_id(key[0])[3])])
+
     def get_all_users(self, show_hidden_users=True, show_banned_users=False):
         rows = []
         for u in USERS:

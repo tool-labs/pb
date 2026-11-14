@@ -360,6 +360,22 @@ def test_api_users_confirmed_by_unknown_or_hidden_user(client, name):
     assert data['confirmed'] is None
 
 
+@pytest.mark.parametrize('name, participant, may_confirm', [
+    ('Alice', True, True),      # 3 confirmations (hidden Eve and banned Mallory count, as for the bot)
+    ('Bob', True, False),       # 1 confirmation
+    ('Eve', False, False),      # hidden
+    ('Mallory', False, False),  # banned
+    ('Nobody', False, False),   # unknown
+])
+def test_api_users_me(client, name, participant, may_confirm):
+    data = client.get('/api/users.json', query_string={'confirmed_by': name}).get_json()
+    assert data['me'] == {'participant': participant, 'may_confirm': may_confirm}
+
+
+def test_api_users_without_confirmed_by_has_no_me(client):
+    assert 'me' not in client.get('/api/users.json').get_json()
+
+
 def test_api_users_is_gzipped(client):
     response = client.get('/api/users.json', headers={'Accept-Encoding': 'gzip'})
     data = response.get_data()

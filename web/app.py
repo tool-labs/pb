@@ -265,6 +265,7 @@ def users():
 
 API_USER_COLUMNS = ['name', 'verified', 'homewiki', 'last_received', 'last_given']
 API_MAX_AGE = 300  # seconds
+MIN_CONFIRMATIONS = 3  # a participant may confirm others from this number of confirmations on
 
 def _day(timestamp):
     return timestamp.strftime('%Y-%m-%d') if timestamp else None
@@ -281,7 +282,9 @@ def api_users():
     The visible participants for the filter of MediaWiki:Gadget-PB2.js on dewiki (same data
     as /users). One array per user, the order of the fields is given in `columns`.
     `?confirmed_by=<name>` adds `confirmed`: the names this user has confirmed (without deleted
-    confirmations and hidden users), `null` if the user is unknown or hidden.
+    confirmations and hidden users), `null` if the user is unknown or hidden; and `me`, the status
+    of this user for the gadget: `participant` (known, neither hidden nor banned) and
+    `may_confirm` (participant with at least 3 confirmations, the same rule as the bot).
     The data is public, so every origin may read it (CORS).
     """
     db = get_db()
@@ -294,10 +297,14 @@ def api_users():
         user = db.get_user_by_name(confirmed_by)
         data['confirmed_by'] = confirmed_by
         data['confirmed'] = None
+        data['me'] = {'participant': False, 'may_confirm': False}
         # user: (name, id, comment, is_hidden, was_banned, ...); hidden users must not be shown
         if user is not None and not user[3]:
             data['confirmed'] = sorted(row[0] for row in db.get_confirmations_by_user(user[1], show_hidden_users=False)
                                        if not row[4])
+            if not user[4]:
+                data['me'] = {'participant': True,
+                              'may_confirm': db.get_cf_count_by_confirmed(user[1]) >= MIN_CONFIRMATIONS}
     response = flask.jsonify(data)
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.cache_control.public = True

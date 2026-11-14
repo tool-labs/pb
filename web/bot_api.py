@@ -94,20 +94,6 @@ class BotDatabase(Database):
                 self.conn.commit()
                 return True
 
-    def get_cf_count_by_confirmed(self, user_id, count_hidden_users=True):
-        """
-        Returns the count of confirmations of *user_id*.
-        """
-        with self.conn.cursor() as curs:
-            curs.execute('''
-            SELECT COUNT(1)
-                FROM `confirmation`
-                LEFT JOIN `user` AS giving ON giving.user_id = cf_user_id
-                WHERE (`cf_confirmed_user_id` = %s) AND
-                      (%s OR giving.`user_is_hidden` = 0)
-            ;''', (user_id, count_hidden_users))
-            return curs.fetchone()[0]
-    
     def has_confirmed(self, user_id, confirmed_id):
         """
         Returns true if *user_id* confirmed *confirmed_id*.

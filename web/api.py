@@ -477,6 +477,21 @@ class Database:
             ;''', (user_id, count_hidden_users))
             return curs.fetchone()[0]
 
+    def get_cf_count_by_confirmed(self, user_id, count_hidden_users=True):
+        """
+        Returns the count of confirmations of *user_id*, including deleted ones.
+        The bot lets a user confirm others from 3 on (pers-bek-to-db-bot.py, addConfirmation).
+        """
+        with self.conn.cursor() as curs:
+            curs.execute('''
+            SELECT COUNT(1)
+                FROM `confirmation`
+                LEFT JOIN `user` AS giving ON giving.user_id = cf_user_id
+                WHERE (`cf_confirmed_user_id` = %s) AND
+                      (%s OR giving.`user_is_hidden` = 0)
+            ;''', (user_id, count_hidden_users))
+            return curs.fetchone()[0]
+
     def get_confirmations_by_user(self, user_id, show_hidden_users=True):
         """
         Returns all confirmations done by *user_id*.
