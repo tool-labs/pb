@@ -66,7 +66,7 @@ def test_user_page(http):
     assert 'Teilnehmerinformationen für Alice' in html
     assert table_rows(html, 'toc') == [
         ['Nimmt teil seit', '2008-02-10'],
-        ['Ist bestätigt seit', '2015-06-02'],
+        ['3 Bestätigungen seit', '2015-06-02'],
         ['↓ Erhaltene Bestätigungen', '3'],
         ['↓ Vergebene Bestätigungen', '4'],
     ]
