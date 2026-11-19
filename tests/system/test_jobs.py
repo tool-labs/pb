@@ -44,8 +44,8 @@ def test_main_page_shows_stats(http):
     assert 'insgesamt <span class="total">12 Bestätigungen</span>' in html
     assert 'insgesamt 12 Mal bestätigt' in html
     assert 'insgesamt <span class="total">5 Teilnehmer</span>' in html
-    assert '<span class="total_0">2 unbestätigte</span>' in html
-    assert '<span class="total_1">3 bestätigte</span>' in html
+    assert '<span class="total_0">2 mit weniger als 3 Bestätigungen</span>' in html
+    assert '<span class="total_1">3 mit mindestens 3</span>' in html
     assert 'title="2008-02: 6"' in html
     assert 'title="2015-06: 4"' in html
 
