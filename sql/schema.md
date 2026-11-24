@@ -37,6 +37,20 @@ audit_trail                    (log of admin actions, no foreign keys: entries o
 
 There is no primary key, only the two unique keys (same as in production).
 
+`user_name` is compared exactly (`utf8mb4_bin`, since 2026-11): names that differ only in case or
+accents belong to different accounts on dewiki. Queries that sort or search by name use
+`COLLATE utf8mb4_general_ci` (as before). The column was changed with
+
+```
+ALTER TABLE `user` MODIFY `user_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;
+```
+
+and can be changed back (if no two names differ only in case or accents) with
+
+```
+ALTER TABLE `user` MODIFY `user_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;
+```
+
 ### `confirmation`: who has confirmed whom
 
 | Column | Type | Meaning |
@@ -195,7 +209,7 @@ DROP TABLE IF EXISTS `user`;
 ```sql
 CREATE TABLE `user` (
   `user_id` int(11) unsigned NOT NULL,
-  `user_name` varchar(255) NOT NULL,
+  `user_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `user_comment` mediumtext DEFAULT NULL,
   `user_participates_since` timestamp NULL DEFAULT NULL,
   `user_verified_since` timestamp NULL DEFAULT NULL,

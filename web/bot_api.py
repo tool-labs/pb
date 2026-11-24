@@ -32,7 +32,7 @@ class BotDatabase(Database):
                     ON `cf_was_deleted` = 0 AND `user_id` = `cf_confirmed_user_id`
                 WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0
                 GROUP BY `user_name`
-                ORDER BY `user_name` ASC
+                ORDER BY `user_name` COLLATE utf8mb4_general_ci, `user_name`
             ;''')
             return curs.fetchall()
 

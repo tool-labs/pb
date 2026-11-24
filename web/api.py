@@ -170,7 +170,7 @@ class Database:
                     ON taken.cf_confirmed_user_id = user_id
                 WHERE (%s OR `user_is_hidden` = 0) AND
                       (%s OR `user_was_banned` = 0)
-                ORDER BY `user_name`
+                ORDER BY `user_name` COLLATE utf8mb4_general_ci, `user_name`
             ;''', (show_hidden_users, show_hidden_users, show_hidden_users, show_banned_users,))
             return curs.fetchall()
 
@@ -205,7 +205,7 @@ class Database:
                     ON taken.cf_confirmed_user_id = user_id
                 LEFT JOIN `user_home_wiki` ON `hw_user_id` = `user_id`
                 WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0
-                ORDER BY `user_name`
+                ORDER BY `user_name` COLLATE utf8mb4_general_ci, `user_name`
             ;''')
             return [{'name': row[0], 'id': row[1], 'participates_since': row[2], 'verified_since': row[3],
                      'given': row[4] or 0, 'taken': row[5] or 0, 'last_given': row[6], 'last_taken': row[7],
@@ -547,7 +547,7 @@ class Database:
                     ON `cf_was_deleted` = 0 AND `user_id` = `cf_confirmed_user_id`
                 WHERE `user_is_hidden` = 0 AND `user_was_banned` = 0 AND `user_participates_since` > DATE_ADD(NOW(), INTERVAL -3 MONTH)
                 GROUP BY `user_name`
-                ORDER BY `user_participates_since` ASC, `user_name`
+                ORDER BY `user_participates_since` ASC, `user_name` COLLATE utf8mb4_general_ci
             ;''')
             return curs.fetchall()
 

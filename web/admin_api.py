@@ -151,12 +151,12 @@ class AdminDatabase(Database):
         where, args = [], []
         if query:
             pattern = '%' + query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
-            where.append('(`user_name` LIKE %s OR `user_id` = %s)')
+            where.append('(`user_name` COLLATE utf8mb4_general_ci LIKE %s OR `user_id` = %s)')
             args += [pattern, int(query) if query.isdigit() else -1]
         if status:
             where.append(USER_STATUSES[status][1])
         with self.conn.cursor() as curs:
-            curs.execute(USER_SELECT + ' WHERE ' + ' AND '.join(where) + ' ORDER BY `user_name` LIMIT %s;',
+            curs.execute(USER_SELECT + ' WHERE ' + ' AND '.join(where) + ' ORDER BY `user_name` COLLATE utf8mb4_general_ci LIMIT %s;',
                          args + [limit])
             return [_user(row) for row in curs.fetchall()]
 
@@ -391,7 +391,7 @@ class AdminDatabase(Database):
         and the suggested `reason` for hiding.
         """
         with self.conn.cursor() as curs:
-            curs.execute(USER_SELECT + ' WHERE `user_is_hidden` = 0 ORDER BY `user_name`;')
+            curs.execute(USER_SELECT + ' WHERE `user_is_hidden` = 0 ORDER BY `user_name` COLLATE utf8mb4_general_ci;')
             users = [_user(row) for row in curs.fetchall() if VANISHED_RE.match(row[1])]
         renames = self.get_global_renames([user['name'] for user in users])
         for user in users:
@@ -451,7 +451,7 @@ class AdminDatabase(Database):
                 GROUP BY `user_id`, `user_name`, `user_verified_since`
                 HAVING (`user_verified_since` IS NULL AND COUNT(`cf_user_id`) >= 3)
                     OR (`user_verified_since` IS NOT NULL AND COUNT(`cf_user_id`) < 3)
-                ORDER BY `user_name`
+                ORDER BY `user_name` COLLATE utf8mb4_general_ci
             ;''')
             return [dict(zip(('id', 'name', 'verified_since', 'count', 'valid_count'), row))
                     for row in curs.fetchall()]
@@ -479,7 +479,7 @@ class AdminDatabase(Database):
         the rename log every hour, the rest needs a look, probably a wrong user_id).
         """
         with self.conn.cursor() as curs:
-            curs.execute('SELECT `user_id`, `user_name`, `user_is_hidden` FROM `user` ORDER BY `user_name`;')
+            curs.execute('SELECT `user_id`, `user_name`, `user_is_hidden` FROM `user` ORDER BY `user_name` COLLATE utf8mb4_general_ci;')
             users = curs.fetchall()
         self.replica()
         mw_names = {}
