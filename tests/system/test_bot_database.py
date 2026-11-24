@@ -54,6 +54,11 @@ def test_names_that_differ_in_case_or_accents_are_other_users(bot_db, name):
     assert bot_db.get_user_by_name(name) is None
 
 
+def test_revoked_confirmation_is_not_returned(bot_db):
+    assert bot_db.get_confirmation(MW_USERS['Carol'], MW_USERS['Zoë Ünicode']) is None
+    assert bot_db.has_confirmed(MW_USERS['Carol'], MW_USERS['Zoë Ünicode'])   # still in the database
+
+
 def test_get_mw_user_id(bot_db):
     assert bot_db.get_mw_user_id('Alice') == 101
     assert bot_db.get_mw_user_id('Zoë Ünicode') == 107

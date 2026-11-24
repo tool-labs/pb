@@ -575,7 +575,7 @@ class Database:
 
     def get_confirmation(self, user_id, confirmed_id):
         """
-        Returns the confirmation of *confirmed_id* by *user_id*.
+        Returns the confirmation of *confirmed_id* by *user_id* (`None` if there is none or it was revoked).
         """
         with self.conn.cursor() as curs:
             curs.execute('''
@@ -583,6 +583,7 @@ class Database:
                 FROM `confirmation`
                 WHERE `cf_user_id` = %s
                     AND `cf_confirmed_user_id` = %s
+                    AND `cf_was_deleted` = 0
             ;''', (user_id,confirmed_id))
             return curs.fetchone()
 

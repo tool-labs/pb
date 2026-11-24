@@ -140,6 +140,12 @@ def test_confirmation_page_one_sided(http):
     assert 'Zoë Ünicode hat Alice noch nicht bestätigt.' in html
 
 
+def test_confirmation_page_does_not_show_revoked_confirmations(http):
+    html = http('/confirmation/103/107').text
+    assert 'Carol hat Zoë Ünicode noch nicht bestätigt.' in html
+    assert 'deleted later' not in html
+
+
 def test_confirmation_page_with_unknown_user(http):
     response = http('/confirmation/101/999')
     assert response.status == 404
