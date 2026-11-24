@@ -49,6 +49,11 @@ def test_unicode_is_stored_unchanged(bot_db):
     assert bot_db.get_confirmation(101, 107)[1] == 'Sommerfest 🎉'
 
 
+@pytest.mark.parametrize('name', ['alice', 'ALICE', 'Älice', 'Zoe Unicode', 'zoë ünicode'])
+def test_names_that_differ_in_case_or_accents_are_other_users(bot_db, name):
+    assert bot_db.get_user_by_name(name) is None
+
+
 def test_get_mw_user_id(bot_db):
     assert bot_db.get_mw_user_id('Alice') == 101
     assert bot_db.get_mw_user_id('Zoë Ünicode') == 107

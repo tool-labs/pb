@@ -423,14 +423,16 @@ class Database:
     
     def get_user_by_name(self, name):
         """
-        Returns the user by *name*.
+        Returns the user by *name*. The collation of the column ignores case and accents, but such
+        names belong to different accounts. So the exact name is compared, too (the first comparison
+        uses the index).
         """
         with self.conn.cursor() as curs:
             curs.execute('''
             SELECT `user_name`, `user_id`, `user_comment`, `user_is_hidden`, `user_was_banned`, `user_participates_since`, `user_verified_since`
                 FROM `user`
-                WHERE `user_name` = %s
-            ;''', (name,))
+                WHERE `user_name` = %s AND `user_name` = %s COLLATE utf8mb4_bin
+            ;''', (name, name))
             return curs.fetchone()
 
     def get_user_count(self, count_banned_users=False, count_hidden_users=True):
