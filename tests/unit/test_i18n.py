@@ -139,7 +139,7 @@ def test_unknown_language_choice(plain_client):
 @pytest.mark.parametrize('code', sorted(i18n.LANGUAGES))
 def test_all_pages_render_in_all_languages(plain_client, path, code):
     response = plain_client.get(path, query_string={'forcedlang': code})
-    assert response.status_code == 200
+    assert response.status_code == (404 if path in ('/user/name/Nobody', '/confirmation/1/99') else 200)
     page = html(response)
     assert f'<html lang="{code}"' in page
     assert '{' not in page.split('<script', 1)[0]          # no unfilled placeholders in the head

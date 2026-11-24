@@ -152,7 +152,7 @@ def test_user_page_of_banned_user_shows_warning(client):
 
 def test_unknown_user(client):
     response = client.get('/user/name/Nobody')
-    assert response.status_code == 200
+    assert response.status_code == 404
     assert 'der angegebene Benutzer existiert nicht' in response.get_data(as_text=True)
 
 
@@ -176,7 +176,23 @@ def test_recent_confirmations_render_wikilinks_in_comments(client):
 def test_hidden_user_page_is_not_shown(client):
     response = client.get('/user/name/Eve')
     assert response.status_code == 404
-    assert 'Eve' not in response.get_data(as_text=True)
+    assert 'Eve' not in response.get_data(as_text=True).replace('next=/user/name/Eve', '')   # language menu
+
+
+def same_answer(client, url_one, url_two):
+    """Whether two pages are the same apart from their own address (in the links of the language menu)."""
+    one, two = client.get(url_one), client.get(url_two)
+    return (one.status_code == two.status_code
+            and one.get_data(as_text=True).replace('next=' + url_one, '')
+            == two.get_data(as_text=True).replace('next=' + url_two, ''))
+
+
+def test_hidden_and_unknown_users_get_the_same_answer(client):
+    assert same_answer(client, '/user/name/Eve', '/user/name/Nobody')
+    assert same_answer(client, '/confirmation/1/3', '/confirmation/1/999')
+    assert same_answer(client, '/confirmation/3/1', '/confirmation/999/1')
+    assert same_answer(client, '/confirmation/3/3', '/confirmation/998/999')
+    assert not same_answer(client, '/user/name/Alice', '/user/name/Nobody')
 
 
 def test_recent_confirmations(client, fake_db_class):
@@ -209,7 +225,9 @@ def test_confirmation_details_one_sided(client):
 
 
 def test_confirmation_details_of_unknown_user(client):
-    html = client.get('/confirmation/1/999').get_data(as_text=True)
+    response = client.get('/confirmation/1/999')
+    assert response.status_code == 404
+    html = response.get_data(as_text=True)
     assert 'Ein Fehler ist aufgetreten' in html
 
 

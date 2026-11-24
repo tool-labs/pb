@@ -152,13 +152,14 @@ def about():
 def confirmation_users(user_id_one, user_id_two):
     u1 = get_db().get_user_by_id(user_id_one)
     u2 = get_db().get_user_by_id(user_id_two)
-    # hidden users (who left the project) must not be shown
-    if (u1 is not None and u1[3]) or (u2 is not None and u2[3]):
-        flask.abort(404)
+    # hidden users (who left the project) must not be shown; the answer is the same as for unknown
+    # users, otherwise it would tell who was a participant
+    if u1 is None or u2 is None or u1[3] or u2[3]:
+        return render_template('confirmation.html', user_one=None, user_two=None), 404
     user_one = {'user_name': u1[0], 'user_id': u1[1], 'user_comment': u1[2], 'user_is_hidden': u1[3],
-                'user_was_banned': u1[4], 'user_participates_since': u1[5], 'user_verified_since': u1[6] } if u1 is not None else None
+                'user_was_banned': u1[4], 'user_participates_since': u1[5], 'user_verified_since': u1[6] }
     user_two = {'user_name': u2[0], 'user_id': u2[1], 'user_comment': u2[2], 'user_is_hidden': u2[3],
-                'user_was_banned': u2[4], 'user_participates_since': u2[5], 'user_verified_since': u2[6] } if u2 is not None else None
+                'user_was_banned': u2[4], 'user_participates_since': u2[5], 'user_verified_since': u2[6] }
     cf12 = get_db().get_confirmation(user_id_one, user_id_two)
     cf_one_two = {'cf_timestamp': cf12[0], 'cf_comment': cf12[1]} if cf12 is not None else None
     cf21 = get_db().get_confirmation(user_id_two, user_id_one)
@@ -179,11 +180,9 @@ def recent_confirmations(page=1):
 @app.route('/user/name/<path:user_name>')
 def user(user_name=None):
     user = get_db().get_user_dict_by_name(user_name)
-    if user is None:
-        return render_template('user.html', user=None)
-    # hidden users (who left the project) must not be shown
-    if user['hidden']:
-        flask.abort(404)
+    # hidden users (who left the project) must not be shown, see confirmation_users
+    if user is None or user['hidden']:
+        return render_template('user.html', user=None), 404
 
     confirmations_given = get_db().get_confirmations_by_user(user['id'], show_hidden_users=False)
     confirmations_received = get_db().get_confirmations_by_confirmed(user['id'], show_hidden_users=False)

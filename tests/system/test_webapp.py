@@ -123,7 +123,7 @@ def test_user_page_does_not_name_hidden_confirmers(http):
 
 def test_unknown_user(http):
     response = http('/user/name/Nobody')
-    assert response.status == 200
+    assert response.status == 404
     assert 'der angegebene Benutzer existiert nicht' in response.text
 
 
@@ -141,7 +141,9 @@ def test_confirmation_page_one_sided(http):
 
 
 def test_confirmation_page_with_unknown_user(http):
-    assert 'Ein Fehler ist aufgetreten' in http('/confirmation/101/999').text
+    response = http('/confirmation/101/999')
+    assert response.status == 404
+    assert 'Ein Fehler ist aufgetreten' in response.text
 
 
 def test_recent_confirmations(http):
