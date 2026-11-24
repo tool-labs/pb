@@ -124,7 +124,8 @@ def test_choosing_the_browser_language_removes_an_old_cookie(plain_client):
     assert '<html lang="de"' in html(plain_client.get('/', headers={'Accept-Language': 'de'}))
 
 
-@pytest.mark.parametrize('next_url', ['https://evil.example/', '//evil.example/', '/\\evil.example', 'users', ''])
+@pytest.mark.parametrize('next_url', ['https://evil.example/', '//evil.example/', '/\\evil.example', 'users', '',
+                                      '/\t/evil.example', '/\n/evil.example', '\t//evil.example', '/x\\evil'])
 def test_choosing_a_language_only_redirects_within_the_site(plain_client, next_url):
     response = plain_client.get('/lang/en', query_string={'next': next_url})
     assert response.headers['Location'] == '/'
