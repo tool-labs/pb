@@ -97,13 +97,19 @@ def test_language_menu_links_back_to_the_current_page(client):
     page = html(client.get('/users?verified=yes&forcedlang=de'))
     assert '<summary><span class="flag">🇩🇪</span> Deutsch</summary>' in page
     # forcedlang is left out, otherwise it would override the choice
-    assert 'href="/lang/ja?next=/users?verified%3Dyes"' in page
-    assert page.count('<li><a href="/lang/') == len(i18n.LANGUAGES)
+    assert '<input type="hidden" name="next" value="/users?verified=yes" />' in page
+    assert page.count('<button type="submit" name="lang" value="') == len(i18n.LANGUAGES)
+    assert 'href="/lang' not in page    # no URLs for crawlers
+
+
+def test_language_choice_is_not_reachable_by_link(client):
+    assert client.get('/lang').status_code == 405
+    assert client.get('/lang/ja?next=/').status_code == 404
 
 
 def test_choosing_a_language_sets_the_cookie_and_goes_back(plain_client):
-    response = plain_client.get('/lang/ja?next=/users?verified%3Dyes', headers={'Accept-Language': 'de'})
-    assert response.status_code == 302
+    response = plain_client.post('/lang', data={'lang': 'ja', 'next': '/users?verified=yes'}, headers={'Accept-Language': 'de'})
+    assert response.status_code == 303
     assert response.headers['Location'] == '/users?verified=yes'
     cookie = response.headers['Set-Cookie']
     assert cookie.startswith(f'{i18n.COOKIE_NAME}=ja;')
@@ -112,14 +118,14 @@ def test_choosing_a_language_sets_the_cookie_and_goes_back(plain_client):
 
 
 def test_choosing_the_browser_language_needs_no_cookie(plain_client):
-    response = plain_client.get('/lang/de?next=/', headers={'Accept-Language': 'de'})
-    assert response.status_code == 302
+    response = plain_client.post('/lang', data={'lang': 'de', 'next': '/'}, headers={'Accept-Language': 'de'})
+    assert response.status_code == 303
     assert 'Set-Cookie' not in response.headers
 
 
 def test_choosing_the_browser_language_removes_an_old_cookie(plain_client):
     plain_client.set_cookie(i18n.COOKIE_NAME, 'ja')
-    response = plain_client.get('/lang/de?next=/', headers={'Accept-Language': 'de'})
+    response = plain_client.post('/lang', data={'lang': 'de', 'next': '/'}, headers={'Accept-Language': 'de'})
     assert response.headers['Set-Cookie'].startswith(f'{i18n.COOKIE_NAME}=;')
     assert '<html lang="de"' in html(plain_client.get('/', headers={'Accept-Language': 'de'}))
 
@@ -127,12 +133,13 @@ def test_choosing_the_browser_language_removes_an_old_cookie(plain_client):
 @pytest.mark.parametrize('next_url', ['https://evil.example/', '//evil.example/', '/\\evil.example', 'users', '',
                                       '/\t/evil.example', '/\n/evil.example', '\t//evil.example', '/x\\evil'])
 def test_choosing_a_language_only_redirects_within_the_site(plain_client, next_url):
-    response = plain_client.get('/lang/en', query_string={'next': next_url})
+    response = plain_client.post('/lang', data={'lang': 'en', 'next': next_url})
     assert response.headers['Location'] == '/'
 
 
 def test_unknown_language_choice(plain_client):
-    assert plain_client.get('/lang/xx').status_code == 404
+    assert plain_client.post('/lang', data={'lang': 'xx'}).status_code == 404
+    assert plain_client.post('/lang').status_code == 404
 
 
 @pytest.mark.parametrize('path', ['/', '/about', '/users', '/recent', '/user/name/Alice', '/user/name/Nobody',

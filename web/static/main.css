@@ -120,13 +120,13 @@ details#lang-switch summary, details#lang-switch summary * { cursor: pointer; }
 details#lang-switch ul { background-color: white; border: 1px solid #aaa; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     list-style: none; margin: 2px 0 0; max-height: 70vh; overflow-y: auto; padding: 0.25em 0; position: absolute; right: 0; white-space: nowrap; }
 [dir=rtl] details#lang-switch ul { left: 0; right: auto; }
-details#lang-switch li a { display: block; padding: 0.15em 1ex; text-decoration: none; }
-details#lang-switch li a:hover { background-color: #eee; }
-details#lang-switch li a.selected { font-weight: bold; }
+details#lang-switch li button { background: none; border: 0; color: inherit; cursor: pointer; display: block; font: inherit; padding: 0.15em 1ex; text-align: start; width: 100%; }
+details#lang-switch li button:hover { background-color: #eee; }
+details#lang-switch li button.selected { font-weight: bold; }
 /* touch devices: bigger tap targets in the language menu, same font size as the navigation */
 @media (pointer: coarse) {
     details#lang-switch summary { padding: 0.3em 0; }
-    details#lang-switch li a { padding: 0.6em 2ex; }
+    details#lang-switch li button { padding: 0.6em 2ex; }
 }
 .flag { font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
 

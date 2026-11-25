@@ -176,15 +176,15 @@ def test_recent_confirmations_render_wikilinks_in_comments(client):
 def test_hidden_user_page_is_not_shown(client):
     response = client.get('/user/name/Eve')
     assert response.status_code == 404
-    assert 'Eve' not in response.get_data(as_text=True).replace('next=/user/name/Eve', '')   # language menu
+    assert 'Eve' not in response.get_data(as_text=True).replace('value="/user/name/Eve"', '')   # language menu
 
 
 def same_answer(client, url_one, url_two):
-    """Whether two pages are the same apart from their own address (in the links of the language menu)."""
+    """Whether two pages are the same apart from their own address (in the form of the language menu)."""
     one, two = client.get(url_one), client.get(url_two)
     return (one.status_code == two.status_code
-            and one.get_data(as_text=True).replace('next=' + url_one, '')
-            == two.get_data(as_text=True).replace('next=' + url_two, ''))
+            and one.get_data(as_text=True).replace(f'value="{url_one}"', '')
+            == two.get_data(as_text=True).replace(f'value="{url_two}"', ''))
 
 
 def test_hidden_and_unknown_users_get_the_same_answer(client):

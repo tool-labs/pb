@@ -148,7 +148,7 @@ toolforge webservice python3.13 restart
 
 The UI is available in 24 languages (`LANGUAGES` in `web/i18n.py`). The language of a page is,
 in this order: the URL parameter `forcedlang=<code>` (only for that request), the cookie
-`pb_lang`, the browser's `Accept-Language`, English. The menu at the top right (`/lang/<code>?next=<page>`)
+`pb_lang`, the browser's `Accept-Language`, English. The menu at the top right (a form, `POST /lang`)
 stores the cookie only if the choice differs from the browser language.
 
 To change a text, edit it in every `web/translations/*.json`; a new key must exist in all of

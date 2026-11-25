@@ -62,19 +62,22 @@ def inject_language():
     lang = i18n.current_language()
     here = _url_without_forced_language()
     return {'_': _, 'lang': lang, 'lang_dir': i18n.text_direction(lang),
-            'languages': [(code, flag, name, flask.url_for('set_language', code=code, next=here))
-                          for code, (flag, name) in i18n.LANGUAGES.items()]}
+            'here': here,
+            'languages': [(code, flag, name) for code, (flag, name) in i18n.LANGUAGES.items()]}
 
-@app.route('/lang/<code>')
-def set_language(code):
+@app.route('/lang', methods=['POST'])
+def set_language():
     """
     Manual choice in the language menu, then back to the page it came from.
     The cookie is only stored if the choice differs from the browser language
     (otherwise an old cookie is removed).
+    This is a form and not a link per language: crawlers followed the links, which were
+    24 URLs per page and about half of all requests.
     """
+    code = flask.request.form.get('lang')
     if code not in i18n.LANGUAGES:
         flask.abort(404)
-    response = flask.redirect(i18n.local_url(flask.request.args.get('next')))
+    response = flask.redirect(i18n.local_url(flask.request.form.get('next')), code=303)
     if code == i18n.browser_language(flask.request):
         if i18n.COOKIE_NAME in flask.request.cookies:
             response.delete_cookie(i18n.COOKIE_NAME)

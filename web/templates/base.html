@@ -16,14 +16,17 @@
   <body>
     <div id="navi">
     <details id="lang-switch" title="{{ _('nav.language') }}">
-{%- for code, flag, name, url in languages if code == lang %}
+{%- for code, flag, name in languages if code == lang %}
       <summary><span class="flag">{{ flag }}</span> {{ name }}</summary>
 {%- endfor %}
+      <form method="post" action="{{ url_for('set_language') }}">
+      <input type="hidden" name="next" value="{{ here }}" />
       <ul>
-{%- for code, flag, name, url in languages %}
-        <li><a href="{{ url }}" lang="{{ code }}" hreflang="{{ code }}" rel="nofollow"{% if code == lang %} class="selected"{% endif %}><span class="flag">{{ flag }}</span> {{ name }}</a></li>
+{%- for code, flag, name in languages %}
+        <li><button type="submit" name="lang" value="{{ code }}" lang="{{ code }}"{% if code == lang %} class="selected"{% endif %}><span class="flag">{{ flag }}</span> {{ name }}</button></li>
 {%- endfor %}
       </ul>
+      </form>
     </details>
     <a href="{{ url_for('index') }}">{{ _('nav.home') }}</a> | <a href="{{ url_for('users') }}">{{ _('nav.users') }}</a> | <a href="{{ url_for('about') }}">{{ _('nav.about') }}</a></div>
     <h1>{% block heading %}{{ _('site.namespace') }}:{{ _('site.name') }}{% endblock %}</h1>
