@@ -129,10 +129,10 @@ def test_add_user_twice_raises_integrity_error(bot_db, replica_sql):
 
 def test_similar_names_are_different_users(bot_db, replica_sql, pb_sql):
     with replica_sql.cursor() as curs:
-        curs.execute("INSERT INTO user (user_id, user_name) VALUES (203, 'Müller'), (204, 'MÜLLER'), (205, 'Muller')")
+        curs.execute("INSERT INTO user (user_id, user_name) VALUES (211, 'Müller'), (212, 'MÜLLER'), (213, 'Muller')")
     for name in ('Müller', 'MÜLLER', 'Muller'):
         assert bot_db.add_user(name, '2026-01-01 12:00:00') is True
-    assert [bot_db.get_user_by_name(name)[1] for name in ('Müller', 'MÜLLER', 'Muller')] == [203, 204, 205]
+    assert [bot_db.get_user_by_name(name)[1] for name in ('Müller', 'MÜLLER', 'Muller')] == [211, 212, 213]
     names = [row[0] for row in bot_db.get_user_list_with_confirmations()]
     assert {'Müller', 'MÜLLER', 'Muller'} <= set(names)
     # sorted like before, not by code points ("Zoë" is not before them, upper case is not first)
