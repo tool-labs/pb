@@ -98,7 +98,7 @@ class AdminDatabase(Database):
         if self.wp_conn is None:
             user, password, host = self._credentials()
             self.wp_conn = pymysql.connect(host=host, port=config.db_port, user=user, password=password,
-                                           database=config.replica_db_name, charset='utf8')
+                                           database=config.replica_db_name, charset='utf8mb4')
         return self.wp_conn
 
     def meta(self):
@@ -106,7 +106,7 @@ class AdminDatabase(Database):
         if self.meta_conn is None:
             user, password, _ = self._credentials()
             self.meta_conn = pymysql.connect(host=config.meta_replica_host, port=config.db_port, user=user,
-                                             password=password, database=config.meta_replica_db_name, charset='utf8')
+                                             password=password, database=config.meta_replica_db_name, charset='utf8mb4')
         return self.meta_conn
 
     def close_connections(self):
@@ -152,7 +152,7 @@ class AdminDatabase(Database):
         if query:
             pattern = '%' + query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
             where.append('(`user_name` COLLATE utf8mb4_general_ci LIKE %s OR `user_id` = %s)')
-            args += [pattern, int(query) if query.isdigit() else -1]
+            args += [pattern, int(query) if query.isdecimal() else -1]
         if status:
             where.append(USER_STATUSES[status][1])
         with self.conn.cursor() as curs:

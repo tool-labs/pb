@@ -127,11 +127,11 @@ class Database:
             self.wp_conn = None
             if use_replica:
                 self.wp_conn = pymysql.connections.Connection(host=wp_host, port=config.db_port, user=user_name, password=password, database=wp_replica_db,
-                               charset='utf8', use_unicode=True, defer_connect=True)
+                               charset='utf8mb4', use_unicode=True, defer_connect=True)
             self.ca_conn = None
             if use_centralauth:
                 self.ca_conn = pymysql.connections.Connection(host=config.centralauth_host, port=config.db_port, user=user_name, password=password, database=config.centralauth_db_name,
-                               charset='utf8', use_unicode=True, defer_connect=True)
+                               charset='utf8mb4', use_unicode=True, defer_connect=True)
             # open the deferred connections; ping() no longer reconnects by default since PyMySQL 1.2
             self.conn.connect()
             if self.wp_conn is not None:
@@ -609,11 +609,11 @@ class Database:
             else:
                 return None
 
-    def touch_user(self, user_id, timestamp):
+    def touch_user(self, user_id, timestamp, commit=True):
         """
         Updates `user`.`user_last_update` for *user_id*. This is used
         after adding the user, making changes to the user manually or
-        when the user gets 'verified'.
+        when the user gets 'verified'. With ``commit=False`` the caller commits.
         """
         with self.conn.cursor() as curs:
             curs.execute('''
@@ -621,7 +621,8 @@ class Database:
                 `user_last_update` = %s
             WHERE `user`.`user_id` = %s LIMIT 1
             ;''', (timestamp, user_id,))
-            self.conn.commit()
+            if commit:
+                self.conn.commit()
             return True
 
     def user_blocked(self, user_id):

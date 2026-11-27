@@ -290,7 +290,7 @@ def test_public_pages_set_no_cookie(anon):
     assert 'Set-Cookie' not in anon.get('/admin/login').headers
 
 
-@pytest.mark.parametrize('token', [None, '', 'wrong'])
+@pytest.mark.parametrize('token', [None, '', 'wrong', 'ünicode', '²'])
 def test_changes_need_the_csrf_token(logged_in, token):
     data = {'reason': 'x', 'hidden': '1'}
     if token is not None:
@@ -425,6 +425,11 @@ def test_audit_page(logged_in):
     assert '<option value="user_change" selected>user_change</option>' in page
     assert '<option value="update-user-names (Job)">' in page
     assert 'href="/admin/audit?page=2&amp;action=user_change">Ältere' in page
+
+
+@pytest.mark.parametrize('query', ['page=²', 'page=x', 'user=²'])
+def test_audit_page_with_odd_numbers(logged_in, query):
+    assert logged_in.get('/admin/audit?' + query).status_code == 200
 
 
 def test_vanished_page_suggests_the_reason(logged_in):

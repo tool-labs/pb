@@ -52,6 +52,7 @@ def test_database_uses_credentials_from_cnf_file(recording_pymysql, cnf_file, mo
     assert pb.kwargs['charset'] == 'utf8mb4'
     assert replica.kwargs['host'] == 'replica.example'
     assert replica.kwargs['database'] == 'wiki_db'
+    assert replica.kwargs['charset'] == 'utf8mb4'   # names with 4-byte characters
     for conn in (pb, replica):
         assert conn.kwargs['user'] == 'u1234'       # quotes are stripped
         assert conn.kwargs['password'] == 'secret'

@@ -211,6 +211,9 @@ def test_recent_confirmations_page_two(client, fake_db_class):
 
 def test_recent_confirmations_rejects_page_zero(client):
     assert client.get('/recent/0').status_code == 400
+    assert client.get('/recent/10000').status_code == 200
+    assert client.get('/recent/10001').status_code == 404
+    assert client.get('/recent/99999999999999999999').status_code == 404
 
 
 def test_confirmation_details(client):

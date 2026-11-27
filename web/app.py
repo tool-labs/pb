@@ -171,11 +171,17 @@ def confirmation_users(user_id_one, user_id_two):
     return render_template('confirmation.html', user_one=user_one, user_two=user_two,
                            cf_one_two=cf_one_two, cf_two_one=cf_two_one)
 
+# 50 confirmations per page: room for 500,000 confirmations (2026: 105,000). Larger numbers gave
+# HTTP 500 (OFFSET out of range) and expensive queries.
+MAX_RECENT_PAGE = 10000
+
 @app.route('/recent')
 @app.route('/recent/<int:page>')
 def recent_confirmations(page=1):
     if page < 1:
         flask.abort(400)
+    if page > MAX_RECENT_PAGE:
+        flask.abort(404)
 
     confirmations = get_db().get_latest_confirmations(page, count=50)
     return render_template('recent_changes.html', confirmations=confirmations, page=page)
@@ -345,4 +351,4 @@ admin.init_app(app)
 
 if __name__ == "__main__":
     # only for local tests, the webservice runs the app via uwsgi
-    app.run(debug = True, threaded = True, host='0.0.0.0', port=80, use_reloader=True)
+    app.run(debug = True, threaded = True, host='127.0.0.1', port=8080, use_reloader=True)

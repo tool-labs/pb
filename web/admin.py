@@ -136,7 +136,8 @@ def require_admin():
 
 def check_csrf():
     token = flask.request.form.get('csrf_token', '')
-    if not token or not secrets.compare_digest(token, csrf_token()):
+    # bytes: compare_digest() raises TypeError for str with non-ASCII characters (HTTP 500 instead of 400)
+    if not token or not secrets.compare_digest(token.encode(), csrf_token().encode()):
         flask.abort(400, 'CSRF-Token fehlt oder ist ungültig, bitte die Seite neu laden.')
 
 
@@ -196,7 +197,7 @@ def oauth_callback():
     if args.get('error'):
         return render('admin/login.html', configured=True, next=next_url,
                       error=i18n.gettext('admin_login.error_cancelled', error=args.get('error'))), 400
-    if not expected_state or not secrets.compare_digest(args.get('state', ''), expected_state):
+    if not expected_state or not secrets.compare_digest(args.get('state', '').encode(), expected_state.encode()):
         return render('admin/login.html', configured=True, next=next_url,
                       error=i18n.gettext('admin_login.error_expired')), 400
     try:
@@ -369,10 +370,10 @@ def audit():
     action = action if action in AUDIT_ACTIONS else ''
     performer = args.get('performer', '').strip()
     page = args.get('page', '1')
-    page = int(page) if page.isdigit() and int(page) > 0 else 1
+    page = int(page) if page.isdecimal() and int(page) > 0 else 1
     user_id = None
     if user_filter:
-        user_id = int(user_filter) if user_filter.isdigit() else db.get_user_id_by_name(user_filter)
+        user_id = int(user_filter) if user_filter.isdecimal() else db.get_user_id_by_name(user_filter)
         if user_id is None:
             user_id = -1  # unknown name: no entries
     entries, has_more = db.get_audit_entries(user_id=user_id, action=action, performer=performer, page=page,

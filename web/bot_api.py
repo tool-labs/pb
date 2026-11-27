@@ -50,7 +50,7 @@ class BotDatabase(Database):
         if (self.get_user_by_id(user_id) == None or
             self.get_user_by_id(confirmed_id) == None):
             return False
-        if TIMESTAMP_RE.match(timestamp) is None:
+        if TIMESTAMP_RE.fullmatch(timestamp) is None:
             return False
         with self.conn.cursor() as curs:
             curs.execute('''
@@ -68,7 +68,7 @@ class BotDatabase(Database):
                      `user_verified_since` = %s
                 WHERE `user`.`user_id` = %s AND `user_verified_since` IS NULL LIMIT 1
                 ;''', (timestamp, confirmed_id,))
-                self.touch_user(confirmed_id, timestamp)
+                self.touch_user(confirmed_id, timestamp, commit=False)
             self.conn.commit()
         return True
     
@@ -77,7 +77,7 @@ class BotDatabase(Database):
         Adds a user to the database with given timestamp of participation. Returns the success as a boolean value.
         comment is not used here, but is useful for admin comments like "X is a sock".
         """
-        if TIMESTAMP_RE.match(part_tstamp) is None:
+        if TIMESTAMP_RE.fullmatch(part_tstamp) is None:
             return False
         # check if the user exists (MW database)
         user_id = self.get_mw_user_id(user_name)
